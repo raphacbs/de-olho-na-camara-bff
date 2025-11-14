@@ -1,0 +1,21 @@
+databaseChangeLog:
+    - changeSet:
+          id: 2.1-ADD_COLUMN_TYPE_USER_ACTIVATION_TOKENS
+          author: raphacbs
+          labels: autenticacao
+          changes:
+              - sqlFile:
+                    dbms: postgresql
+                    encoding: utf8
+                    path: ddl/2.1-ADD_COLUMN_TYPE_USER_ACTIVATION_TOKENS.sql
+                    relativeToChangelogFile: true
+                    splitStatements: true
+                    schemaName: authentication
+          # ADICIONE AQUI A SEÇÃO ROLLBACK
+          rollback:
+              - sqlFile:
+                    path: ddl/2.1-ROLLBACK_ADD_COLUMN_TYPE_USER_ACTIVATION_TOKENS.sql
+                    relativeToChangelogFile: true
+                    dbms: postgresql
+                    splitStatements: true
+                    schemaName: authentication # Mantenha o schema aqui para o rollback também

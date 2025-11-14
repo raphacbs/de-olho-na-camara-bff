@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - include:
+      file: schema.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: authentication/db.changelog.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: camara_deputados/db.changelog.yaml
+      relativeToChangelogFile: true
+  # Adicione aqui outras inclusões, como para transactions, se tiver:
+  # - include:
+  #     file: transactions/db.changelog.yaml
+  #     relativeToChangelogFile: true

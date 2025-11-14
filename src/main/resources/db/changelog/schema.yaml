@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-authentication-schema
+      author: raphacbs
+      changes:
+        - sql: CREATE SCHEMA IF NOT EXISTS authentication;
+  - changeSet:
+      id: create-config-schema
+      author: raphacbs
+      changes:
+        - sql: CREATE SCHEMA IF NOT EXISTS config;
+  - changeSet:
+      id: create-camara_deputados-schema
+      author: raphacbs
+      changes:
+        - sql: CREATE SCHEMA IF NOT EXISTS camara_deputados;

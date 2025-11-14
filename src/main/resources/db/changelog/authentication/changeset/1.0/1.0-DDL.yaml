@@ -1,0 +1,21 @@
+databaseChangeLog:
+    - changeSet:
+          id: 1.0-CREATE_TABLE_USERS.sql
+          author: raphacbs
+          labels: autenticacao
+          changes:
+              - sqlFile:
+                    dbms: postgresql
+                    encoding: utf8
+                    path: ddl/1.0-CREATE_TABLE_USERS.sql
+                    relativeToChangelogFile: true
+                    splitStatements: true
+                    schemaName: authentication
+          # ADICIONE AQUI A SEÇÃO ROLLBACK
+          rollback:
+              - sqlFile:
+                    path: ddl/1.0-DROP_TABLE_USERS.sql
+                    relativeToChangelogFile: true
+                    dbms: postgresql
+                    splitStatements: true
+                    schemaName: authentication # Mantenha o schema aqui para o rollback também

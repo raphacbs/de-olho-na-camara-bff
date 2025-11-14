@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: Watch the Chamber - BFF API
+  description: >
+    Backend For Frontend API between the mobile app and the Brazilian Chamber of Deputies public API.
+    Handles authentication, user management, followed politicians, and notifications.
+  version: 1.0.0
+  contact:
+    name: Raphael Coelho
+    email: contato@raphaelcoelho.dev
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local environment
+  - url: https://api.deolhonacamara.com/api/v1
+    description: Production
+
+tags:
+  - name: Auth
+    description: Authentication and token management
+  - name: Politicians
+    description: Local synchronized politicians data
+  - name: Followed
+    description: Politicians followed by authenticated users
+
+paths:
+  /api/v1/auth/register:
+    post:
+      tags: [ Auth ]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestNewUser'
+      responses:
+        '201':
+          description: User successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDTO'
+        '400':
+          description: Invalid request data
+
+  /api/v1/auth/login:
+    post:
+      tags: [ Auth ]
+      summary: Perform login and return access tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestLogin'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDTO'
+        '401':
+          description: Invalid credentials
+
+  /api/v1/politicians:
+    get:
+      tags: [ Politicians ]
+      summary: List all politicians (locally synced)
+      operationId: listPoliticians
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: name
+          schema: { type: string }
+          description: Partial name search (optional)
+        - in: query
+          name: party
+          schema: { type: string }
+          description: Party acronym filter
+        - in: query
+          name: state
+          schema: { type: string }
+          description: State acronym filter
+      responses:
+        '200':
+          description: Paginated list of politicians
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticianResponseDTO'
+
+  /api/v1/politicians/{id}:
+    get:
+      tags: [ Politicians ]
+      summary: Get details of a specific politician
+      operationId: politiciansIdGet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Politician data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticianDto'
+
+  /api/v1/followed:
+    get:
+      tags: [ Followed ]
+      summary: List followed politicians (paginated)
+      operationId: listFollowed
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Paginated list of followed politicians
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticianResponseDTO'
+
+  /api/v1/followed/{politicianId}:
+    post:
+      tags: [ Followed ]
+      summary: Follow a politician
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+        - in: path
+          name: politicianId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Politician successfully followed
+
+    delete:
+      tags: [ Followed ]
+      summary: Unfollow a politician
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+        - in: path
+          name: politicianId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Politician successfully unfollowed
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RequestNewUser:
+      type: object
+      required: [ email, password, fullName ]
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    RequestLogin:
+      type: object
+      required: [ email, password ]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    AuthResponseDTO:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expireIn:
+          type: integer
+          example: 900
+
+    PoliticianResponseDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoliticianDto'
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        sizePage:
+          type: integer
+
+    PoliticianDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 204379
+        name:
+          type: string
+          example: Acácio Favacho
+        party:
+          type: string
+          example: MDB
+        partyUri:
+          type: string
+          example: https://dadosabertos.camara.leg.br/api/v2/partidos/36899
+        state:
+          type: string
+          example: AP
+        legislatureId:
+          type: integer
+          example: 57
+        email:
+          type: string
+          example: dep.acaciofavacho@camara.leg.br
+        uri:
+          type: string
+          example: https://dadosabertos.camara.leg.br/api/v2/deputados/204379
+        photoUrl:
+          type: string
+          example: https://www.camara.leg.br/internet/deputado/bandep/204379.jpg

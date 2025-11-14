@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - include:
+      file: changeset/1.0/1.0-DDL.yaml
+      context: authentication
+      relativeToChangelogFile: true
+      errorIfMissingorEmpty: true
+  - include:
+      file: changeset/2.0/2.0-DDL.yaml
+      context: authentication
+      relativeToChangelogFile: true
+      errorIfMissingorEmpty: true
+  - include:
+      file: changeset/2.1/2.1-DDL.yaml
+      context: authentication
+      relativeToChangelogFile: true
+      errorIfMissingorEmpty: true

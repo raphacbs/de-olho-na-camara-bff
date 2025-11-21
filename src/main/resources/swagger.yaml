@@ -22,6 +22,20 @@ tags:
     description: Local synchronized politicians data
   - name: Followed
     description: Politicians followed by authenticated users
+  - name: Expenses
+    description: Politician expenses data
+  - name: Votes
+    description: Voting records and politician votes
+  - name: Speeches
+    description: Politician speeches in the chamber
+  - name: Propositions
+    description: Legislative propositions
+  - name: Presence
+    description: Politician presence records
+  - name: Devices
+    description: User device management for push notifications
+  - name: Sync
+    description: Data synchronization endpoints
 
 paths:
   /api/v1/auth/register:
@@ -186,6 +200,288 @@ paths:
         '204':
           description: Politician successfully unfollowed
 
+  /api/v1/politicians/{id}/expenses:
+    get:
+      tags: [ Expenses ]
+      summary: Get expenses for a specific politician
+      operationId: getPoliticianExpenses
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: year
+          schema: { type: integer }
+          description: Filter by year
+        - in: query
+          name: month
+          schema: { type: integer }
+          description: Filter by month (1-12)
+      responses:
+        '200':
+          description: Paginated list of expenses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseResponseDTO'
+
+  /api/v1/politicians/{id}/votes:
+    get:
+      tags: [ Votes ]
+      summary: Get votes for a specific politician
+      operationId: getPoliticianVotes
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Paginated list of votes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticianVoteResponseDTO'
+
+  /api/v1/politicians/{id}/speeches:
+    get:
+      tags: [ Speeches ]
+      summary: Get speeches for a specific politician
+      operationId: getPoliticianSpeeches
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Paginated list of speeches
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechResponseDTO'
+
+  /api/v1/politicians/{id}/propositions:
+    get:
+      tags: [ Propositions ]
+      summary: Get propositions for a specific politician
+      operationId: getPoliticianPropositions
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Paginated list of propositions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropositionResponseDTO'
+
+  /api/v1/politicians/{id}/presence:
+    get:
+      tags: [ Presence ]
+      summary: Get presence records for a specific politician
+      operationId: getPoliticianPresence
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Paginated list of presence records
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresenceResponseDTO'
+
+  /api/v1/devices:
+    post:
+      tags: [ Devices ]
+      summary: Register or update user device for push notifications
+      operationId: registerDevice
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRequest'
+      responses:
+        '201':
+          description: Device successfully registered
+        '400':
+          description: Invalid request data
+
+    delete:
+      tags: [ Devices ]
+      summary: Unregister user device
+      operationId: unregisterDevice
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+        - in: query
+          name: fcmToken
+          required: true
+          schema:
+            type: string
+          description: FCM token to unregister
+      responses:
+        '204':
+          description: Device successfully unregistered
+
+  /api/v1/sync/all:
+    post:
+      tags: [ Sync ]
+      summary: Trigger full synchronization of all features
+      operationId: syncAll
+      description: Starts an asynchronous synchronization process for all features (politicians, expenses, votes, speeches, propositions, and presence). Returns immediately without waiting for completion.
+      responses:
+        '202':
+          description: Synchronization started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+        '500':
+          description: Error starting synchronization
+
+  /api/v1/sync/politicians:
+    post:
+      tags: [ Sync ]
+      summary: Trigger synchronization of politicians only
+      operationId: syncPoliticians
+      description: Starts an asynchronous synchronization process for politicians only.
+      responses:
+        '202':
+          description: Synchronization started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+
+  /api/v1/sync/expenses:
+    post:
+      tags: [ Sync ]
+      summary: Trigger synchronization of expenses only
+      operationId: syncExpenses
+      description: Starts an asynchronous synchronization process for expenses only.
+      responses:
+        '202':
+          description: Synchronization started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+
+  /api/v1/sync/votes:
+    post:
+      tags: [ Sync ]
+      summary: Trigger synchronization of votes only
+      operationId: syncVotes
+      description: Starts an asynchronous synchronization process for votes only.
+      responses:
+        '202':
+          description: Synchronization started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+
+  /api/v1/sync/speeches:
+    post:
+      tags: [ Sync ]
+      summary: Trigger synchronization of speeches only
+      operationId: syncSpeeches
+      description: Starts an asynchronous synchronization process for speeches only.
+      responses:
+        '202':
+          description: Synchronization started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+
+  /api/v1/sync/propositions:
+    post:
+      tags: [ Sync ]
+      summary: Trigger synchronization of propositions only
+      operationId: syncPropositions
+      description: Starts an asynchronous synchronization process for propositions only.
+      responses:
+        '202':
+          description: Synchronization started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+
+  /api/v1/sync/presence:
+    post:
+      tags: [ Sync ]
+      summary: Trigger synchronization of presence only
+      operationId: syncPresence
+      description: Starts an asynchronous synchronization process for presence only.
+      responses:
+        '202':
+          description: Synchronization started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -278,3 +574,226 @@ components:
         photoUrl:
           type: string
           example: https://www.camara.leg.br/internet/deputado/bandep/204379.jpg
+
+    ExpenseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        politicianId:
+          type: integer
+        year:
+          type: integer
+        month:
+          type: integer
+        expenseType:
+          type: string
+        supplier:
+          type: string
+        documentValue:
+          type: string
+        netValue:
+          type: string
+        glosaValue:
+          type: string
+        documentDate:
+          type: string
+          format: date
+        documentUrl:
+          type: string
+
+    ExpenseResponseDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpenseDto'
+        detail:
+          type: object
+          properties:
+            year:
+              type: integer
+            month:
+              type: integer
+            totalExpenses:
+              type: string
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        sizePage:
+          type: integer
+
+    VoteDto:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        summary:
+          type: string
+
+    PoliticianVoteDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        voteId:
+          type: string
+        politicianId:
+          type: integer
+        voteOption:
+          type: string
+        vote:
+          $ref: '#/components/schemas/VoteDto'
+
+    PoliticianVoteResponseDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoliticianVoteDto'
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        sizePage:
+          type: integer
+
+    SpeechDto:
+      type: object
+      properties:
+        startDateTime:
+          type: string
+        endDateTime:
+          type: string
+        titleEvent:
+          type: string
+        endDateTimeEvent:
+          type: string
+        startDateTimeEvent:
+          type: string
+        summary:
+          type: string
+        speechType:
+          type: string
+        transcription:
+          type: string
+        eventUri:
+          type: string
+        audioUrl:
+          type: string
+        textUrl:
+          type: string
+        videoUrl:
+          type: string
+
+    SpeechResponseDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpeechDto'
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        sizePage:
+          type: integer
+
+    PropositionDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        number:
+          type: integer
+        year:
+          type: integer
+        summary:
+          type: string
+        presentationDate:
+          type: string
+          format: date
+        status:
+          type: object
+
+    PropositionResponseDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PropositionDto'
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        sizePage:
+          type: integer
+
+    PresenceDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        politicianId:
+          type: integer
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        status:
+          type: string
+
+    PresenceResponseDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PresenceDto'
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        sizePage:
+          type: integer
+
+    DeviceRequest:
+      type: object
+      required: [ fcmToken ]
+      properties:
+        fcmToken:
+          type: string
+          description: Firebase Cloud Messaging token
+
+    SyncResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Synchronization started successfully
+        status:
+          type: string
+          example: ACCEPTED

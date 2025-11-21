@@ -41,10 +41,11 @@ public class Requester<T> {
                      String endpoint,
                      String timeout,
                      Class<T> type,
-                     String contentType) {
+                     String contentType,
+                     ObjectMapper objectMapper) {
 
         this.httpClient = httpClient;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;//new ObjectMapper();
 
         PropertyPlaceholderHelper placeholderHelper = new PropertyPlaceholderHelper("${", "}");
 
@@ -144,8 +145,8 @@ public class Requester<T> {
         return process(PATCH, params, bodyPublisher);
     }
 
-    public static <T> RequesterBuilder<T> builder(HttpClient httpClient, Environment environment, Class<T> type) {
-        return new RequesterBuilder<>(httpClient, environment, type);
+    public static <T> RequesterBuilder<T> builder(HttpClient httpClient, Environment environment, Class<T> type, ObjectMapper objectMapper) {
+        return new RequesterBuilder<>(httpClient, environment, type, objectMapper);
     }
 
     private String resolvePlaceholder(Environment environment, PropertyPlaceholderHelper helper, String value) {

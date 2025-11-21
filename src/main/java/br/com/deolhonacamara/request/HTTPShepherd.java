@@ -29,8 +29,8 @@ public class HTTPShepherd<B, O> {
         this.url = url;
     }
 
-    public static  <I, O> HTTPShepherdBuilder<I, O> builder(HttpClient httpClient, Environment environment, Class<O> type) {
-        return new HTTPShepherdBuilder<I, O>(httpClient, environment, type);
+    public static  <I, O> HTTPShepherdBuilder<I, O> builder(HttpClient httpClient, Environment environment, Class<O> type, ObjectMapper objectMapper) {
+        return new HTTPShepherdBuilder<I, O>(httpClient, environment, type, objectMapper);
     }
 
     public O request(Map<String, Object> params) {

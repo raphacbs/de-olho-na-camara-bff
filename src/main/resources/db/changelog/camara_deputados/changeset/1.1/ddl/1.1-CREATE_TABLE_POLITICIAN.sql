@@ -79,21 +79,29 @@ CREATE TABLE IF NOT EXISTS camara_deputados.politician_vote (
 CREATE INDEX IF NOT EXISTS idx_pol_vote_politician
 ON camara_deputados.politician_vote (politician_id);
 
-CREATE TABLE IF NOT EXISTS camara_deputados.speech (
-    id VARCHAR(50) PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS camara_deputados.speeches (
     politician_id INT NOT NULL,
-    date DATE,
-    time VARCHAR(10),
-    title TEXT,
-    type TEXT,
-    url TEXT,
+    start_datetime TIMESTAMPTZ,
+    end_datetime TIMESTAMPTZ,
+    title_event VARCHAR(255),
+    start_datetime_event TIMESTAMPTZ,
+    end_datetime_event TIMESTAMPTZ,
+    keywords TEXT,
+    summary TEXT,
+    speech_type VARCHAR(100),
+    transcription TEXT,
+    event_uri VARCHAR(255),
+    audio_url VARCHAR(255),
+    text_url VARCHAR(255),
+    video_url VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
+    PRIMARY KEY (politician_id, start_datetime),
     CONSTRAINT fk_speech_politician FOREIGN KEY (politician_id) REFERENCES camara_deputados.politicians(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_speech_politician
-ON camara_deputados.speech (politician_id);
+ON camara_deputados.speeches (politician_id);
 
 CREATE TABLE IF NOT EXISTS camara_deputados.proposition (
     id INT PRIMARY KEY,

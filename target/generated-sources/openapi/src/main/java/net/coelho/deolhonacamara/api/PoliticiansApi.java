@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-11-13T18:40:16.691081500-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-11-21T10:53:37.437611200-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 @Validated
 @Tag(name = "Politicians", description = "Local synchronized politicians data")
 public interface PoliticiansApi {

@@ -1,6 +1,7 @@
 package br.com.deolhonacamara.request;
 
 import br.com.deolhonacamara.request.repository.HTTPShepherdRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -15,6 +16,7 @@ public class RequesterBuilder<T> {
     private final HttpClient httpClient;
     private final Environment environment;
     private final Class<T> type;
+    private final ObjectMapper objectMapper;
 
     @Setter
     private String url;
@@ -29,7 +31,7 @@ public class RequesterBuilder<T> {
 
     public Requester<T> build() {
         validateRequiredFields();
-        return new Requester<>(httpClient, environment, url, endpoint, timeout, type, contentType);
+        return new Requester<>(httpClient, environment, url, endpoint, timeout, type, contentType, objectMapper);
     }
 
     private void validateRequiredFields() {

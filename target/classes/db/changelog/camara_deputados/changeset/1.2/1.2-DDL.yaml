@@ -1,0 +1,21 @@
+databaseChangeLog:
+    - changeSet:
+          id: 1.2-ADD_EXPENSE_FIELDS.sql
+          author: system
+          labels: TABLE_EXPENSE_FIELDS
+          changes:
+              - sqlFile:
+                    dbms: postgresql
+                    encoding: utf8
+                    path: ddl/1.2-ADD_EXPENSE_FIELDS.sql
+                    relativeToChangelogFile: true
+                    splitStatements: true
+                    schemaName: camara_deputados
+          rollback:
+              - sqlFile:
+                    path: ddl/1.2-DROP_EXPENSE_FIELDS.sql
+                    relativeToChangelogFile: true
+                    dbms: postgresql
+                    splitStatements: true
+                    schemaName: camara_deputados
+

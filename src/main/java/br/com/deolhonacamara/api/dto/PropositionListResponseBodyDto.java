@@ -13,9 +13,9 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PropositionResponseBodyDto implements Serializable {
+public class PropositionListResponseBodyDto implements Serializable {
     @JsonProperty("dados")
-    private PropositionBodyDto data;
+    private List<PropositionBodyDto> data;
     @JsonProperty("links")
     private List<LinkDto> links;
 }

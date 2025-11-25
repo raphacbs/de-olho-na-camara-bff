@@ -1,0 +1,172 @@
+{
+  "dados": [
+    {
+      "id": 2569099,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2569099",
+      "siglaTipo": "EMC",
+      "codTipo": 130,
+      "numero": 631,
+      "ano": 2025,
+      "ementa": "Dá nova redação à MPV 1303/2025",
+      "dataApresentacao": "2025-06-17T00:00"
+    },
+    {
+      "id": 2569100,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2569100",
+      "siglaTipo": "EMC",
+      "codTipo": 130,
+      "numero": 632,
+      "ano": 2025,
+      "ementa": "Dá nova redação à MPV 1303/2025",
+      "dataApresentacao": "2025-06-17T00:00"
+    },
+    {
+      "id": 2509056,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2509056",
+      "siglaTipo": "INC",
+      "codTipo": 133,
+      "numero": 1373,
+      "ano": 2025,
+      "ementa": "Requer o envio de Indicação ao Governo Federal, por meio do Ministro da Saúde, Alexandre Padilha, sugerindo a implementação de Programa Governamental de capacitação de profissionais de saúde para o desenvolvimento de ações de combate à Ludopatia e formação de parcerias com secretarias estaduais e municipais de saúde para criação de protocolo de atendimento para tratamento dos vícios em jogos e apostas.",
+      "dataApresentacao": "2025-05-15T10:34"
+    },
+    {
+      "id": 2562825,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2562825",
+      "siglaTipo": "INC",
+      "codTipo": 133,
+      "numero": 2353,
+      "ano": 2025,
+      "ementa": "Requer o envio de Indicação ao Excelentíssimo Ministro de Estado da Justiça e Segurança Pública, sugerindo que as discussões e deliberações realizadas nas reuniões do Conselho Nacional de Proteção de Dados Pessoais e da Privacidade deverão ser objeto de registro escrito e audiovisual, e disponibilizados em transparência ativa.",
+      "dataApresentacao": "2025-09-22T12:46"
+    },
+    {
+      "id": 2485341,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2485341",
+      "siglaTipo": "PEC",
+      "codTipo": 136,
+      "numero": 8,
+      "ano": 2025,
+      "ementa": "Dá nova redação ao inciso XIII, do artigo 7° da Constituição Federal para dispor sobre a redução da jornada de trabalho para quatro dias por semana no Brasil.",
+      "dataApresentacao": "2025-02-25T15:47"
+    },
+    {
+      "id": 2504516,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2504516",
+      "siglaTipo": "PEC",
+      "codTipo": 136,
+      "numero": 21,
+      "ano": 2025,
+      "ementa": "Acrescenta o inciso LXXX ao artigo 5º da Constituição Federal para tornar imprescritível os crimes sexuais quando cometidos contra menores de doze anos de idade.",
+      "dataApresentacao": "2025-05-06T15:50"
+    },
+    {
+      "id": 2543145,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2543145",
+      "siglaTipo": "PEC",
+      "codTipo": 136,
+      "numero": 30,
+      "ano": 2025,
+      "ementa": "Altera a Constituição Federal e o Ato das Disposições Constitucionais Transitórias para estabelecer regras antiprivilégios para agentes públicos.",
+      "dataApresentacao": "2025-08-12T19:35"
+    },
+    {
+      "id": 2486052,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2486052",
+      "siglaTipo": "PL",
+      "codTipo": 139,
+      "numero": 787,
+      "ano": 2025,
+      "ementa": "Institui o dia 7 de abril como Dia Nacional da Avaliação de Políticas Públicas.",
+      "dataApresentacao": "2025-03-07T16:54"
+    },
+    {
+      "id": 2486802,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2486802",
+      "siglaTipo": "PL",
+      "codTipo": 139,
+      "numero": 973,
+      "ano": 2025,
+      "ementa": "Altera a Lei nº 14.937, de 26 de julho de 2024, para criar a Letra de Crédito de Desenvolvimento Educacional (LCD-e) e a Letra de Crédito de Desenvolvimento da Inovação (LCD-i).",
+      "dataApresentacao": "2025-03-12T20:27"
+    },
+    {
+      "id": 2486860,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2486860",
+      "siglaTipo": "PL",
+      "codTipo": 139,
+      "numero": 982,
+      "ano": 2025,
+      "ementa": "Altera a Lei nº 11.340, de 7 de agosto de 2006 (Lei Maria da Penha) para dispensar o exame de corpo de delito nos crimes cometidos no contexto de violência doméstica e dá outras providências.",
+      "dataApresentacao": "2025-03-13T14:05"
+    },
+    {
+      "id": 2500205,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2500205",
+      "siglaTipo": "PL",
+      "codTipo": 139,
+      "numero": 1849,
+      "ano": 2025,
+      "ementa": "Autoriza e estabelece diretrizes para criação do Programa Acesso Livre e cria campanhas de conscientização acerca do sistema de free flow.",
+      "dataApresentacao": "2025-04-24T16:19"
+    },
+    {
+      "id": 2508313,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2508313",
+      "siglaTipo": "PL",
+      "codTipo": 139,
+      "numero": 2269,
+      "ano": 2025,
+      "ementa": "Altera a Lei nº 14.790, de 29 de dezembro de 2023, que dispõe sobre a modalidade lotérica denominada apostas de quota fixa, para tratar sobre publicidade e propaganda comercial de apostas, de produtos, serviços ou arranjos a eles assemelhados.",
+      "dataApresentacao": "2025-05-13T15:34"
+    },
+    {
+      "id": 2508461,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2508461",
+      "siglaTipo": "PL",
+      "codTipo": 139,
+      "numero": 2278,
+      "ano": 2025,
+      "ementa": "Altera a Lei nº 14.790, de 29 de dezembro de 2023, para determinar a limitação das apostas nos casos que especifica.",
+      "dataApresentacao": "2025-05-13T18:28"
+    },
+    {
+      "id": 2508479,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2508479",
+      "siglaTipo": "PL",
+      "codTipo": 139,
+      "numero": 2279,
+      "ano": 2025,
+      "ementa": "Altera a Lei nº 14.790, de 29 de dezembro de 2023, que dispõe sobre a modalidade lotérica denominada apostas de quota fixa.",
+      "dataApresentacao": "2025-05-13T19:13"
+    },
+    {
+      "id": 2508480,
+      "uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/2508480",
+      "siglaTipo": "PL",
+      "codTipo": 139,
+      "numero": 2280,
+      "ano": 2025,
+      "ementa": "Dispõe sobre a destinação de percentual dos recursos depositados em plataformas digitais de operação financeira para contas de poupança de titularidade do usuário, e dá outras providências.",
+      "dataApresentacao": "2025-05-13T19:13"
+    }
+  ],
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/proposicoes?ano=2025,2024,2023&idDeputadoAutor=204534&ordem=DESC&ordenarPor=ano"
+    },
+    {
+      "rel": "next",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/proposicoes?ano=2025,2024,2023&idDeputadoAutor=204534&ordem=DESC&ordenarPor=ano&pagina=2&itens=15"
+    },
+    {
+      "rel": "first",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/proposicoes?ano=2025,2024,2023&idDeputadoAutor=204534&ordem=DESC&ordenarPor=ano&pagina=1&itens=15"
+    },
+    {
+      "rel": "last",
+      "href": "https://dadosabertos.camara.leg.br/api/v2/proposicoes?ano=2025,2024,2023&idDeputadoAutor=204534&ordem=DESC&ordenarPor=ano&pagina=32&itens=15"
+    }
+  ]
+}

@@ -20,6 +20,9 @@ public abstract class Input<B> {
     @Getter
     @Setter
     private Integer sizePage;
+    @Getter
+    @Setter
+    private Integer propositionId;
 
     public Input(UUID userId) {
         this.filters = new HashMap<>();

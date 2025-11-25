@@ -24,13 +24,13 @@ public class CamaraDeputadosService {
     public CamaraDeputadosService(HttpClient httpClient, Environment environment,
                                   HTTPShepherdRepository httpShepherdRepository,
                                   ObjectMapper objectMapper,
-                                  PropertiesConfig config){
+                                  PropertiesConfig config) {
         this.httpClient = httpClient;
         this.environment = environment;
         this.httpShepherdRepository = httpShepherdRepository;
         this.config = config;
         this.objectMapper = objectMapper;
-        
+
         this.getDeputadosShepherd = HTTPShepherd.<Void, DeputadosResponseBodyDto>builder(httpClient, environment, DeputadosResponseBodyDto.class, objectMapper)
                 .url(config.getApiCamaraBaseUrl())
                 .endpoint("/deputados")
@@ -40,7 +40,7 @@ public class CamaraDeputadosService {
                 .build();
     }
 
-    public DeputadosResponseBodyDto getDeputados(){
+    public DeputadosResponseBodyDto getDeputados() {
         return getDeputadosShepherd.request();
     }
 
@@ -52,7 +52,7 @@ public class CamaraDeputadosService {
         if (month != null) {
             params.put("mes", month);
         }
-        
+
         HTTPShepherd<Void, ExpenseResponseBodyDto> shepherd = HTTPShepherd
                 .<Void, ExpenseResponseBodyDto>builder(httpClient, environment, ExpenseResponseBodyDto.class, objectMapper)
                 .url(config.getApiCamaraBaseUrl())
@@ -61,7 +61,7 @@ public class CamaraDeputadosService {
                 .contentType("application/json")
                 .repository(httpShepherdRepository)
                 .build();
-        
+
         return params.isEmpty() ? shepherd.request() : shepherd.request(params);
     }
 
@@ -74,7 +74,7 @@ public class CamaraDeputadosService {
                 .contentType("application/json")
                 .repository(httpShepherdRepository)
                 .build();
-        
+
         return shepherd.request();
     }
 
@@ -88,31 +88,45 @@ public class CamaraDeputadosService {
                 .contentType("application/json")
                 .repository(httpShepherdRepository)
                 .build();
-        
+
         return shepherd.request();
     }
 
-    public PropositionResponseBodyDto getPropositions(Integer politicianId) {
-        HTTPShepherd<Void, PropositionResponseBodyDto> shepherd = HTTPShepherd
-                .<Void, PropositionResponseBodyDto>builder(httpClient, environment, PropositionResponseBodyDto.class, objectMapper)
+    public PropositionListResponseBodyDto getPropositionsWithParams(String params) {
+        HTTPShepherd<Void, PropositionListResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, PropositionListResponseBodyDto>builder(httpClient, environment, PropositionListResponseBodyDto.class, objectMapper)
                 .url(config.getApiCamaraBaseUrl())
-                .endpoint("/deputados/" + politicianId + "/proposicoes")
+                .endpoint("/proposicoes?+" + params)
                 .timeout(config.getTimeout())
                 .contentType("application/json")
                 .repository(httpShepherdRepository)
                 .build();
-        
+
         return shepherd.request();
     }
+
+    public PropositionResponseBodyDto getPropositionsById(Integer id) {
+        HTTPShepherd<Void, PropositionListResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, PropositionListResponseBodyDto>builder(httpClient, environment, PropositionListResponseBodyDto.class, objectMapper)
+                .url(config.getApiCamaraBaseUrl())
+                .endpoint("/proposicoes/+" + id)
+                .timeout(config.getTimeout())
+                .contentType("application/json")
+                .repository(httpShepherdRepository)
+                .build();
+
+        return shepherd.request();
+    }
+
 
     /**
      * ATENÇÃO: Este endpoint não existe na API REST v2 da Câmara dos Deputados.
      * As presenças estão disponíveis apenas via web service SOAP, não via API REST.
-     * 
+     * <p>
      * Para obter presenças, seria necessário:
      * - Usar o web service SOAP: ListarPresencasParlamentar ou ListarPresencasDia
      * - Ou consultar eventos: /eventos/{id}/presencas (mas requer ID do evento, não do deputado)
-     * 
+     *
      * @deprecated Este método não funciona pois o endpoint não existe na API REST
      */
     @Deprecated
@@ -120,8 +134,8 @@ public class CamaraDeputadosService {
         // Endpoint não existe na API REST v2
         // As presenças estão disponíveis apenas via web service SOAP
         throw new UnsupportedOperationException(
-            "O endpoint /deputados/{id}/presencas não existe na API REST v2 da Câmara dos Deputados. " +
-            "As presenças estão disponíveis apenas via web service SOAP."
+                "O endpoint /deputados/{id}/presencas não existe na API REST v2 da Câmara dos Deputados. " +
+                        "As presenças estão disponíveis apenas via web service SOAP."
         );
     }
 }

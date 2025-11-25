@@ -1,5 +1,7 @@
 package br.com.deolhonacamara.api.controller;
 
+import br.com.deolhonacamara.api.model.input.InputBuilder;
+import br.com.deolhonacamara.api.model.input.PropositionInput;
 import br.com.deolhonacamara.api.service.PropositionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -17,10 +19,15 @@ public class PropositionController implements PropositionsApi {
 
     @Override
     public ResponseEntity<PropositionResponseDTO> getPoliticianPropositions(Integer id, Integer page, Integer size) {
-        int pageNum = page != null ? page : 0;
-        int pageSize = size != null ? size : 20;
 
-        return ResponseEntity.ok(propositionService.getByPoliticianId(id, pageNum, pageSize));
+        PropositionInput input = InputBuilder
+                .builder(PropositionInput.class)
+                .page(page != null ? page : 0)
+                .sizePage(size != null ? size : 20)
+                .politicianId(id)
+                .build();
+
+        return ResponseEntity.ok(propositionService.getByPoliticianId(input));
     }
 }
 

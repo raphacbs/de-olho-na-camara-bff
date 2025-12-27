@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class PoliticianVoteEntity {
-    private Integer id;
-    private String voteId;
+    private Long id;
+    private LocalDateTime voteRegistrationDate;
     private Integer politicianId;
-    private String voteOption;
+    private String voteType;
+    private String voteId;
     private LocalDateTime createdAt;
-    private VoteEntity vote;
+    private LocalDateTime updatedAt;
 }
-

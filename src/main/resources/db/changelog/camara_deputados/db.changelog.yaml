@@ -54,3 +54,9 @@ databaseChangeLog:
       relativeToChangelogFile: true
       errorIfMissingorEmpty: true
 
+  - include:
+      file: changeset/1.9/1.9-DDL.yaml
+      context: camara_deputados
+      relativeToChangelogFile: true
+      errorIfMissingorEmpty: true
+

@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+        id: 1.7-RENAME_TABLE_VOTE_TO_VOTING.sql
+        author: raphacbs
+        labels: RENAME_TABLE_VOTE_TO_VOTING
+        changes:
+            - sqlFile:
+                  dbms: postgresql
+                  encoding: utf8
+                  path: ddl/1.7-RENAME_TABLE_VOTE_TO_VOTING.sql
+                  relativeToChangelogFile: true
+                  splitStatements: true
+                  schemaName: camara_deputados
+        # ADICIONE AQUI A SEÇÃO ROLLBACK
+        rollback:
+            - sqlFile:
+                  path: ddl/1.7-ROLLBACK_RENAME_TABLE_VOTE_TO_VOTING.sql
+                  relativeToChangelogFile: true
+                  dbms: postgresql
+                  splitStatements: true
+                  schemaName: camara_deputados

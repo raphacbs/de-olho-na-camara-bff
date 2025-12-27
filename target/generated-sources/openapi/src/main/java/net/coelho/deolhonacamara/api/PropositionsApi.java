@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-11-21T10:53:37.437611200-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-12-27T15:23:02.402204900-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 @Validated
 @Tag(name = "Propositions", description = "Legislative propositions")
 public interface PropositionsApi {
@@ -48,6 +48,7 @@ public interface PropositionsApi {
      * @param id  (required)
      * @param page  (optional, default to 0)
      * @param size  (optional, default to 20)
+     * @param year Filter by year (optional)
      * @return Paginated list of propositions (status code 200)
      */
     @Operation(
@@ -69,12 +70,13 @@ public interface PropositionsApi {
     default ResponseEntity<PropositionResponseDTO> getPoliticianPropositions(
         @Parameter(name = "id", description = "", required = true, in = ParameterIn.PATH) @PathVariable("id") Integer id,
         @Parameter(name = "page", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
-        @Parameter(name = "size", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "size", required = false, defaultValue = "20") Integer size
+        @Parameter(name = "size", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "size", required = false, defaultValue = "20") Integer size,
+        @Parameter(name = "year", description = "Filter by year", in = ParameterIn.QUERY) @Valid @RequestParam(value = "year", required = false) Integer year
     ) {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"total\" : 5, \"data\" : [ { \"summary\" : \"summary\", \"number\" : 6, \"year\" : 1, \"presentationDate\" : \"2000-01-23\", \"id\" : 0, \"type\" : \"type\", \"status\" : \"{}\" }, { \"summary\" : \"summary\", \"number\" : 6, \"year\" : 1, \"presentationDate\" : \"2000-01-23\", \"id\" : 0, \"type\" : \"type\", \"status\" : \"{}\" } ], \"totalPages\" : 2, \"sizePage\" : 7, \"page\" : 5 }";
+                    String exampleString = "{ \"total\" : 5, \"data\" : [ { \"codeType\" : \"codeType\", \"statusAppreciation\" : \"statusAppreciation\", \"keywords\" : \"keywords\", \"year\" : 5, \"statusUrl\" : \"statusUrl\", \"type\" : \"type\", \"number\" : 1, \"createdAt\" : \"createdAt\", \"urlInteiroTeor\" : \"urlInteiroTeor\", \"statusDateTime\" : \"statusDateTime\", \"id\" : 6, \"text\" : \"text\", \"justification\" : \"justification\", \"statusSituationDescription\" : \"statusSituationDescription\", \"statusTramitationDescription\" : \"statusTramitationDescription\", \"uriAutores\" : \"uriAutores\", \"statusDispatch\" : \"statusDispatch\", \"uriPropPrincipal\" : \"uriPropPrincipal\", \"updatedAt\" : \"updatedAt\", \"summary\" : \"summary\", \"uriOrgaoNumerador\" : \"uriOrgaoNumerador\", \"statusTramitationTypeCode\" : \"statusTramitationTypeCode\", \"uriPropPosterior\" : \"uriPropPosterior\", \"presentationDate\" : \"2000-01-23\", \"typeDescription\" : \"typeDescription\", \"uri\" : \"uri\", \"statusSituationCode\" : \"statusSituationCode\", \"statusScope\" : \"statusScope\", \"statusLastReporterUri\" : \"statusLastReporterUri\", \"detailedSummary\" : \"detailedSummary\", \"politicianId\" : 0, \"urnFinal\" : \"urnFinal\", \"uriPropAnterior\" : \"uriPropAnterior\", \"status\" : \"{}\" }, { \"codeType\" : \"codeType\", \"statusAppreciation\" : \"statusAppreciation\", \"keywords\" : \"keywords\", \"year\" : 5, \"statusUrl\" : \"statusUrl\", \"type\" : \"type\", \"number\" : 1, \"createdAt\" : \"createdAt\", \"urlInteiroTeor\" : \"urlInteiroTeor\", \"statusDateTime\" : \"statusDateTime\", \"id\" : 6, \"text\" : \"text\", \"justification\" : \"justification\", \"statusSituationDescription\" : \"statusSituationDescription\", \"statusTramitationDescription\" : \"statusTramitationDescription\", \"uriAutores\" : \"uriAutores\", \"statusDispatch\" : \"statusDispatch\", \"uriPropPrincipal\" : \"uriPropPrincipal\", \"updatedAt\" : \"updatedAt\", \"summary\" : \"summary\", \"uriOrgaoNumerador\" : \"uriOrgaoNumerador\", \"statusTramitationTypeCode\" : \"statusTramitationTypeCode\", \"uriPropPosterior\" : \"uriPropPosterior\", \"presentationDate\" : \"2000-01-23\", \"typeDescription\" : \"typeDescription\", \"uri\" : \"uri\", \"statusSituationCode\" : \"statusSituationCode\", \"statusScope\" : \"statusScope\", \"statusLastReporterUri\" : \"statusLastReporterUri\", \"detailedSummary\" : \"detailedSummary\", \"politicianId\" : 0, \"urnFinal\" : \"urnFinal\", \"uriPropAnterior\" : \"uriPropAnterior\", \"status\" : \"{}\" } ], \"totalPages\" : 7, \"sizePage\" : 9, \"page\" : 2 }";
                     ApiUtil.setExampleResponse(request, "application/json", exampleString);
                     break;
                 }

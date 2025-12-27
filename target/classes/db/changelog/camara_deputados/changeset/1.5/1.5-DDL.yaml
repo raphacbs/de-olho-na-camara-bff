@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+        id: 1.5-CREATE_TABLE_SYNC_PROGRESS.sql
+        author: raphacbs
+        labels: TABLE_SYNC_PROGRESS
+        changes:
+            - sqlFile:
+                  dbms: postgresql
+                  encoding: utf8
+                  path: ddl/1.5-CREATE_TABLE_SYNC_PROGRESS.sql
+                  relativeToChangelogFile: true
+                  splitStatements: true
+                  schemaName: camara_deputados
+        # ADICIONE AQUI A SEÇÃO ROLLBACK
+        rollback:
+            - sqlFile:
+                  path: ddl/1.5-ROLLBACK_TABLE_SYNC_PROGRESS.sql
+                  relativeToChangelogFile: true
+                  dbms: postgresql
+                  splitStatements: true
+                  schemaName: camara_deputados

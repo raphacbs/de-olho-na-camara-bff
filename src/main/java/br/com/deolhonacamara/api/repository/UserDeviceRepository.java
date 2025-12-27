@@ -15,7 +15,7 @@ public class UserDeviceRepository {
 
     public void upsertDevice(UUID userId, String fcmToken) {
         String sql = """
-            INSERT INTO camara_deputados.user_device (user_id, fcm_token, updated_at)
+            INSERT INTO user_device (user_id, fcm_token, updated_at)
             VALUES (:userId, :fcmToken, CURRENT_TIMESTAMP)
             ON CONFLICT (user_id, fcm_token) DO UPDATE SET
                 updated_at = CURRENT_TIMESTAMP;
@@ -26,7 +26,7 @@ public class UserDeviceRepository {
 
     public void deleteDevice(UUID userId, String fcmToken) {
         String sql = """
-            DELETE FROM camara_deputados.user_device
+            DELETE FROM user_device
             WHERE user_id = :userId AND fcm_token = :fcmToken;
         """;
 

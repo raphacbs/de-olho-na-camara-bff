@@ -41,13 +41,13 @@ public class ExpenseRepository {
                    document_code, batch_code, document_type_code, document_number,
                    reimbursement_number, installment, document_type,
                    created_at, updated_at
-            FROM camara_deputados.politician_expense
+            FROM politician_expense
         """ + where + """
             ORDER BY year DESC, month DESC, document_date DESC
             LIMIT :limit OFFSET :offset
         """;
 
-        String countSql = "SELECT COUNT(*) FROM camara_deputados.politician_expense " + where;
+        String countSql = "SELECT COUNT(*) FROM politician_expense " + where;
 
         params.put("limit", pageable.getPageSize());
         params.put("offset", pageable.getOffset());
@@ -66,7 +66,7 @@ public class ExpenseRepository {
 
     public void upsertExpense(ExpenseEntity expense) {
         String sql = """
-            INSERT INTO camara_deputados.politician_expense
+            INSERT INTO politician_expense
                 (politician_id, year, month, expense_type, supplier, supplier_cnpj_cpf,
                  document_value, net_value, glosa_value, document_date, document_url,
                  document_code, batch_code, document_type_code, document_number,

@@ -19,7 +19,7 @@ public class PoliticianRepository {
 
     public void upsertPolitician(PoliticianEntity politician) {
         String sql = """
-            INSERT INTO camara_deputados.politicians
+            INSERT INTO politicians
                 (id, name, party, party_uri, state, legislature_id, email, uri, photo_url, updated_at)
             VALUES
                 (:id, :name, :party, :partyUri, :state, :legislatureId, :email, :uri, :photoUrl, CURRENT_TIMESTAMP)
@@ -77,7 +77,7 @@ public class PoliticianRepository {
         // ---- SQL de conteúdo ----
         String sql = """
         SELECT id, name, party, party_uri, state, legislature_id, email, uri, photo_url, created_at, updated_at
-        FROM camara_deputados.politicians
+        FROM politicians
     """ + where +
                 """
                     ORDER BY name ASC
@@ -85,7 +85,7 @@ public class PoliticianRepository {
                 """;
 
         // ---- SQL para contagem ----
-        String countSql = "SELECT COUNT(*) FROM camara_deputados.politicians " + where;
+        String countSql = "SELECT COUNT(*) FROM politicians " + where;
 
         // ---- Paginação ----
         params.put("limit", pageable.getPageSize());
@@ -111,13 +111,13 @@ public class PoliticianRepository {
         String sql = """
             SELECT p.id, p.name, p.party, p.party_uri, p.state, p.legislature_id, p.email, p.uri, p.photo_url,
              p.updated_at, p.created_at
-            FROM camara_deputados.politicians p
-            INNER JOIN camara_deputados.user_followed_politicians ufp ON ufp.politician_id = p.id
+            FROM politicians p
+            INNER JOIN user_followed_politicians ufp ON ufp.politician_id = p.id
             WHERE ufp.user_id = :userId
             ORDER BY p.name ASC
             LIMIT :limit OFFSET :offset
         """;
-        String countSql = "SELECT COUNT(*) FROM camara_deputados.user_followed_politicians WHERE user_id = :userId";
+        String countSql = "SELECT COUNT(*) FROM user_followed_politicians WHERE user_id = :userId";
 
         var params = Map.of("userId", userId, "limit", pageable.getPageSize(), "offset", pageable.getOffset());
 
@@ -129,7 +129,7 @@ public class PoliticianRepository {
 
     public void followPolitician(UUID userId, int politicianId) {
         String sql = """
-            INSERT INTO camara_deputados.user_followed_politicians (user_id, politician_id)
+            INSERT INTO user_followed_politicians (user_id, politician_id)
             VALUES (:userId, :politicianId)
             ON CONFLICT DO NOTHING;
         """;
@@ -138,7 +138,7 @@ public class PoliticianRepository {
 
     public void unfollowPolitician(UUID userId, int politicianId) {
         String sql = """
-            DELETE FROM camara_deputados.user_followed_politicians
+            DELETE FROM user_followed_politicians
             WHERE user_id = :userId AND politician_id = :politicianId;
         """;
         jdbcTemplate.update(sql, Map.of("userId", userId, "politicianId", politicianId));

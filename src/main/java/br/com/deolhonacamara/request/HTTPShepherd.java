@@ -45,11 +45,12 @@ public class HTTPShepherd<B, O> {
         Response<O> response = requester.process(requestType, params, ofJson(body));
 
         var httpShepherdModel = HTTPShepherdModel.builder()
-                .url(this.url)
+                .url(this.requester.getFullEndpoint())
                 .type(requestType.name())
                 .params(params != null ? params.toString() : null)
                 .requestBody(body != null ? body.toString() : null)
                 .responseBody(response != null && response.body() != null ? response.body().toString() : null)
+                .statusCode(response != null ? Integer.valueOf(response.statusCode()) : null)
                 .createdAt(LocalDateTime.now())
                 .build();
 

@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+        id: 1.4-RECREATE_TABLE_VOTE.sql
+        author: raphacbs
+        labels: TABLE_VOTE
+        changes:
+            - sqlFile:
+                  dbms: postgresql
+                  encoding: utf8
+                  path: ddl/1.4-RECREATE_TABLE_VOTE.sql
+                  relativeToChangelogFile: true
+                  splitStatements: true
+                  schemaName: authentication
+        # ADICIONE AQUI A SEÇÃO ROLLBACK
+        rollback:
+            - sqlFile:
+                  path: ddl/1.4-ROLLBACK_TABLE_VOTE.sql
+                  relativeToChangelogFile: true
+                  dbms: postgresql
+                  splitStatements: true
+                  schemaName: authentication # Mantenha o schema aqui para o rollback também

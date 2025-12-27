@@ -9,6 +9,7 @@ public class InputBuilder<T extends Input<?>> {
     private Integer page;
     private Integer sizePage;
     private Integer politicianId;
+    private final java.util.Map<String, Object> filters = new java.util.HashMap<>();
 
     private InputBuilder() {}
 
@@ -29,6 +30,11 @@ public class InputBuilder<T extends Input<?>> {
     }
     public InputBuilder<T> sizePage(Integer sizePage) {
         this.sizePage = sizePage;
+        return this;
+    }
+
+    public InputBuilder<T> filter(String key, Object value) {
+        this.filters.put(key, value);
         return this;
     }
 
@@ -61,6 +67,7 @@ public class InputBuilder<T extends Input<?>> {
             instance.setPage(page);
             instance.setSizePage(sizePage);
             instance.setPropositionId(politicianId);
+            instance.addFilters(filters);
             return instance;
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to create input instance of " + inputClass.getName(), e);

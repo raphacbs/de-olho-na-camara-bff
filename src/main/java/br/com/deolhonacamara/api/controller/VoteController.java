@@ -1,6 +1,6 @@
 package br.com.deolhonacamara.api.controller;
 
-import br.com.deolhonacamara.api.service.VoteService;
+import br.com.deolhonacamara.api.service.VotingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.coelho.deolhonacamara.api.VotesApi;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Log4j2
 public class VoteController implements VotesApi {
 
-    private final VoteService voteService;
+    private final VotingService voteService;
 
     @Override
     public ResponseEntity<PoliticianVoteResponseDTO> getPoliticianVotes(Integer id, Integer page, Integer size) {

@@ -39,7 +39,7 @@ public class SpeechRepository {
                 video_url,
                 created_at,
                 updated_at
-            FROM camara_deputados.speeches
+            FROM speeches
             WHERE politician_id = :politicianId
             ORDER BY start_datetime DESC
             LIMIT :limit OFFSET :offset
@@ -47,7 +47,7 @@ public class SpeechRepository {
 
         String countSql = """
             SELECT COUNT(*) 
-            FROM camara_deputados.speeches
+            FROM speeches
             WHERE politician_id = :politicianId
         """;
 
@@ -72,7 +72,7 @@ public class SpeechRepository {
     public void upsertSpeech(SpeechEntity s) {
 
         String sql = """
-            INSERT INTO camara_deputados.speeches (
+            INSERT INTO speeches (
                 politician_id,
                 start_datetime,
                 end_datetime,

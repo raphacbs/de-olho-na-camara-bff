@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -13,11 +12,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class VoteEntity {
-    private String id;
-    private LocalDate date;
-    private String description;
-    private String summary;
+    private Long id;
+    private LocalDateTime voteRegistrationDate;
+    private Integer politicianId;
+    private String voteType;
+    private String voteId;
+    private String votingId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-

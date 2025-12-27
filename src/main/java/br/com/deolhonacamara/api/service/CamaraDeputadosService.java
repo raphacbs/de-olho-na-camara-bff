@@ -9,6 +9,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.net.http.HttpClient;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,6 +45,19 @@ public class CamaraDeputadosService {
         return getDeputadosShepherd.request();
     }
 
+    public DeputadoResponseBodyDto getDeputadoById(Integer politicianId) {
+        HTTPShepherd<Void, DeputadoResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, DeputadoResponseBodyDto>builder(httpClient, environment, DeputadoResponseBodyDto.class, objectMapper)
+                .url(config.getApiCamaraBaseUrl())
+                .endpoint("/deputados/" + politicianId)
+                .timeout(config.getTimeout())
+                .contentType("application/json")
+                .repository(httpShepherdRepository)
+                .build();
+
+        return shepherd.request();
+    }
+
     public ExpenseResponseBodyDto getExpenses(Integer politicianId, Integer year, Integer month) {
         Map<String, Object> params = new HashMap<>();
         if (year != null) {
@@ -65,9 +79,9 @@ public class CamaraDeputadosService {
         return params.isEmpty() ? shepherd.request() : shepherd.request(params);
     }
 
-    public VoteResponseBodyDto getVotes(Integer politicianId) {
-        HTTPShepherd<Void, VoteResponseBodyDto> shepherd = HTTPShepherd
-                .<Void, VoteResponseBodyDto>builder(httpClient, environment, VoteResponseBodyDto.class, objectMapper)
+    public VotingResponseBodyDto getVotesByPoliticianId(Integer politicianId) {
+        HTTPShepherd<Void, VotingResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, VotingResponseBodyDto>builder(httpClient, environment, VotingResponseBodyDto.class, objectMapper)
                 .url(config.getApiCamaraBaseUrl())
                 .endpoint("/deputados/" + politicianId + "/votacoes")
                 .timeout(config.getTimeout())
@@ -77,6 +91,77 @@ public class CamaraDeputadosService {
 
         return shepherd.request();
     }
+
+    /**
+     * @param startDate - Data de início (formato: yyyy-MM-dd)
+     * @param endDate - Data de fim (formato: yyyy-MM-dd)
+     * @return Lista de votações
+     */
+    public VotingResponseBodyDto getVotingLastMonths(LocalDate startDate, LocalDate endDate) {
+        return getVotingLastMonthsWithPage(startDate, endDate, 1);
+    }
+
+    /**
+     * @param startDate - Data de início (formato: yyyy-MM-dd)
+     * @param endDate - Data de fim (formato: yyyy-MM-dd)
+     * @param page - Página a ser consultada
+     * @return Lista de votações paginada
+     */
+    public VotingResponseBodyDto getVotingLastMonthsWithPage(LocalDate startDate, LocalDate endDate, Integer page) {
+        // validar se as datas são válidas
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("As datas de início e fim são obrigatórias");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("A data de início não pode ser posterior à data de fim");
+        }
+        if (page == null || page < 1) {
+            page = 1;
+        }
+
+        HTTPShepherd<Void, VotingResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, VotingResponseBodyDto>builder(httpClient, environment, VotingResponseBodyDto.class, objectMapper)
+                .url(config.getApiCamaraBaseUrl())
+                .endpoint("/votacoes?dataInicio=" + startDate + "&dataFim=" + endDate + "&ordem=DESC&ordenarPor=dataHoraRegistro&pagina=" + page)
+                .timeout(config.getTimeout())
+                .contentType("application/json")
+                .repository(httpShepherdRepository)
+                .build();
+
+        return shepherd.request();
+    }
+
+    public VotingByIdResponseBodyDto getVotingById(String voteId) {
+        HTTPShepherd<Void, VotingByIdResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, VotingByIdResponseBodyDto>builder(httpClient, environment, VotingByIdResponseBodyDto.class, objectMapper)
+                .url(config.getApiCamaraBaseUrl())
+                .endpoint("/votacoes/" + voteId)
+                .timeout(config.getTimeout())
+                .contentType("application/json")
+                .repository(httpShepherdRepository)
+                .build();
+
+        return shepherd.request();
+    }
+
+    public VoteResponseBodyDto getVotesInVoting(String votingId) {
+        HTTPShepherd<Void, VoteResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, VoteResponseBodyDto>builder(httpClient, environment, VoteResponseBodyDto.class, objectMapper)
+                .url(config.getApiCamaraBaseUrl())
+                .endpoint("/votacoes/" + votingId + "/votos")
+                .timeout(config.getTimeout())
+                .contentType("application/json")
+                .repository(httpShepherdRepository)
+                .build();
+
+        return shepherd.request();
+    }
+
+    @Deprecated
+    public VoteResponseBodyDto getVotesInVotingWithPage(String votingId, Integer page) {
+        // Método mantido por compatibilidade, mas não usa paginação pois o endpoint não suporta
+        return getVotesInVoting(votingId);
+    }   
 
 
     public SpeechResponseBodyDto getSpeeches(Integer politicianId) {
@@ -96,7 +181,7 @@ public class CamaraDeputadosService {
         HTTPShepherd<Void, PropositionListResponseBodyDto> shepherd = HTTPShepherd
                 .<Void, PropositionListResponseBodyDto>builder(httpClient, environment, PropositionListResponseBodyDto.class, objectMapper)
                 .url(config.getApiCamaraBaseUrl())
-                .endpoint("/proposicoes?+" + params)
+                .endpoint("proposicoes?" + params)
                 .timeout(config.getTimeout())
                 .contentType("application/json")
                 .repository(httpShepherdRepository)
@@ -106,8 +191,8 @@ public class CamaraDeputadosService {
     }
 
     public PropositionResponseBodyDto getPropositionsById(Integer id) {
-        HTTPShepherd<Void, PropositionListResponseBodyDto> shepherd = HTTPShepherd
-                .<Void, PropositionListResponseBodyDto>builder(httpClient, environment, PropositionListResponseBodyDto.class, objectMapper)
+        HTTPShepherd<Void, PropositionResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, PropositionResponseBodyDto>builder(httpClient, environment, PropositionResponseBodyDto.class, objectMapper)
                 .url(config.getApiCamaraBaseUrl())
                 .endpoint("/proposicoes/+" + id)
                 .timeout(config.getTimeout())

@@ -15,6 +15,8 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class VoteResponseBodyDto implements Serializable {
     @JsonProperty("dados")
-    private List<PoliticianVoteBodyDto> data;
+    private List<VoteBodyDto> data;
+    @JsonProperty("links")
+    private List<LinkDto> links;
 }
 

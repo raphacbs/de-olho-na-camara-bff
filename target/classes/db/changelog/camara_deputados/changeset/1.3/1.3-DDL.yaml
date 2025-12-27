@@ -1,0 +1,21 @@
+databaseChangeLog:
+    - changeSet:
+          id: 1.3-ALTER_TABLE_PROPOSITION_ADD_COLUMNS.sql
+          author: system
+          labels: TABLE_PROPOSITION
+          changes:
+              - sqlFile:
+                    dbms: postgresql
+                    encoding: utf8
+                    path: ddl/1.3-ALTER_TABLE_PROPOSITION_ADD_COLUMNS.sql
+                    relativeToChangelogFile: true
+                    splitStatements: true
+                    schemaName: camara_deputados
+          rollback:
+              - sqlFile:
+                    path: ddl/1.3-DROP_PROPOSITION_COLUMNS.sql
+                    relativeToChangelogFile: true
+                    dbms: postgresql
+                    splitStatements: true
+                    schemaName: camara_deputados
+

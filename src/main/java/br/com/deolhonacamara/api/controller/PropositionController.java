@@ -18,13 +18,19 @@ public class PropositionController implements PropositionsApi {
     private final PropositionService propositionService;
 
     @Override
-    public ResponseEntity<PropositionResponseDTO> getPoliticianPropositions(Integer id, Integer page, Integer size) {
+    public ResponseEntity<PropositionResponseDTO> getPoliticianPropositions(Integer id,
+                                                                            Integer page,
+                                                                            Integer size,
+                                                                            Integer year) {
 
+
+        //TODO Ajustar forma de criar o input, pois da forma atual fica muito verboso
         PropositionInput input = InputBuilder
                 .builder(PropositionInput.class)
                 .page(page != null ? page : 0)
                 .sizePage(size != null ? size : 20)
                 .politicianId(id)
+                .filter("year", year)
                 .build();
 
         return ResponseEntity.ok(propositionService.getByPoliticianId(input));

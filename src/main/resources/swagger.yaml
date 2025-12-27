@@ -300,6 +300,11 @@ paths:
         - in: query
           name: size
           schema: { type: integer, default: 20 }
+        - in: query
+          name: year
+          schema: { type: integer }
+          description: Filter by year
+
       responses:
         '200':
           description: Paginated list of propositions
@@ -717,6 +722,8 @@ components:
     PropositionDto:
       type: object
       properties:
+        politicianId:
+          type: integer
         id:
           type: integer
         uri:

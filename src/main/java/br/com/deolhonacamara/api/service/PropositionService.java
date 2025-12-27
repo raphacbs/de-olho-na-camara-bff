@@ -23,7 +23,7 @@ public class PropositionService {
 
     public PropositionResponseDTO getByPoliticianId(PropositionInput input) {
         var pageable = PageRequest.of(input.getPage(), input.getSizePage());
-        PageResponse<PropositionEntity> pageRes = repository.findByPoliticianId(input.getPropositionId(), pageable);
+        PageResponse<PropositionEntity> pageRes = repository.findByPoliticianId(input, pageable);
         List<PropositionDto> list = pageRes.getContent().stream().map(mapper::toDto).collect(Collectors.toList());
 
         var responseDto = new PropositionResponseDTO();

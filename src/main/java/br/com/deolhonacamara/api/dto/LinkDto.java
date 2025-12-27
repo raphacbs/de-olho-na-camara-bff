@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 public class LinkDto {
     private String rel;
     private String href;
+    private String type;
 
     public Integer getNumberNextPage() {
         if (rel != null && rel.equals("next")) {

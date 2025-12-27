@@ -29,7 +29,8 @@ public class JsonBodyCodec implements HttpBodyCodec {
             }
             return objectMapper.readValue(bodyContent, type);
         } catch (Exception e) {
-            log.error("Failed to decode response as {}: {}", type.getSimpleName(), e.getMessage(), e);
+            log.error("Failed to decode response as {}: {}", type.getSimpleName(), e.getMessage());
+            log.error("Response body content (first 500 chars): {}", bodyContent != null ? bodyContent.substring(0, Math.min(500, bodyContent.length())) : "null");
             throw new RuntimeException("Failed to decode response body", e);
         }
     }

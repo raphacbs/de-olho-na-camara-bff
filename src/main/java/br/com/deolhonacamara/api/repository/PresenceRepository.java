@@ -22,13 +22,13 @@ public class PresenceRepository {
     public PageResponse<PresenceEntity> findByPoliticianId(Integer politicianId, Pageable pageable) {
         String sql = """
             SELECT id, politician_id, date, description, status, created_at, updated_at
-            FROM camara_deputados.presence
+            FROM presence
             WHERE politician_id = :politicianId
             ORDER BY date DESC
             LIMIT :limit OFFSET :offset
         """;
 
-        String countSql = "SELECT COUNT(*) FROM camara_deputados.presence WHERE politician_id = :politicianId";
+        String countSql = "SELECT COUNT(*) FROM presence WHERE politician_id = :politicianId";
 
         Map<String, Object> params = new HashMap<>();
         params.put("politicianId", politicianId);
@@ -49,7 +49,7 @@ public class PresenceRepository {
 
     public void upsertPresence(PresenceEntity presence) {
         String sql = """
-            INSERT INTO camara_deputados.presence
+            INSERT INTO presence
                 (politician_id, date, description, status, updated_at)
             VALUES
                 (:politicianId, :date, :description, :status, CURRENT_TIMESTAMP)

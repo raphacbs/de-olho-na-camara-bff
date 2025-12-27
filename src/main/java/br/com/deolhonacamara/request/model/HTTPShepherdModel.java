@@ -17,5 +17,6 @@ public class HTTPShepherdModel {
     private String requestBody;
     private String responseBody;
     private String params;
+    private Integer statusCode;
     private LocalDateTime createdAt;
 }

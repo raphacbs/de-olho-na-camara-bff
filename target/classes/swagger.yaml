@@ -300,6 +300,11 @@ paths:
         - in: query
           name: size
           schema: { type: integer, default: 20 }
+        - in: query
+          name: year
+          schema: { type: integer }
+          description: Filter by year
+
       responses:
         '200':
           description: Paginated list of propositions
@@ -717,9 +722,15 @@ components:
     PropositionDto:
       type: object
       properties:
+        politicianId:
+          type: integer
         id:
           type: integer
+        uri:
+          type: string
         type:
+          type: string
+        codeType:
           type: string
         number:
           type: integer
@@ -727,9 +738,57 @@ components:
           type: integer
         summary:
           type: string
+        detailedSummary:
+          type: string
         presentationDate:
           type: string
           format: date
+        statusDateTime:
+          type: string
+        statusLastReporterUri:
+          type: string
+        statusTramitationDescription:
+          type: string
+        statusTramitationTypeCode:
+          type: string
+        statusSituationDescription:
+          type: string
+        statusSituationCode:
+          type: string
+        statusDispatch:
+          type: string
+        statusUrl:
+          type: string
+        statusScope:
+          type: string
+        statusAppreciation:
+          type: string
+        uriOrgaoNumerador:
+          type: string
+        uriAutores:
+          type: string
+        typeDescription:
+          type: string
+        keywords:
+          type: string
+        uriPropPrincipal:
+          type: string
+        uriPropAnterior:
+          type: string
+        uriPropPosterior:
+          type: string
+        urlInteiroTeor:
+          type: string
+        urnFinal:
+          type: string
+        text:
+          type: string
+        justification:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
         status:
           type: object
 

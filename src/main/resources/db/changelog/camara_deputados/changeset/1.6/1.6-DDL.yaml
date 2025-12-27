@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+        id: 1.6-ADD_STATUS_CODE_COLUMN.sql
+        author: raphacbs
+        labels: TB_TX_HTTP_STATUS_CODE
+        changes:
+            - sqlFile:
+                  dbms: postgresql
+                  encoding: utf8
+                  path: ddl/1.6-ADD_STATUS_CODE_COLUMN.sql
+                  relativeToChangelogFile: true
+                  splitStatements: true
+                  schemaName: camara_deputados
+        # ADICIONE AQUI A SEÇÃO ROLLBACK
+        rollback:
+            - sqlFile:
+                  path: ddl/1.6-ROLLBACK_STATUS_CODE_COLUMN.sql
+                  relativeToChangelogFile: true
+                  dbms: postgresql
+                  splitStatements: true
+                  schemaName: camara_deputados

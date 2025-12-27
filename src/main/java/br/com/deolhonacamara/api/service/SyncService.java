@@ -6,6 +6,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+
 @Service
 @RequiredArgsConstructor
 @Log4j2
@@ -73,7 +75,13 @@ public class SyncService {
     @Async("syncExecutor")
     public void syncVotes() {
         log.info("Starting vote synchronization...");
-        voteSyncJob.syncVotes();
+        voteSyncJob.syncVotes(null, null);
+    }
+
+    @Async("syncExecutor")
+    public void syncVotes(LocalDate startDate, LocalDate endDate) {
+        log.info("Starting vote synchronization with date range: {} to {}", startDate, endDate);
+        voteSyncJob.syncVotes(startDate, endDate);
     }
 
     @Async("syncExecutor")

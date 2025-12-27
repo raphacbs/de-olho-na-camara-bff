@@ -2,6 +2,7 @@ package br.com.deolhonacamara.request;
 
 import br.com.deolhonacamara.exception.RequesterException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
 import org.springframework.util.PropertyPlaceholderHelper;
@@ -30,6 +31,7 @@ public class Requester<T> {
     private final Set<String> headerParams;
     private final Set<String> queryParams;
     private final Set<String> pathParams;
+    @Getter
     private final String fullEndpoint;
     private final Class<T> type;
     private final Duration timeout;
@@ -38,7 +40,7 @@ public class Requester<T> {
     public Requester(HttpClient httpClient,
                      Environment environment,
                      String url,
-                     String endpoint,
+                      String endpoint,
                      String timeout,
                      Class<T> type,
                      String contentType,
@@ -51,27 +53,24 @@ public class Requester<T> {
 
         String resolveUrl = resolvePlaceholder(environment, placeholderHelper, url);
         String resolveEndpoint = resolvePlaceholder(environment, placeholderHelper, endpoint);
-        String fullUrl = resolveUrl + resolveEndpoint;
+        this.fullEndpoint = resolveUrl + resolveEndpoint;
 
-        int i = fullUrl.indexOf("!");
+        int i = fullEndpoint.indexOf("!");
         if (i != -1) {
-            this.headerParams = processOtherParams(fullUrl.substring(i + 1));
-            fullUrl = fullUrl.substring(0, i);
+            this.headerParams = processOtherParams(fullEndpoint.substring(i + 1));
         } else {
             this.headerParams = Collections.emptySet();
         }
 
-        int j = fullUrl.indexOf("?");
+        int j = fullEndpoint.indexOf("?");
         if (j != -1) {
-            this.queryParams = processOtherParams(fullUrl.substring(j + 1));
-            fullUrl = fullUrl.substring(0, j);
+            this.queryParams = processOtherParams(fullEndpoint.substring(j + 1));
         } else {
             this.queryParams = Collections.emptySet();
         }
 
         String resolvedTimeout = resolvePlaceholder(environment, placeholderHelper, timeout);
-        this.pathParams = processPathParams(fullUrl);
-        this.fullEndpoint = fullUrl;
+        this.pathParams = processPathParams(fullEndpoint);
         this.timeout = parseDuration(resolvedTimeout);
         this.contentType = contentType;
         this.type = type;

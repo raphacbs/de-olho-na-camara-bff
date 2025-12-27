@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1.9-ADD_VOTING_ID_TO_POLITICIAN_VOTE
+      author: system
+      changes:
+        - sqlFile:
+            encoding: utf8
+            path: ddl/1.9-ADD_VOTING_ID_TO_POLITICIAN_VOTE.sql
+            relativeToChangelogFile: true

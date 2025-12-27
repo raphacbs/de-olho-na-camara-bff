@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 @Setter
 public class PropositionInput extends Input<PropositionInput>{
 
+
+    private Integer year;
+
     protected PropositionInput() {
         super(null);
     }

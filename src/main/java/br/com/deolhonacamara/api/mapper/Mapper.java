@@ -3,7 +3,12 @@ package br.com.deolhonacamara.api.mapper;
 
 import br.com.deolhonacamara.api.dto.PropositionBodyDto;
 import br.com.deolhonacamara.api.dto.SpeechBodyDto;
+import br.com.deolhonacamara.api.dto.VoteBodyDto;
+import br.com.deolhonacamara.api.dto.VotingBodyByIdDto;
 import br.com.deolhonacamara.api.model.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.coelho.deolhonacamara.api.model.*;
 import org.mapstruct.Named;
 import org.mapstruct.Mapping;
@@ -13,6 +18,7 @@ import org.mapstruct.factory.Mappers;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @org.mapstruct.Mapper(componentModel = "spring")
@@ -31,7 +37,7 @@ public interface Mapper {
     })
     ExpenseDto toDto(ExpenseEntity e);
 
-    VoteDto toDto(br.com.deolhonacamara.api.model.VoteEntity e);
+    VoteDto toDto(br.com.deolhonacamara.api.model.VotingEntity e);
 
     PoliticianVoteDto toDto(PoliticianVoteEntity e);
 
@@ -46,6 +52,31 @@ public interface Mapper {
     SpeechEntity toDto(SpeechDto o);
 
     SpeechEntity toDto(Integer politicianId, SpeechBodyDto o);
+
+    @Mappings({
+        @Mapping(source = "registeredEffects", target = "registeredEffects", qualifiedByName = "registeredEffectsToJson"),
+        @Mapping(source = "possibleObjects", target = "possibleObjects", qualifiedByName = "possibleObjectsToJson"),
+        @Mapping(source = "affectedPropositions", target = "affectedPropositions", qualifiedByName = "affectedPropositionsToJson"),
+        @Mapping(source = "lastPropositionPresentation", target = "lastPropositionPresentation", qualifiedByName = "lastPropositionPresentationToJson")
+    })
+    VotingEntity toEntity(VotingBodyByIdDto dto);
+
+    @Mappings({
+        @Mapping(source = "dto.dataRegistroVoto", target = "voteRegistrationDate"),
+        @Mapping(source = "dto.deputado.id", target = "politicianId"),
+        @Mapping(source = "dto.tipoVoto", target = "voteType"),
+        @Mapping(source = "voteId", target = "voteId"),
+        @Mapping(source = "votingId", target = "votingId")
+    })
+    VoteEntity toEntity(VoteBodyDto dto, String voteId, String votingId);
+
+    @Mappings({
+        @Mapping(source = "dto.dataRegistroVoto", target = "voteRegistrationDate"),
+        @Mapping(source = "dto.deputado.id", target = "politicianId"),
+        @Mapping(source = "dto.tipoVoto", target = "voteType"),
+        @Mapping(source = "voteId", target = "voteId")
+    })
+    PoliticianVoteEntity toPoliticianVoteEntity(VoteBodyDto dto, String voteId);
 
 
     @Mappings({
@@ -135,8 +166,8 @@ public interface Mapper {
             @Mapping(source = "year", target = "year"),
             @Mapping(source = "summary", target = "summary"),
             @Mapping(source = "detailedSummary", target = "detailedSummary"),
-            @Mapping(source = "presentationDate", target = "presentationDate", qualifiedByName = "localDateToLocalDateTime"),
-            @Mapping(source = "statusProposition.dateTime", target = "statusDateTime", qualifiedByName = "stringToLocalDateTime"),
+            @Mapping(source = "presentationDate", target = "presentationDate"),
+            @Mapping(source = "statusProposition.dateTime", target = "statusDateTime"),
             @Mapping(source = "statusProposition.lastReporterUri", target = "statusLastReporterUri"),
             @Mapping(source = "statusProposition.tramitationDescription", target = "statusTramitationDescription"),
             @Mapping(source = "statusProposition.tramitationTypeCode", target = "statusTramitationTypeCode"),
@@ -187,16 +218,16 @@ public interface Mapper {
             @Mapping(source = "text", target = "text"),
             @Mapping(source = "justification", target = "justification"),
             // statusProposicao nested mapping
-            @Mapping(source = "statusProposicao.dateTime", target = "statusDateTime"),
-            @Mapping(source = "statusProposicao.lastReporterUri", target = "statusLastReporterUri"),
-            @Mapping(source = "statusProposicao.tramitationDescription", target = "statusTramitationDescription"),
-            @Mapping(source = "statusProposicao.tramitationTypeCode", target = "statusTramitationTypeCode"),
-            @Mapping(source = "statusProposicao.situationDescription", target = "statusSituationDescription"),
-            @Mapping(source = "statusProposicao.situationCode", target = "statusSituationCode"),
-            @Mapping(source = "statusProposicao.dispatch", target = "statusDispatch"),
-            @Mapping(source = "statusProposicao.url", target = "statusUrl"),
-            @Mapping(source = "statusProposicao.scope", target = "statusScope"),
-            @Mapping(source = "statusProposicao.appreciation", target = "statusAppreciation")
+            @Mapping(source = "statusProposition.dateTime", target = "statusDateTime"),
+            @Mapping(source = "statusProposition.lastReporterUri", target = "statusLastReporterUri"),
+            @Mapping(source = "statusProposition.tramitationDescription", target = "statusTramitationDescription"),
+            @Mapping(source = "statusProposition.tramitationTypeCode", target = "statusTramitationTypeCode"),
+            @Mapping(source = "statusProposition.situationDescription", target = "statusSituationDescription"),
+            @Mapping(source = "statusProposition.situationCode", target = "statusSituationCode"),
+            @Mapping(source = "statusProposition.dispatch", target = "statusDispatch"),
+            @Mapping(source = "statusProposition.url", target = "statusUrl"),
+            @Mapping(source = "statusProposition.scope", target = "statusScope"),
+            @Mapping(source = "statusProposition.appreciation", target = "statusAppreciation")
     })
     PropositionEntity fromBody(PropositionBodyDto b);
 
@@ -313,6 +344,47 @@ public interface Mapper {
         try {
             return LocalDateTime.parse(s);
         } catch (DateTimeParseException ex) {
+            return null;
+        }
+    }
+
+    // JSON mapping methods for VotingEntity
+    @Named("registeredEffectsToJson")
+    default String registeredEffectsToJson(List<VotingBodyByIdDto.RegisteredEffect> effects) {
+        if (effects == null) return null;
+        try {
+            return new ObjectMapper().writeValueAsString(effects);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    @Named("possibleObjectsToJson")
+    default String possibleObjectsToJson(List<VotingBodyByIdDto.PossibleObject> objects) {
+        if (objects == null) return null;
+        try {
+            return new ObjectMapper().writeValueAsString(objects);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    @Named("affectedPropositionsToJson")
+    default String affectedPropositionsToJson(List<VotingBodyByIdDto.AffectedProposition> propositions) {
+        if (propositions == null) return null;
+        try {
+            return new ObjectMapper().writeValueAsString(propositions);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    @Named("lastPropositionPresentationToJson")
+    default String lastPropositionPresentationToJson(VotingBodyByIdDto.LastPropositionPresentation presentation) {
+        if (presentation == null) return null;
+        try {
+            return new ObjectMapper().writeValueAsString(presentation);
+        } catch (JsonProcessingException e) {
             return null;
         }
     }

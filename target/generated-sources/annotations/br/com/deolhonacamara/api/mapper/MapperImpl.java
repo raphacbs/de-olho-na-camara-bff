@@ -1,6 +1,9 @@
 package br.com.deolhonacamara.api.mapper;
 
+import br.com.deolhonacamara.api.dto.PropositionBodyDto;
 import br.com.deolhonacamara.api.dto.SpeechBodyDto;
+import br.com.deolhonacamara.api.dto.VoteBodyDto;
+import br.com.deolhonacamara.api.dto.VotingBodyByIdDto;
 import br.com.deolhonacamara.api.model.ExpenseEntity;
 import br.com.deolhonacamara.api.model.PoliticianEntity;
 import br.com.deolhonacamara.api.model.PoliticianVoteEntity;
@@ -8,6 +11,7 @@ import br.com.deolhonacamara.api.model.PresenceEntity;
 import br.com.deolhonacamara.api.model.PropositionEntity;
 import br.com.deolhonacamara.api.model.SpeechEntity;
 import br.com.deolhonacamara.api.model.VoteEntity;
+import br.com.deolhonacamara.api.model.VotingEntity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,8 +32,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-11-21T10:55:04-0300",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 22.0.2 (Amazon.com Inc.)"
+    date = "2025-12-27T15:23:26-0300",
+    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.44.0.v20251118-1623, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 @Component
 public class MapperImpl implements Mapper {
@@ -92,7 +96,7 @@ public class MapperImpl implements Mapper {
     }
 
     @Override
-    public VoteDto toDto(VoteEntity e) {
+    public VoteDto toDto(VotingEntity e) {
         if ( e == null ) {
             return null;
         }
@@ -102,7 +106,6 @@ public class MapperImpl implements Mapper {
         voteDto.setId( e.getId() );
         voteDto.setDate( e.getDate() );
         voteDto.setDescription( e.getDescription() );
-        voteDto.setSummary( e.getSummary() );
 
         return voteDto;
     }
@@ -115,11 +118,11 @@ public class MapperImpl implements Mapper {
 
         PoliticianVoteDto politicianVoteDto = new PoliticianVoteDto();
 
-        politicianVoteDto.setId( e.getId() );
+        if ( e.getId() != null ) {
+            politicianVoteDto.setId( e.getId().intValue() );
+        }
         politicianVoteDto.setVoteId( e.getVoteId() );
         politicianVoteDto.setPoliticianId( e.getPoliticianId() );
-        politicianVoteDto.setVoteOption( e.getVoteOption() );
-        politicianVoteDto.setVote( toDto( e.getVote() ) );
 
         return politicianVoteDto;
     }
@@ -217,6 +220,78 @@ public class MapperImpl implements Mapper {
     }
 
     @Override
+    public VotingEntity toEntity(VotingBodyByIdDto dto) {
+        if ( dto == null ) {
+            return null;
+        }
+
+        VotingEntity.VotingEntityBuilder votingEntity = VotingEntity.builder();
+
+        votingEntity.registeredEffects( registeredEffectsToJson( dto.getRegisteredEffects() ) );
+        votingEntity.possibleObjects( possibleObjectsToJson( dto.getPossibleObjects() ) );
+        votingEntity.affectedPropositions( affectedPropositionsToJson( dto.getAffectedPropositions() ) );
+        votingEntity.lastPropositionPresentation( lastPropositionPresentationToJson( dto.getLastPropositionPresentation() ) );
+        votingEntity.id( dto.getId() );
+        votingEntity.approval( dto.getApproval() );
+        if ( dto.getDate() != null ) {
+            votingEntity.date( LocalDate.parse( dto.getDate() ) );
+        }
+        if ( dto.getRegistrationDateTime() != null ) {
+            votingEntity.registrationDateTime( LocalDateTime.parse( dto.getRegistrationDateTime() ) );
+        }
+        if ( dto.getLastVotingOpenDateTime() != null ) {
+            votingEntity.lastVotingOpenDateTime( LocalDateTime.parse( dto.getLastVotingOpenDateTime() ) );
+        }
+        votingEntity.lastVotingOpenDescription( dto.getLastVotingOpenDescription() );
+        votingEntity.description( dto.getDescription() );
+        votingEntity.eventId( dto.getEventId() );
+        votingEntity.organId( dto.getOrganId() );
+        votingEntity.organAcronym( dto.getOrganAcronym() );
+        votingEntity.uri( dto.getUri() );
+        votingEntity.eventUri( dto.getEventUri() );
+        votingEntity.organUri( dto.getOrganUri() );
+
+        return votingEntity.build();
+    }
+
+    @Override
+    public VoteEntity toEntity(VoteBodyDto dto, String voteId, String votingId) {
+        if ( dto == null && voteId == null && votingId == null ) {
+            return null;
+        }
+
+        VoteEntity.VoteEntityBuilder voteEntity = VoteEntity.builder();
+
+        if ( dto != null ) {
+            voteEntity.voteRegistrationDate( dto.getDataRegistroVoto() );
+            voteEntity.politicianId( dtoDeputadoId( dto ) );
+            voteEntity.voteType( dto.getTipoVoto() );
+        }
+        voteEntity.voteId( voteId );
+        voteEntity.votingId( votingId );
+
+        return voteEntity.build();
+    }
+
+    @Override
+    public PoliticianVoteEntity toPoliticianVoteEntity(VoteBodyDto dto, String voteId) {
+        if ( dto == null && voteId == null ) {
+            return null;
+        }
+
+        PoliticianVoteEntity.PoliticianVoteEntityBuilder politicianVoteEntity = PoliticianVoteEntity.builder();
+
+        if ( dto != null ) {
+            politicianVoteEntity.voteRegistrationDate( dto.getDataRegistroVoto() );
+            politicianVoteEntity.politicianId( dtoDeputadoId( dto ) );
+            politicianVoteEntity.voteType( dto.getTipoVoto() );
+        }
+        politicianVoteEntity.voteId( voteId );
+
+        return politicianVoteEntity.build();
+    }
+
+    @Override
     public PropositionDto toDto(PropositionEntity e) {
         if ( e == null ) {
             return null;
@@ -225,14 +300,130 @@ public class MapperImpl implements Mapper {
         PropositionDto propositionDto = new PropositionDto();
 
         propositionDto.setId( e.getId() );
+        propositionDto.setUri( e.getUri() );
         propositionDto.setType( e.getType() );
+        propositionDto.setCodeType( e.getCodeType() );
         propositionDto.setNumber( e.getNumber() );
         propositionDto.setYear( e.getYear() );
         propositionDto.setSummary( e.getSummary() );
-        propositionDto.setPresentationDate( e.getPresentationDate() );
-        propositionDto.setStatus( e.getStatus() );
+        propositionDto.setDetailedSummary( e.getDetailedSummary() );
+        propositionDto.setPresentationDate( localDateTimeToLocalDate( e.getPresentationDate() ) );
+        propositionDto.setStatusDateTime( localDateTimeToString( e.getStatusDateTime() ) );
+        propositionDto.setStatusLastReporterUri( e.getStatusLastReporterUri() );
+        propositionDto.setStatusTramitationDescription( e.getStatusTramitationDescription() );
+        propositionDto.setStatusTramitationTypeCode( e.getStatusTramitationTypeCode() );
+        propositionDto.setStatusSituationDescription( e.getStatusSituationDescription() );
+        propositionDto.setStatusSituationCode( e.getStatusSituationCode() );
+        propositionDto.setStatusDispatch( e.getStatusDispatch() );
+        propositionDto.setStatusUrl( e.getStatusUrl() );
+        propositionDto.setStatusScope( e.getStatusScope() );
+        propositionDto.setStatusAppreciation( e.getStatusAppreciation() );
+        propositionDto.setUriOrgaoNumerador( e.getUriOrgaoNumerador() );
+        propositionDto.setUriAutores( e.getUriAutores() );
+        propositionDto.setTypeDescription( e.getTypeDescription() );
+        propositionDto.setKeywords( e.getKeywords() );
+        propositionDto.setUriPropPrincipal( e.getUriPropPrincipal() );
+        propositionDto.setUriPropAnterior( e.getUriPropAnterior() );
+        propositionDto.setUriPropPosterior( e.getUriPropPosterior() );
+        propositionDto.setUrlInteiroTeor( e.getUrlInteiroTeor() );
+        propositionDto.setUrnFinal( e.getUrnFinal() );
+        propositionDto.setText( e.getText() );
+        propositionDto.setJustification( e.getJustification() );
+        propositionDto.setCreatedAt( localDateTimeToString( e.getCreatedAt() ) );
+        propositionDto.setUpdatedAt( localDateTimeToString( e.getUpdatedAt() ) );
+
+        propositionDto.setStatus( statusFromEntity(e) );
 
         return propositionDto;
+    }
+
+    @Override
+    public PropositionEntity toEntity(PropositionDto d) {
+        if ( d == null ) {
+            return null;
+        }
+
+        PropositionEntity.PropositionEntityBuilder propositionEntity = PropositionEntity.builder();
+
+        propositionEntity.id( d.getId() );
+        propositionEntity.uri( d.getUri() );
+        propositionEntity.type( d.getType() );
+        propositionEntity.codeType( d.getCodeType() );
+        propositionEntity.number( d.getNumber() );
+        propositionEntity.year( d.getYear() );
+        propositionEntity.summary( d.getSummary() );
+        propositionEntity.detailedSummary( d.getDetailedSummary() );
+        propositionEntity.presentationDate( localDateToLocalDateTime( d.getPresentationDate() ) );
+        propositionEntity.statusDateTime( stringToLocalDateTime( d.getStatusDateTime() ) );
+        propositionEntity.statusLastReporterUri( d.getStatusLastReporterUri() );
+        propositionEntity.statusTramitationDescription( d.getStatusTramitationDescription() );
+        propositionEntity.statusTramitationTypeCode( d.getStatusTramitationTypeCode() );
+        propositionEntity.statusSituationDescription( d.getStatusSituationDescription() );
+        propositionEntity.statusSituationCode( d.getStatusSituationCode() );
+        propositionEntity.statusDispatch( d.getStatusDispatch() );
+        propositionEntity.statusUrl( d.getStatusUrl() );
+        propositionEntity.statusScope( d.getStatusScope() );
+        propositionEntity.statusAppreciation( d.getStatusAppreciation() );
+        propositionEntity.uriOrgaoNumerador( d.getUriOrgaoNumerador() );
+        propositionEntity.uriAutores( d.getUriAutores() );
+        propositionEntity.typeDescription( d.getTypeDescription() );
+        propositionEntity.keywords( d.getKeywords() );
+        propositionEntity.uriPropPrincipal( d.getUriPropPrincipal() );
+        propositionEntity.uriPropAnterior( d.getUriPropAnterior() );
+        propositionEntity.uriPropPosterior( d.getUriPropPosterior() );
+        propositionEntity.urlInteiroTeor( d.getUrlInteiroTeor() );
+        propositionEntity.urnFinal( d.getUrnFinal() );
+        propositionEntity.text( d.getText() );
+        propositionEntity.justification( d.getJustification() );
+        propositionEntity.createdAt( stringToLocalDateTime( d.getCreatedAt() ) );
+        propositionEntity.updatedAt( stringToLocalDateTime( d.getUpdatedAt() ) );
+
+        return propositionEntity.build();
+    }
+
+    @Override
+    public PropositionEntity toEntity(PropositionBodyDto d) {
+        if ( d == null ) {
+            return null;
+        }
+
+        PropositionEntity.PropositionEntityBuilder propositionEntity = PropositionEntity.builder();
+
+        propositionEntity.id( d.getId() );
+        propositionEntity.uri( d.getUri() );
+        propositionEntity.type( d.getType() );
+        propositionEntity.codeType( d.getCodeType() );
+        propositionEntity.number( d.getNumber() );
+        propositionEntity.year( d.getYear() );
+        propositionEntity.summary( d.getSummary() );
+        propositionEntity.detailedSummary( d.getDetailedSummary() );
+        propositionEntity.presentationDate( d.getPresentationDate() );
+        propositionEntity.statusDateTime( dStatusPropositionDateTime( d ) );
+        propositionEntity.statusLastReporterUri( dStatusPropositionLastReporterUri( d ) );
+        propositionEntity.statusTramitationDescription( dStatusPropositionTramitationDescription( d ) );
+        propositionEntity.statusTramitationTypeCode( dStatusPropositionTramitationTypeCode( d ) );
+        propositionEntity.statusSituationDescription( dStatusPropositionSituationDescription( d ) );
+        propositionEntity.statusSituationCode( dStatusPropositionSituationCode( d ) );
+        propositionEntity.statusDispatch( dStatusPropositionDispatch( d ) );
+        propositionEntity.statusUrl( dStatusPropositionUrl( d ) );
+        propositionEntity.statusScope( dStatusPropositionScope( d ) );
+        propositionEntity.statusAppreciation( dStatusPropositionAppreciation( d ) );
+        propositionEntity.uriOrgaoNumerador( d.getUriOrgaoNumerador() );
+        propositionEntity.uriAutores( d.getUriAutores() );
+        propositionEntity.typeDescription( d.getTypeDescription() );
+        propositionEntity.keywords( d.getKeywords() );
+        propositionEntity.uriPropPrincipal( d.getUriPropPrincipal() );
+        propositionEntity.uriPropAnterior( d.getUriPropAnterior() );
+        propositionEntity.uriPropPosterior( d.getUriPropPosterior() );
+        propositionEntity.urlInteiroTeor( d.getUrlInteiroTeor() );
+        propositionEntity.urnFinal( d.getUrnFinal() );
+        propositionEntity.text( d.getText() );
+        propositionEntity.justification( d.getJustification() );
+
+        propositionEntity.createdAt( java.time.LocalDateTime.now() );
+        propositionEntity.updatedAt( java.time.LocalDateTime.now() );
+
+        return propositionEntity.build();
     }
 
     @Override
@@ -250,6 +441,48 @@ public class MapperImpl implements Mapper {
         presenceDto.setStatus( e.getStatus() );
 
         return presenceDto;
+    }
+
+    @Override
+    public PropositionEntity fromBody(PropositionBodyDto b) {
+        if ( b == null ) {
+            return null;
+        }
+
+        PropositionEntity.PropositionEntityBuilder propositionEntity = PropositionEntity.builder();
+
+        propositionEntity.id( b.getId() );
+        propositionEntity.uri( b.getUri() );
+        propositionEntity.type( b.getType() );
+        propositionEntity.codeType( b.getCodeType() );
+        propositionEntity.number( b.getNumber() );
+        propositionEntity.year( b.getYear() );
+        propositionEntity.summary( b.getSummary() );
+        propositionEntity.presentationDate( b.getPresentationDate() );
+        propositionEntity.uriOrgaoNumerador( b.getUriOrgaoNumerador() );
+        propositionEntity.uriAutores( b.getUriAutores() );
+        propositionEntity.typeDescription( b.getTypeDescription() );
+        propositionEntity.detailedSummary( b.getDetailedSummary() );
+        propositionEntity.keywords( b.getKeywords() );
+        propositionEntity.uriPropPrincipal( b.getUriPropPrincipal() );
+        propositionEntity.uriPropAnterior( b.getUriPropAnterior() );
+        propositionEntity.uriPropPosterior( b.getUriPropPosterior() );
+        propositionEntity.urlInteiroTeor( b.getUrlInteiroTeor() );
+        propositionEntity.urnFinal( b.getUrnFinal() );
+        propositionEntity.text( b.getText() );
+        propositionEntity.justification( b.getJustification() );
+        propositionEntity.statusDateTime( dStatusPropositionDateTime( b ) );
+        propositionEntity.statusLastReporterUri( dStatusPropositionLastReporterUri( b ) );
+        propositionEntity.statusTramitationDescription( dStatusPropositionTramitationDescription( b ) );
+        propositionEntity.statusTramitationTypeCode( dStatusPropositionTramitationTypeCode( b ) );
+        propositionEntity.statusSituationDescription( dStatusPropositionSituationDescription( b ) );
+        propositionEntity.statusSituationCode( dStatusPropositionSituationCode( b ) );
+        propositionEntity.statusDispatch( dStatusPropositionDispatch( b ) );
+        propositionEntity.statusUrl( dStatusPropositionUrl( b ) );
+        propositionEntity.statusScope( dStatusPropositionScope( b ) );
+        propositionEntity.statusAppreciation( dStatusPropositionAppreciation( b ) );
+
+        return propositionEntity.build();
     }
 
     private XMLGregorianCalendar localDateTimeToXmlGregorianCalendar( LocalDateTime localDateTime ) {
@@ -274,5 +507,170 @@ public class MapperImpl implements Mapper {
         }
 
         return LocalDate.of( xcal.getYear(), xcal.getMonth(), xcal.getDay() );
+    }
+
+    private Integer dtoDeputadoId(VoteBodyDto voteBodyDto) {
+        if ( voteBodyDto == null ) {
+            return null;
+        }
+        VoteBodyDto.Deputado deputado = voteBodyDto.getDeputado();
+        if ( deputado == null ) {
+            return null;
+        }
+        Integer id = deputado.getId();
+        if ( id == null ) {
+            return null;
+        }
+        return id;
+    }
+
+    private LocalDateTime dStatusPropositionDateTime(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        LocalDateTime dateTime = statusProposition.getDateTime();
+        if ( dateTime == null ) {
+            return null;
+        }
+        return dateTime;
+    }
+
+    private String dStatusPropositionLastReporterUri(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        String lastReporterUri = statusProposition.getLastReporterUri();
+        if ( lastReporterUri == null ) {
+            return null;
+        }
+        return lastReporterUri;
+    }
+
+    private String dStatusPropositionTramitationDescription(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        String tramitationDescription = statusProposition.getTramitationDescription();
+        if ( tramitationDescription == null ) {
+            return null;
+        }
+        return tramitationDescription;
+    }
+
+    private String dStatusPropositionTramitationTypeCode(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        String tramitationTypeCode = statusProposition.getTramitationTypeCode();
+        if ( tramitationTypeCode == null ) {
+            return null;
+        }
+        return tramitationTypeCode;
+    }
+
+    private String dStatusPropositionSituationDescription(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        String situationDescription = statusProposition.getSituationDescription();
+        if ( situationDescription == null ) {
+            return null;
+        }
+        return situationDescription;
+    }
+
+    private String dStatusPropositionSituationCode(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        String situationCode = statusProposition.getSituationCode();
+        if ( situationCode == null ) {
+            return null;
+        }
+        return situationCode;
+    }
+
+    private String dStatusPropositionDispatch(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        String dispatch = statusProposition.getDispatch();
+        if ( dispatch == null ) {
+            return null;
+        }
+        return dispatch;
+    }
+
+    private String dStatusPropositionUrl(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        String url = statusProposition.getUrl();
+        if ( url == null ) {
+            return null;
+        }
+        return url;
+    }
+
+    private String dStatusPropositionScope(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        String scope = statusProposition.getScope();
+        if ( scope == null ) {
+            return null;
+        }
+        return scope;
+    }
+
+    private String dStatusPropositionAppreciation(PropositionBodyDto propositionBodyDto) {
+        if ( propositionBodyDto == null ) {
+            return null;
+        }
+        PropositionBodyDto.PropositionStatusDto statusProposition = propositionBodyDto.getStatusProposition();
+        if ( statusProposition == null ) {
+            return null;
+        }
+        String appreciation = statusProposition.getAppreciation();
+        if ( appreciation == null ) {
+            return null;
+        }
+        return appreciation;
     }
 }

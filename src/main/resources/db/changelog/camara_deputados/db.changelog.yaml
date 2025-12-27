@@ -24,3 +24,33 @@ databaseChangeLog:
       relativeToChangelogFile: true
       errorIfMissingorEmpty: true
 
+  - include:
+      file: changeset/1.4/1.4-DDL.yaml
+      context: camara_deputados
+      relativeToChangelogFile: true
+      errorIfMissingorEmpty: true
+
+  - include:
+      file: changeset/1.5/1.5-DDL.yaml
+      context: camara_deputados
+      relativeToChangelogFile: true
+      errorIfMissingorEmpty: true
+
+  - include:
+      file: changeset/1.6/1.6-DDL.yaml
+      context: camara_deputados
+      relativeToChangelogFile: true
+      errorIfMissingorEmpty: true
+
+  - include:
+      file: changeset/1.7/1.7-DDL.yaml
+      context: camara_deputados
+      relativeToChangelogFile: true
+      errorIfMissingorEmpty: true
+
+  - include:
+      file: changeset/1.8/1.8-DDL.yaml
+      context: camara_deputados
+      relativeToChangelogFile: true
+      errorIfMissingorEmpty: true
+

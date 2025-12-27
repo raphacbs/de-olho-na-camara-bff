@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1.8-ADD_UNIQUE_CONSTRAINT_POLITICIAN_VOTE
+      author: system
+      changes:
+        - sqlFile:
+            encoding: utf8
+            path: ddl/1.8-ADD_UNIQUE_CONSTRAINT_POLITICIAN_VOTE.sql
+            relativeToChangelogFile: true

@@ -28,26 +28,26 @@ public class SduiService {
     }
 
     /**
-     * Retorna a tela de deputados usando a estratégia apropriada.
+     * Retorna a tela de politicians usando a estratégia apropriada.
      *
      * @param search Termo de busca
      * @param uf Filtro por estado
      * @param page Página
      * @param size Tamanho da página
-     * @return SDUIResponse com a tela de deputados configurada
+     * @return SDUIResponse com a tela de politicians configurada
      */
-    public SDUIResponse getDeputadosScreen(String search, String uf, Integer page, Integer size) {
+    public SDUIResponse getPoliticiansScreen(String search, String uf, Integer page, Integer size) {
         Map<String, Object> params = Map.of(
             "search", search != null ? search : "",
             "uf", uf != null ? uf : "",
             "page", page != null ? page : 0,
             "size", size != null ? size : 20
         );
-        return getScreenStrategy("deputados").buildScreen(params);
+        return getScreenStrategy("politicians").buildScreen(params);
     }
 
     /**
-     * Retorna a tela de proposições usando a estratégia apropriada.
+     * Retorna a tela de propositions usando a estratégia apropriada.
      *
      * @param tipos Lista de filtros por tipo (múltiplos valores permitidos)
      * @param statuses Lista de filtros por status (múltiplos valores permitidos)
@@ -56,9 +56,9 @@ public class SduiService {
      * @param dataFim Filtro por data final
      * @param page Página
      * @param size Tamanho da página
-     * @return SDUIResponse com a tela de proposições configurada
+     * @return SDUIResponse com a tela de propositions configurada
      */
-    public SDUIResponse getProposicoesScreen(List<String> tipos, List<String> statuses, String politico, String dataInicio, String dataFim, Integer page, Integer size) {
+    public SDUIResponse getPropositionsScreen(List<String> tipos, List<String> statuses, String politico, String dataInicio, String dataFim, Integer page, Integer size) {
         Map<String, Object> params = Map.of(
             "tipos", tipos != null ? tipos : List.of(),
             "statuses", statuses != null ? statuses : List.of(),
@@ -68,33 +68,33 @@ public class SduiService {
             "page", page != null ? page : 0,
             "size", size != null ? size : 20
         );
-        return getScreenStrategy("proposicoes").buildScreen(params);
+        return getScreenStrategy("propositions").buildScreen(params);
     }
 
     /**
-     * Retorna a tela de votações usando a estratégia apropriada.
+     * Retorna a tela de votings usando a estratégia apropriada.
      *
      * @param periodo Filtro por período
      * @param page Página
      * @param size Tamanho da página
-     * @return SDUIResponse com a tela de votações configurada
+     * @return SDUIResponse com a tela de votings configurada
      */
-    public SDUIResponse getVotacoesScreen(String periodo, Integer page, Integer size) {
+    public SDUIResponse getVotingsScreen(String periodo, Integer page, Integer size) {
         Map<String, Object> params = Map.of(
             "periodo", periodo != null ? periodo : "week",
             "page", page != null ? page : 0,
             "size", size != null ? size : 20
         );
-        return getScreenStrategy("votacoes").buildScreen(params);
+        return getScreenStrategy("votings").buildScreen(params);
     }
 
     /**
-     * Retorna a tela de configurações usando a estratégia apropriada.
+     * Retorna a tela de settings usando a estratégia apropriada.
      *
-     * @return SDUIResponse com a tela de configurações configurada
+     * @return SDUIResponse com a tela de settings configurada
      */
-    public SDUIResponse getConfiguracoesScreen() {
-        return getScreenStrategy("configuracoes").buildScreen(Map.of());
+    public SDUIResponse getSettingsScreen() {
+        return getScreenStrategy("settings").buildScreen(Map.of());
     }
 
     /**

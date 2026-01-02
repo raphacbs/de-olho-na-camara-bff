@@ -35,7 +35,7 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
 
     @Override
     public String getScreenType() {
-        return "proposicoes";
+        return "propositions";
     }
 
     @Override

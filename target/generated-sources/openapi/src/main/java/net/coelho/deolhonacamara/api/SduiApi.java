@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-02T15:19:49.071322600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-02T16:04:43.208263200-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 @Validated
 @Tag(name = "SDUI", description = "Server-Driven UI components for mobile app")
 public interface SduiApi {
@@ -45,7 +45,7 @@ public interface SduiApi {
     }
 
     /**
-     * GET /api/screens/configuracoes : Get configurações screen SDUI components
+     * GET /api/v1/sdui/settings : Get configurações screen SDUI components
      * Returns server-driven UI components for the configurações (settings) screen
      *
      * @param authorization token de autenticação do usuário (required)
@@ -67,7 +67,7 @@ public interface SduiApi {
     )
     @RequestMapping(
         method = RequestMethod.GET,
-        value = "/api/screens/configuracoes",
+        value = "/api/v1/sdui/settings",
         produces = { "application/json" }
     )
     
@@ -89,7 +89,7 @@ public interface SduiApi {
 
 
     /**
-     * GET /api/screens/deputados : Get deputados screen SDUI components
+     * GET /api/v1/sdui/politicians : Get deputados screen SDUI components
      * Returns server-driven UI components for the deputados (politicians) screen with search and filters
      *
      * @param authorization token de autenticação do usuário (required)
@@ -115,7 +115,7 @@ public interface SduiApi {
     )
     @RequestMapping(
         method = RequestMethod.GET,
-        value = "/api/screens/deputados",
+        value = "/api/v1/sdui/politicians",
         produces = { "application/json" }
     )
     
@@ -141,7 +141,7 @@ public interface SduiApi {
 
 
     /**
-     * GET /api/screens/home : Get home screen SDUI components
+     * GET /api/v1/sdui/home : Get home screen SDUI components
      * Returns server-driven UI components for the home screen with latest propositions and weekly statistics
      *
      * @param authorization token de autenticação do usuário (required)
@@ -163,7 +163,7 @@ public interface SduiApi {
     )
     @RequestMapping(
         method = RequestMethod.GET,
-        value = "/api/screens/home",
+        value = "/api/v1/sdui/home",
         produces = { "application/json" }
     )
     
@@ -185,7 +185,7 @@ public interface SduiApi {
 
 
     /**
-     * GET /api/screens/proposicoes : Get proposições screen SDUI components
+     * GET /api/v1/sdui/propositions : Get proposições screen SDUI components
      * Returns server-driven UI components for the proposições (propositions) screen with filters and details
      *
      * @param authorization token de autenticação do usuário (required)
@@ -214,7 +214,7 @@ public interface SduiApi {
     )
     @RequestMapping(
         method = RequestMethod.GET,
-        value = "/api/screens/proposicoes",
+        value = "/api/v1/sdui/propositions",
         produces = { "application/json" }
     )
     
@@ -243,7 +243,7 @@ public interface SduiApi {
 
 
     /**
-     * GET /api/screens/votacoes : Get votações screen SDUI components
+     * GET /api/v1/sdui/votings : Get votações screen SDUI components
      * Returns server-driven UI components for the votações (votes) screen with results and details
      *
      * @param authorization token de autenticação do usuário (required)
@@ -268,7 +268,7 @@ public interface SduiApi {
     )
     @RequestMapping(
         method = RequestMethod.GET,
-        value = "/api/screens/votacoes",
+        value = "/api/v1/sdui/votings",
         produces = { "application/json" }
     )
     

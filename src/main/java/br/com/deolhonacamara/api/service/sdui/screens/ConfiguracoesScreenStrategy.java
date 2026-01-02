@@ -23,7 +23,7 @@ public class ConfiguracoesScreenStrategy implements SDUIScreenStrategy {
 
     @Override
     public String getScreenType() {
-        return "configuracoes";
+        return "settings";
     }
 
     @Override

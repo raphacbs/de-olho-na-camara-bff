@@ -27,7 +27,7 @@ interface SDUIResponse {
 
 ## Endpoints por Tela
 
-### 1. GET /api/screens/home
+### 1. GET /api/v1/sdui/home
 
 **Descrição**: Tela inicial com resumos e estatísticas da semana.
 
@@ -187,7 +187,7 @@ interface SDUIResponse {
 
 ---
 
-### 2. GET /api/screens/deputados
+### 2. GET /api/v1/sdui/politicians
 
 **Descrição**: Lista de deputados federais com filtros e busca.
 
@@ -332,7 +332,7 @@ interface SDUIResponse {
 
 ---
 
-### 3. GET /api/screens/proposicoes
+### 3. GET /api/v1/sdui/propositions
 
 **Descrição**: Lista de proposições legislativas com filtros e detalhes.
 
@@ -476,7 +476,7 @@ interface SDUIResponse {
 
 ---
 
-### 4. GET /api/screens/votacoes
+### 4. GET /api/v1/sdui/votings
 
 **Descrição**: Votações recentes e históricas com resultados detalhados.
 
@@ -637,7 +637,7 @@ interface SDUIResponse {
 
 ---
 
-### 5. GET /api/screens/configuracoes
+### 5. GET /api/v1/sdui/settings
 
 **Descrição**: Configurações do usuário e personalização do app.
 

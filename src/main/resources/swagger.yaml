@@ -534,7 +534,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/VotingWithVotesResponseDTO'
 
-  /api/screens/home:
+  /api/v1/sdui/home:
     get:
       tags: [ SDUI ]
       summary: Get home screen SDUI components
@@ -557,7 +557,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SDUIResponse'
 
-  /api/screens/deputados:
+  /api/v1/sdui/politicians:
     get:
       tags: [ SDUI ]
       summary: Get deputados screen SDUI components
@@ -602,7 +602,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SDUIResponse'
 
-  /api/screens/proposicoes:
+  /api/v1/sdui/propositions:
     get:
       tags: [ SDUI ]
       summary: Get proposições screen SDUI components
@@ -664,7 +664,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SDUIResponse'
 
-  /api/screens/votacoes:
+  /api/v1/sdui/votings:
     get:
       tags: [ SDUI ]
       summary: Get votações screen SDUI components
@@ -706,7 +706,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SDUIResponse'
 
-  /api/screens/configuracoes:
+  /api/v1/sdui/settings:
     get:
       tags: [ SDUI ]
       summary: Get configurações screen SDUI components

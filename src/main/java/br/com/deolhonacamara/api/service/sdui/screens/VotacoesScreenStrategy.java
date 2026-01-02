@@ -24,7 +24,7 @@ public class VotacoesScreenStrategy implements SDUIScreenStrategy {
 
     @Override
     public String getScreenType() {
-        return "votacoes";
+        return "votings";
     }
 
     @Override

@@ -10,6 +10,15 @@ http://localhost:8080/api/v1
 https://api.deolhonacamara.com/api/v1
 ```
 
+## Endpoints SDUI
+```
+GET /api/v1/sdui/home
+GET /api/v1/sdui/politicians
+GET /api/v1/sdui/propositions
+GET /api/v1/sdui/votings
+GET /api/v1/sdui/settings
+```
+
 ## Autenticação
 Todos os endpoints SDUI requerem autenticação via header `Authorization` com token JWT:
 ```
@@ -38,7 +47,7 @@ Retorna a tela inicial (Home) com componentes dinâmicos.
 
 ---
 
-### 1.2 GET /api/v1/sdui/deputados
+### 1.2 GET /api/v1/sdui/politicians
 Retorna a tela de deputados com filtros e listagem.
 
 **Parâmetros de Query:**
@@ -55,7 +64,7 @@ GET /api/v1/sdui/deputados?uf=RJ
 
 ---
 
-### 1.3 GET /api/v1/sdui/proposicoes
+### 1.3 GET /api/v1/sdui/propositions
 Retorna a tela de proposições com filtros avançados e listagem paginada.
 
 **Parâmetros de Query:**
@@ -97,7 +106,7 @@ GET /api/v1/sdui/proposicoes?tipo=PEC&status=aprovado&dataInicio=2024-01-01&data
 
 ---
 
-### 1.4 GET /api/v1/sdui/votacoes
+### 1.4 GET /api/v1/sdui/votings
 Retorna a tela de votações com filtros por período.
 
 **Parâmetros de Query:**
@@ -113,7 +122,7 @@ Retorna a tela de votações com filtros por período.
 
 ---
 
-### 1.5 GET /api/v1/sdui/configuracoes
+### 1.5 GET /api/v1/sdui/settings
 Retorna a tela de configurações do aplicativo.
 
 **Parâmetros:** Nenhum (além do header Authorization)

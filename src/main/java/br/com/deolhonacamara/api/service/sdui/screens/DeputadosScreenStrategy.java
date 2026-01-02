@@ -23,7 +23,7 @@ public class DeputadosScreenStrategy implements SDUIScreenStrategy {
 
     @Override
     public String getScreenType() {
-        return "deputados";
+        return "politicians";
     }
 
     @Override

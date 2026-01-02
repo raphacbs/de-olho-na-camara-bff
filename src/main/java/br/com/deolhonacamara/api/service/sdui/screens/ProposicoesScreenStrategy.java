@@ -42,6 +42,7 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
     public SDUIResponse buildScreen(Map<String, Object> params) {
         String tipo = (String) params.get("tipo");
         String status = (String) params.get("status");
+        String periodo = (String) params.get("periodo");
         String politico = (String) params.get("politico");
         String dataInicio = (String) params.get("dataInicio");
         String dataFim = (String) params.get("dataFim");
@@ -54,7 +55,7 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
         components.add(buildFilterComponent());
 
         // Lista de proposições
-        components.add(buildPropositionsList(tipo, status, politico, dataInicio, dataFim, page, size));
+        components.add(buildPropositionsList(tipo, status, periodo, politico, dataInicio, dataFim, page, size));
 
         // Navegação
         SDUINavigation navigation = new SDUINavigation()
@@ -127,13 +128,39 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
         return advancedFilter;
     }
 
-    private SDUIComponent buildPropositionsList(String tipo, String status, String politico, String dataInicio,
-            String dataFim, Integer page, Integer size) {
+    private SDUIComponent buildPropositionsList(String tipo, String status, String periodo, String politico,
+            String dataInicio, String dataFim, Integer page, Integer size) {
         SDUIComponent container = componentFactory.createContainer("container-proposals-list-main")
                 .direction(SDUIComponent.DirectionEnum.COLUMN)
                 .scrollable(true);
 
-        // Converter datas de string para LocalDate se fornecidas
+        // Converter período para datas se fornecido
+        LocalDate periodoInicioParsed = null;
+        LocalDate periodoFimParsed = null;
+        if (periodo != null && !periodo.trim().isEmpty()) {
+            LocalDate now = LocalDate.now();
+            switch (periodo.trim()) {
+                case "ultima_semana":
+                    periodoInicioParsed = now.minusWeeks(1);
+                    periodoFimParsed = now;
+                    break;
+                case "ultimo_mes":
+                    periodoInicioParsed = now.minusMonths(1);
+                    periodoFimParsed = now;
+                    break;
+                case "ultimos_3_meses":
+                    periodoInicioParsed = now.minusMonths(3);
+                    periodoFimParsed = now;
+                    break;
+                case "ultimo_ano":
+                    periodoInicioParsed = now.minusYears(1);
+                    periodoFimParsed = now;
+                    break;
+                // Para "personalizado", as datas serão fornecidas separadamente
+            }
+        }
+
+        // Converter datas de string para LocalDate se fornecidas (sobrescreve período se personalizado)
         LocalDate dataInicioParsed = null;
         LocalDate dataFimParsed = null;
         try {
@@ -147,6 +174,14 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
             // Ignorar erros de parsing e usar null
         }
 
+        // Usar datas do período se não houver datas personalizadas
+        if (dataInicioParsed == null && periodoInicioParsed != null) {
+            dataInicioParsed = periodoInicioParsed;
+        }
+        if (dataFimParsed == null && periodoFimParsed != null) {
+            dataFimParsed = periodoFimParsed;
+        }
+
         // Buscar proposições com filtros aplicados
         List<PropositionScreen> propositions;
         if ((politico == null || politico.trim().isEmpty()) &&
@@ -157,7 +192,7 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
         } else {
             // Se há filtros, usar o método filtrado
             propositions = propositionService.getFilteredPropositionsScreen(
-                    politico, tipo, dataInicioParsed, dataFimParsed, size);
+                    politico, tipo, status, dataInicioParsed, dataFimParsed, size);
         }
 
         // Agrupar proposições por mês

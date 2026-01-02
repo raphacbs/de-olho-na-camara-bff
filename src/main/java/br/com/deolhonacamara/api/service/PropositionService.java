@@ -4,6 +4,7 @@ import br.com.deolhonacamara.api.mapper.Mapper;
 import br.com.deolhonacamara.api.model.PageResponse;
 import br.com.deolhonacamara.api.model.PropositionEntity;
 import br.com.deolhonacamara.api.model.input.PropositionInput;
+import br.com.deolhonacamara.api.model.screen.PropositionScreen;
 import br.com.deolhonacamara.api.repository.PropositionRepository;
 import lombok.RequiredArgsConstructor;
 import net.coelho.deolhonacamara.api.model.PropositionDto;
@@ -11,6 +12,7 @@ import net.coelho.deolhonacamara.api.model.PropositionResponseDTO;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,5 +37,18 @@ public class PropositionService {
 
         return responseDto;
     }
+
+    public List<PropositionEntity> getLatestPropositions(int limit) {
+        return repository.findLatestPropositions(limit);
+    }
+
+    public List<PropositionScreen> getLatestPropositionsScreen(int limit) {
+        return repository.findLatestPropositionsScreen(limit);
+    }
+
+    public List<PropositionScreen> getFilteredPropositionsScreen(String politico, String tipo, String status, LocalDate dataInicio, LocalDate dataFim, int limit) {
+        return repository.findFilteredPropositionsScreen(politico, tipo, status, dataInicio, dataFim, limit);
+    }
+
 }
 

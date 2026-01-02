@@ -288,7 +288,7 @@ public class PropositionRepository {
         });
     }
 
-    public List<PropositionScreen> findFilteredPropositionsScreen(String politico, String tipo, LocalDate dataInicio, LocalDate dataFim, int limit) {
+    public List<PropositionScreen> findFilteredPropositionsScreen(String politico, String tipo, String status, LocalDate dataInicio, LocalDate dataFim, int limit) {
         StringBuilder sql = new StringBuilder("""
             SELECT p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
                    p.presentation_date, p.status_date_time, p.status_last_reporter_uri, p.status_tramitation_description,
@@ -330,6 +330,13 @@ public class PropositionRepository {
                 // Se o tipo não for válido, não aplica filtro (evita queries vazias)
                 log.warn("Tipo de proposição inválido fornecido: {}", tipoTrimmed);
             }
+        }
+
+        // Filtro por status
+        if (status != null && !status.trim().isEmpty()) {
+            String statusTrimmed = status.trim().toLowerCase();
+            sql.append(" AND LOWER(p.status_tramitation_description) LIKE LOWER(:status)");
+            params.put("status", "%" + statusTrimmed + "%");
         }
 
         // Filtro por data inicial

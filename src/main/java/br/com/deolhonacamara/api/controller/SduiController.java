@@ -30,13 +30,13 @@ public class SduiController implements SduiApi {
     }
 
     @Override
-    public ResponseEntity<SDUIResponse> getPoliticiansScreen(String authorization, String search, String uf, Integer page, Integer size) {
-        SDUIResponse response = sduiService.getPoliticiansScreen(search, uf, page, size);
+    public ResponseEntity<SDUIResponse> getDeputadosScreen(String authorization, String search, String uf, Integer page, Integer size) {
+        SDUIResponse response = sduiService.getDeputadosScreen(search, uf, page, size);
         return ResponseEntity.ok(response);
     }
 
     @Override
-    public ResponseEntity<SDUIResponse> getPropositionsScreen(String authorization, String tipo, String status, String politico, @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio, @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim, Integer page, Integer size) {
+    public ResponseEntity<SDUIResponse> getProposicoesScreen(String authorization, String tipo, String status, String politico, @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio, @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim, Integer page, Integer size) {
         // Converter parâmetros únicos para listas (suporte a múltiplos valores)
         List<String> tipos = tipo != null && !tipo.trim().isEmpty() ?
             Arrays.asList(tipo.split(",")) : Collections.emptyList();
@@ -46,19 +46,19 @@ public class SduiController implements SduiApi {
 
         String dataInicioStr = dataInicio != null ? dataInicio.toString() : null;
         String dataFimStr = dataFim != null ? dataFim.toString() : null;
-        SDUIResponse response = sduiService.getPropositionsScreen(tipos, statuses, politico, dataInicioStr, dataFimStr, page, size);
+        SDUIResponse response = sduiService.getProposicoesScreen(tipos, statuses, politico, dataInicioStr, dataFimStr, page, size);
         return ResponseEntity.ok(response);
     }
 
     @Override
-    public ResponseEntity<SDUIResponse> getVotingsScreen(String authorization, String periodo, Integer page, Integer size) {
-        SDUIResponse response = sduiService.getVotingsScreen(periodo, page, size);
+    public ResponseEntity<SDUIResponse> getVotacoesScreen(String authorization, String periodo, Integer page, Integer size) {
+        SDUIResponse response = sduiService.getVotacoesScreen(periodo, page, size);
         return ResponseEntity.ok(response);
     }
 
     @Override
-    public ResponseEntity<SDUIResponse> getSettingsScreen(String authorization) {
-        SDUIResponse response = sduiService.getSettingsScreen();
+    public ResponseEntity<SDUIResponse> getConfiguracoesScreen(String authorization) {
+        SDUIResponse response = sduiService.getConfiguracoesScreen();
         return ResponseEntity.ok(response);
     }
 }

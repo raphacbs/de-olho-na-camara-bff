@@ -1,5 +1,7 @@
 package br.com.deolhonacamara.api.repository;
 
+import br.com.deolhonacamara.api.dto.PoliticianVoteWithPropositionDTO;
+import br.com.deolhonacamara.api.dto.PoliticianVoteWithPropositionResponseDTO;
 import br.com.deolhonacamara.api.model.PageResponse;
 import br.com.deolhonacamara.api.model.PoliticianVoteEntity;
 import lombok.RequiredArgsConstructor;
@@ -123,6 +125,53 @@ public class PoliticianVoteRepository {
                     rs.getTimestamp("created_at").toLocalDateTime() : null)
                 .updatedAt(rs.getTimestamp("updated_at") != null ?
                     rs.getTimestamp("updated_at").toLocalDateTime() : null)
+                .build();
+    }
+
+    public PoliticianVoteWithPropositionResponseDTO findVotesWithPropositionByPoliticianId(Integer politicianId, Pageable pageable) {
+        String sql = """
+            SELECT pv.id, pv.politician_id, pv.vote_type, pv.vote_id,
+                   v.date as vote_date, v.description as vote_description,
+                   p.summary as proposition_summary, p.year as proposition_year, p.detailed_summary as proposition_detailed_summary
+            FROM politician_vote pv
+            INNER JOIN voting v ON v.id = pv.vote_id
+            LEFT JOIN LATERAL (
+                SELECT (jsonb_array_elements(v.affected_propositions)->>'id')::integer as prop_id
+                LIMIT 1
+            ) ap ON true
+            LEFT JOIN proposition p ON p.id = ap.prop_id
+            WHERE pv.politician_id = :politicianId
+            ORDER BY v.date DESC, pv.created_at DESC
+            LIMIT :limit OFFSET :offset
+        """;
+
+        String countSql = "SELECT COUNT(*) FROM politician_vote WHERE politician_id = :politicianId";
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("politicianId", politicianId);
+        params.put("limit", pageable.getPageSize());
+        params.put("offset", pageable.getOffset());
+
+        List<PoliticianVoteWithPropositionDTO> content = jdbcTemplate.query(sql, params, (rs, i) -> PoliticianVoteWithPropositionDTO.builder()
+                .id(rs.getLong("id"))
+                .politicianId(rs.getInt("politician_id"))
+                .vote(rs.getString("vote_type"))
+                .voteId(rs.getString("vote_id"))
+                .voteDate(rs.getDate("vote_date") != null ? rs.getDate("vote_date").toLocalDate() : null)
+                .votingDescription(rs.getString("vote_description"))
+                .propositionSummary(rs.getString("proposition_summary"))
+                .propositionYear(rs.getInt("proposition_year"))
+                .propositionDetailedSummary(rs.getString("proposition_detailed_summary"))
+                .build());
+
+        int total = jdbcTemplate.queryForObject(countSql, params, Integer.class);
+
+        return PoliticianVoteWithPropositionResponseDTO.builder()
+                .data(content)
+                .total(total)
+                .page(pageable.getPageNumber())
+                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
+                .sizePage(pageable.getPageSize())
                 .build();
     }
 }

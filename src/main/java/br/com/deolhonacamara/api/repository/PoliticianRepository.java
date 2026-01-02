@@ -1,11 +1,11 @@
 package br.com.deolhonacamara.api.repository;
 
-import br.com.deolhonacamara.api.model.PoliticianEntity;
 import br.com.deolhonacamara.api.model.PageResponse;
+import br.com.deolhonacamara.api.model.PoliticianEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.domain.Pageable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

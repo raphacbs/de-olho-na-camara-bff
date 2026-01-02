@@ -1,5 +1,7 @@
 package br.com.deolhonacamara.api.repository;
 
+import br.com.deolhonacamara.api.dto.VotingWithVotesDTO;
+import br.com.deolhonacamara.api.dto.VotingWithVotesResponseDTO;
 import br.com.deolhonacamara.api.model.PageResponse;
 import br.com.deolhonacamara.api.model.PoliticianEntity;
 import br.com.deolhonacamara.api.model.VotingEntity;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -280,6 +283,67 @@ public class VotingRepository {
                     rs.getTimestamp("created_at").toLocalDateTime() : null)
                 .updatedAt(rs.getTimestamp("updated_at") != null ?
                     rs.getTimestamp("updated_at").toLocalDateTime() : null)
+                .build();
+    }
+
+    public VotingWithVotesResponseDTO findVotingsWithVotes(Pageable pageable) {
+        String sql = """
+            SELECT v.id, v.date, v.description, v.organ_acronym,
+                   pv.politician_id, p.name as politician_name, pv.vote_type
+            FROM voting v
+            LEFT JOIN politician_vote pv ON pv.vote_id = v.id
+            LEFT JOIN politician p ON p.id = pv.politician_id
+            ORDER BY v.date DESC, v.created_at DESC, pv.politician_id
+        """;
+
+        String countSql = "SELECT COUNT(*) FROM voting";
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("limit", pageable.getPageSize());
+        params.put("offset", pageable.getOffset());
+
+        // Buscar todos os dados primeiro
+        List<VotingWithVotesDTO> votings = new ArrayList<>();
+        Map<String, VotingWithVotesDTO> votingMap = new HashMap<>();
+
+        jdbcTemplate.query(sql + " LIMIT :limit OFFSET :offset", params, (rs, i) -> {
+            String votingId = rs.getString("id");
+
+            VotingWithVotesDTO voting = votingMap.get(votingId);
+            if (voting == null) {
+                voting = VotingWithVotesDTO.builder()
+                        .id(votingId)
+                        .date(rs.getDate("date") != null ? rs.getDate("date").toLocalDate() : null)
+                        .description(rs.getString("description"))
+                        .organAcronym(rs.getString("organ_acronym"))
+                        .votes(new ArrayList<>())
+                        .build();
+                votingMap.put(votingId, voting);
+                votings.add(voting);
+            }
+
+            // Adicionar voto se existir
+            Integer politicianId = rs.getInt("politician_id");
+            if (politicianId != null) {
+                VotingWithVotesDTO.PoliticianVoteSummaryDTO vote = VotingWithVotesDTO.PoliticianVoteSummaryDTO.builder()
+                        .politicianId(politicianId)
+                        .politicianName(rs.getString("politician_name"))
+                        .voteType(rs.getString("vote_type"))
+                        .build();
+                voting.getVotes().add(vote);
+            }
+
+            return voting;
+        });
+
+        int total = jdbcTemplate.queryForObject(countSql, new HashMap<>(), Integer.class);
+
+        return VotingWithVotesResponseDTO.builder()
+                .data(votings)
+                .total(total)
+                .page(pageable.getPageNumber())
+                .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
+                .sizePage(pageable.getPageSize())
                 .build();
     }
 }

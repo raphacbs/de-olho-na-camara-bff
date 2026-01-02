@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-12-27T15:23:26-0300",
+    date = "2026-01-02T15:19:41-0300",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.44.0.v20251118-1623, environment: Java 21.0.9 (Eclipse Adoptium)"
 )
 @Component
@@ -118,6 +118,7 @@ public class MapperImpl implements Mapper {
 
         PoliticianVoteDto politicianVoteDto = new PoliticianVoteDto();
 
+        politicianVoteDto.setVoteOption( e.getVoteType() );
         if ( e.getId() != null ) {
             politicianVoteDto.setId( e.getId().intValue() );
         }
@@ -167,25 +168,25 @@ public class MapperImpl implements Mapper {
 
         SpeechEntity.SpeechEntityBuilder speechEntity = SpeechEntity.builder();
 
-        if ( o.getStartDateTime() != null ) {
-            speechEntity.startDateTime( LocalDateTime.parse( o.getStartDateTime() ) );
-        }
+        speechEntity.audioUrl( o.getAudioUrl() );
         if ( o.getEndDateTime() != null ) {
             speechEntity.endDateTime( LocalDateTime.parse( o.getEndDateTime() ) );
-        }
-        speechEntity.titleEvent( o.getTitleEvent() );
-        if ( o.getStartDateTimeEvent() != null ) {
-            speechEntity.startDateTimeEvent( LocalDateTime.parse( o.getStartDateTimeEvent() ) );
         }
         if ( o.getEndDateTimeEvent() != null ) {
             speechEntity.endDateTimeEvent( LocalDateTime.parse( o.getEndDateTimeEvent() ) );
         }
-        speechEntity.summary( o.getSummary() );
-        speechEntity.speechType( o.getSpeechType() );
-        speechEntity.transcription( o.getTranscription() );
         speechEntity.eventUri( o.getEventUri() );
-        speechEntity.audioUrl( o.getAudioUrl() );
+        speechEntity.speechType( o.getSpeechType() );
+        if ( o.getStartDateTime() != null ) {
+            speechEntity.startDateTime( LocalDateTime.parse( o.getStartDateTime() ) );
+        }
+        if ( o.getStartDateTimeEvent() != null ) {
+            speechEntity.startDateTimeEvent( LocalDateTime.parse( o.getStartDateTimeEvent() ) );
+        }
+        speechEntity.summary( o.getSummary() );
         speechEntity.textUrl( o.getTextUrl() );
+        speechEntity.titleEvent( o.getTitleEvent() );
+        speechEntity.transcription( o.getTranscription() );
         speechEntity.videoUrl( o.getVideoUrl() );
 
         return speechEntity.build();
@@ -200,18 +201,18 @@ public class MapperImpl implements Mapper {
         SpeechEntity.SpeechEntityBuilder speechEntity = SpeechEntity.builder();
 
         if ( o != null ) {
-            speechEntity.startDateTime( o.getStartDateTime() );
-            speechEntity.endDateTime( o.getEndDateTime() );
-            speechEntity.titleEvent( o.getTitleEvent() );
-            speechEntity.startDateTimeEvent( o.getStartDateTimeEvent() );
-            speechEntity.endDateTimeEvent( o.getEndDateTimeEvent() );
-            speechEntity.keywords( o.getKeywords() );
-            speechEntity.summary( o.getSummary() );
-            speechEntity.speechType( o.getSpeechType() );
-            speechEntity.transcription( o.getTranscription() );
-            speechEntity.eventUri( o.getEventUri() );
             speechEntity.audioUrl( o.getAudioUrl() );
+            speechEntity.endDateTime( o.getEndDateTime() );
+            speechEntity.endDateTimeEvent( o.getEndDateTimeEvent() );
+            speechEntity.eventUri( o.getEventUri() );
+            speechEntity.keywords( o.getKeywords() );
+            speechEntity.speechType( o.getSpeechType() );
+            speechEntity.startDateTime( o.getStartDateTime() );
+            speechEntity.startDateTimeEvent( o.getStartDateTimeEvent() );
+            speechEntity.summary( o.getSummary() );
             speechEntity.textUrl( o.getTextUrl() );
+            speechEntity.titleEvent( o.getTitleEvent() );
+            speechEntity.transcription( o.getTranscription() );
             speechEntity.videoUrl( o.getVideoUrl() );
         }
         speechEntity.politicianId( politicianId );
@@ -231,25 +232,25 @@ public class MapperImpl implements Mapper {
         votingEntity.possibleObjects( possibleObjectsToJson( dto.getPossibleObjects() ) );
         votingEntity.affectedPropositions( affectedPropositionsToJson( dto.getAffectedPropositions() ) );
         votingEntity.lastPropositionPresentation( lastPropositionPresentationToJson( dto.getLastPropositionPresentation() ) );
-        votingEntity.id( dto.getId() );
         votingEntity.approval( dto.getApproval() );
         if ( dto.getDate() != null ) {
             votingEntity.date( LocalDate.parse( dto.getDate() ) );
         }
-        if ( dto.getRegistrationDateTime() != null ) {
-            votingEntity.registrationDateTime( LocalDateTime.parse( dto.getRegistrationDateTime() ) );
-        }
+        votingEntity.description( dto.getDescription() );
+        votingEntity.eventId( dto.getEventId() );
+        votingEntity.eventUri( dto.getEventUri() );
+        votingEntity.id( dto.getId() );
         if ( dto.getLastVotingOpenDateTime() != null ) {
             votingEntity.lastVotingOpenDateTime( LocalDateTime.parse( dto.getLastVotingOpenDateTime() ) );
         }
         votingEntity.lastVotingOpenDescription( dto.getLastVotingOpenDescription() );
-        votingEntity.description( dto.getDescription() );
-        votingEntity.eventId( dto.getEventId() );
-        votingEntity.organId( dto.getOrganId() );
         votingEntity.organAcronym( dto.getOrganAcronym() );
-        votingEntity.uri( dto.getUri() );
-        votingEntity.eventUri( dto.getEventUri() );
+        votingEntity.organId( dto.getOrganId() );
         votingEntity.organUri( dto.getOrganUri() );
+        if ( dto.getRegistrationDateTime() != null ) {
+            votingEntity.registrationDateTime( LocalDateTime.parse( dto.getRegistrationDateTime() ) );
+        }
+        votingEntity.uri( dto.getUri() );
 
         return votingEntity.build();
     }

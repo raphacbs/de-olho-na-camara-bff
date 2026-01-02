@@ -40,8 +40,10 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
 
     @Override
     public SDUIResponse buildScreen(Map<String, Object> params) {
-        String tipo = (String) params.get("tipo");
-        String status = (String) params.get("status");
+        @SuppressWarnings("unchecked")
+        List<String> tipos = (List<String>) params.getOrDefault("tipos", List.of());
+        @SuppressWarnings("unchecked")
+        List<String> statuses = (List<String>) params.getOrDefault("statuses", List.of());
         String periodo = (String) params.get("periodo");
         String politico = (String) params.get("politico");
         String dataInicio = (String) params.get("dataInicio");
@@ -55,7 +57,7 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
         components.add(buildFilterComponent());
 
         // Lista de proposições
-        components.add(buildPropositionsList(tipo, status, periodo, politico, dataInicio, dataFim, page, size));
+        components.add(buildPropositionsList(tipos, statuses, periodo, politico, dataInicio, dataFim, page, size));
 
         // Navegação
         SDUINavigation navigation = new SDUINavigation()
@@ -128,7 +130,7 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
         return advancedFilter;
     }
 
-    private SDUIComponent buildPropositionsList(String tipo, String status, String periodo, String politico,
+    private SDUIComponent buildPropositionsList(List<String> tipos, List<String> statuses, String periodo, String politico,
             String dataInicio, String dataFim, Integer page, Integer size) {
         SDUIComponent container = componentFactory.createContainer("container-proposals-list-main")
                 .direction(SDUIComponent.DirectionEnum.COLUMN)
@@ -185,14 +187,14 @@ public class ProposicoesScreenStrategy implements SDUIScreenStrategy {
         // Buscar proposições com filtros aplicados
         List<PropositionScreen> propositions;
         if ((politico == null || politico.trim().isEmpty()) &&
-                (tipo == null || tipo.trim().isEmpty()) &&
+                (tipos == null || tipos.isEmpty()) &&
                 dataInicioParsed == null && dataFimParsed == null) {
             // Se não há filtros aplicados, usar o mesmo método que o HomeScreenStrategy
             propositions = propositionService.getLatestPropositionsScreen(size);
         } else {
             // Se há filtros, usar o método filtrado
             propositions = propositionService.getFilteredPropositionsScreen(
-                    politico, tipo, status, dataInicioParsed, dataFimParsed, size);
+                    politico, tipos, statuses, dataInicioParsed, dataFimParsed, size);
         }
 
         // Agrupar proposições por mês

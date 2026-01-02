@@ -6,6 +6,8 @@
 package net.coelho.deolhonacamara.api;
 
 import net.coelho.deolhonacamara.api.model.PoliticianVoteResponseDTO;
+import net.coelho.deolhonacamara.api.model.PoliticianVoteWithPropositionResponseDTO;
+import net.coelho.deolhonacamara.api.model.VotingWithVotesResponseDTO;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,7 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-12-27T15:23:02.402204900-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-02T15:19:49.071322600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 @Validated
 @Tag(name = "Votes", description = "Voting records and politician votes")
 public interface VotesApi {
@@ -75,6 +77,90 @@ public interface VotesApi {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
                     String exampleString = "{ \"total\" : 1, \"data\" : [ { \"politicianId\" : 6, \"id\" : 0, \"voteId\" : \"voteId\", \"voteOption\" : \"voteOption\", \"vote\" : { \"date\" : \"2000-01-23\", \"summary\" : \"summary\", \"description\" : \"description\", \"id\" : \"id\" } }, { \"politicianId\" : 6, \"id\" : 0, \"voteId\" : \"voteId\", \"voteOption\" : \"voteOption\", \"vote\" : { \"date\" : \"2000-01-23\", \"summary\" : \"summary\", \"description\" : \"description\", \"id\" : \"id\" } } ], \"totalPages\" : 5, \"sizePage\" : 2, \"page\" : 5 }";
+                    ApiUtil.setExampleResponse(request, "application/json", exampleString);
+                    break;
+                }
+            }
+        });
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+
+    }
+
+
+    /**
+     * GET /api/v1/politicians/{id}/votes-with-proposition : Get politician votes with proposition information
+     *
+     * @param id  (required)
+     * @param page  (optional, default to 0)
+     * @param size  (optional, default to 20)
+     * @return Paginated list of politician votes with proposition details (status code 200)
+     */
+    @Operation(
+        operationId = "getPoliticianVotesWithProposition",
+        summary = "Get politician votes with proposition information",
+        tags = { "Votes" },
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Paginated list of politician votes with proposition details", content = {
+                @Content(mediaType = "application/json", schema = @Schema(implementation = PoliticianVoteWithPropositionResponseDTO.class))
+            })
+        }
+    )
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = "/api/v1/politicians/{id}/votes-with-proposition",
+        produces = { "application/json" }
+    )
+    
+    default ResponseEntity<PoliticianVoteWithPropositionResponseDTO> getPoliticianVotesWithProposition(
+        @Parameter(name = "id", description = "", required = true, in = ParameterIn.PATH) @PathVariable("id") Integer id,
+        @Parameter(name = "page", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+        @Parameter(name = "size", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "size", required = false, defaultValue = "20") Integer size
+    ) {
+        getRequest().ifPresent(request -> {
+            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
+                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
+                    String exampleString = "{ \"total\" : 5, \"data\" : [ { \"votingDescription\" : \"votingDescription\", \"politicianId\" : 6, \"propositionSummary\" : \"propositionSummary\", \"voteDate\" : \"2000-01-23\", \"propositionYear\" : 1, \"id\" : 0, \"voteId\" : \"voteId\", \"vote\" : \"vote\", \"propositionDetailedSummary\" : \"propositionDetailedSummary\" }, { \"votingDescription\" : \"votingDescription\", \"politicianId\" : 6, \"propositionSummary\" : \"propositionSummary\", \"voteDate\" : \"2000-01-23\", \"propositionYear\" : 1, \"id\" : 0, \"voteId\" : \"voteId\", \"vote\" : \"vote\", \"propositionDetailedSummary\" : \"propositionDetailedSummary\" } ], \"totalPages\" : 2, \"sizePage\" : 7, \"page\" : 5 }";
+                    ApiUtil.setExampleResponse(request, "application/json", exampleString);
+                    break;
+                }
+            }
+        });
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+
+    }
+
+
+    /**
+     * GET /api/v1/votings-with-votes : Get votings with related votes
+     *
+     * @param page  (optional, default to 0)
+     * @param size  (optional, default to 20)
+     * @return Paginated list of votings with their related votes (status code 200)
+     */
+    @Operation(
+        operationId = "getVotingsWithVotes",
+        summary = "Get votings with related votes",
+        tags = { "Votes" },
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Paginated list of votings with their related votes", content = {
+                @Content(mediaType = "application/json", schema = @Schema(implementation = VotingWithVotesResponseDTO.class))
+            })
+        }
+    )
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = "/api/v1/votings-with-votes",
+        produces = { "application/json" }
+    )
+    
+    default ResponseEntity<VotingWithVotesResponseDTO> getVotingsWithVotes(
+        @Parameter(name = "page", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+        @Parameter(name = "size", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "size", required = false, defaultValue = "20") Integer size
+    ) {
+        getRequest().ifPresent(request -> {
+            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
+                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
+                    String exampleString = "{ \"total\" : 6, \"data\" : [ { \"date\" : \"2000-01-23\", \"description\" : \"description\", \"votes\" : [ { \"voteType\" : \"voteType\", \"politicianName\" : \"politicianName\", \"politicianId\" : 0 }, { \"voteType\" : \"voteType\", \"politicianName\" : \"politicianName\", \"politicianId\" : 0 } ], \"id\" : \"id\", \"organAcronym\" : \"organAcronym\" }, { \"date\" : \"2000-01-23\", \"description\" : \"description\", \"votes\" : [ { \"voteType\" : \"voteType\", \"politicianName\" : \"politicianName\", \"politicianId\" : 0 }, { \"voteType\" : \"voteType\", \"politicianName\" : \"politicianName\", \"politicianId\" : 0 } ], \"id\" : \"id\", \"organAcronym\" : \"organAcronym\" } ], \"totalPages\" : 5, \"sizePage\" : 5, \"page\" : 1 }";
                     ApiUtil.setExampleResponse(request, "application/json", exampleString);
                     break;
                 }

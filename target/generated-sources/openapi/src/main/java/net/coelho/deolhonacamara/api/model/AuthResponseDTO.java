@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import java.time.OffsetDateTime;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.OffsetDateTime;
@@ -19,7 +21,7 @@ import jakarta.annotation.Generated;
  * AuthResponseDTO
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-12-27T15:23:02.402204900-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-02T15:19:49.071322600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 public class AuthResponseDTO {
 
   private @Nullable String accessToken;
@@ -29,6 +31,9 @@ public class AuthResponseDTO {
   private @Nullable String tokenType;
 
   private @Nullable Integer expireIn;
+
+  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+  private @Nullable OffsetDateTime expireAt;
 
   public AuthResponseDTO accessToken(String accessToken) {
     this.accessToken = accessToken;
@@ -100,7 +105,7 @@ public class AuthResponseDTO {
    * @return expireIn
    */
   
-  @Schema(name = "expireIn", example = "900", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @Schema(name = "expireIn", example = "3600", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("expireIn")
   public Integer getExpireIn() {
     return expireIn;
@@ -108,6 +113,26 @@ public class AuthResponseDTO {
 
   public void setExpireIn(Integer expireIn) {
     this.expireIn = expireIn;
+  }
+
+  public AuthResponseDTO expireAt(OffsetDateTime expireAt) {
+    this.expireAt = expireAt;
+    return this;
+  }
+
+  /**
+   * Get expireAt
+   * @return expireAt
+   */
+  @Valid 
+  @Schema(name = "expireAt", example = "2025-12-28T16:43:57Z", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("expireAt")
+  public OffsetDateTime getExpireAt() {
+    return expireAt;
+  }
+
+  public void setExpireAt(OffsetDateTime expireAt) {
+    this.expireAt = expireAt;
   }
 
   @Override
@@ -122,12 +147,13 @@ public class AuthResponseDTO {
     return Objects.equals(this.accessToken, authResponseDTO.accessToken) &&
         Objects.equals(this.refreshToken, authResponseDTO.refreshToken) &&
         Objects.equals(this.tokenType, authResponseDTO.tokenType) &&
-        Objects.equals(this.expireIn, authResponseDTO.expireIn);
+        Objects.equals(this.expireIn, authResponseDTO.expireIn) &&
+        Objects.equals(this.expireAt, authResponseDTO.expireAt);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(accessToken, refreshToken, tokenType, expireIn);
+    return Objects.hash(accessToken, refreshToken, tokenType, expireIn, expireAt);
   }
 
   @Override
@@ -138,6 +164,7 @@ public class AuthResponseDTO {
     sb.append("    refreshToken: ").append(toIndentedString(refreshToken)).append("\n");
     sb.append("    tokenType: ").append(toIndentedString(tokenType)).append("\n");
     sb.append("    expireIn: ").append(toIndentedString(expireIn)).append("\n");
+    sb.append("    expireAt: ").append(toIndentedString(expireAt)).append("\n");
     sb.append("}");
     return sb.toString();
   }

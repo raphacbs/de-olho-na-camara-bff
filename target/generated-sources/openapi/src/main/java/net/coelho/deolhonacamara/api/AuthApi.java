@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-12-27T15:23:02.402204900-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-02T15:19:49.071322600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 @Validated
 @Tag(name = "Auth", description = "Authentication and token management")
 public interface AuthApi {
@@ -75,7 +75,7 @@ public interface AuthApi {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"expireIn\" : 900, \"accessToken\" : \"accessToken\", \"tokenType\" : \"Bearer\", \"refreshToken\" : \"refreshToken\" }";
+                    String exampleString = "{ \"expireIn\" : 3600, \"accessToken\" : \"accessToken\", \"tokenType\" : \"Bearer\", \"expireAt\" : \"2025-12-28T16:43:57Z\", \"refreshToken\" : \"refreshToken\" }";
                     ApiUtil.setExampleResponse(request, "application/json", exampleString);
                     break;
                 }
@@ -117,7 +117,7 @@ public interface AuthApi {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"expireIn\" : 900, \"accessToken\" : \"accessToken\", \"tokenType\" : \"Bearer\", \"refreshToken\" : \"refreshToken\" }";
+                    String exampleString = "{ \"expireIn\" : 3600, \"accessToken\" : \"accessToken\", \"tokenType\" : \"Bearer\", \"expireAt\" : \"2025-12-28T16:43:57Z\", \"refreshToken\" : \"refreshToken\" }";
                     ApiUtil.setExampleResponse(request, "application/json", exampleString);
                     break;
                 }

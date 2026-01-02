@@ -59,8 +59,12 @@ GET /api/v1/sdui/deputados?uf=RJ
 Retorna a tela de proposições com filtros avançados e listagem paginada.
 
 **Parâmetros de Query:**
-- `tipo` (string, opcional): Código do tipo de proposição (ver seção 2.1)
-- `status` (string, opcional): Status da tramitação (busca parcial)
+- `tipo` (string, opcional): Códigos de tipos de proposição separados por vírgula (ver seção 2.1)
+  - Formato: `tipo=PL,PEC,PLP`
+  - Exemplo: `tipo=PL,PEC` (busca PL OU PEC)
+- `status` (string, opcional): Status da tramitação separados por vírgula (busca parcial)
+  - Formato: `status=tramitando,aprovado,rejeitado`
+  - Exemplo: `status=tramitando,aprovado` (busca status que contenham "tramitando" OU "aprovado")
 - `periodo` (string, opcional): Período pré-definido (ver seção 2.2)
 - `politico` (string, opcional): Nome do político (busca parcial)
 - `dataInicio` (string, opcional): Data inicial no formato YYYY-MM-DD
@@ -69,21 +73,26 @@ Retorna a tela de proposições com filtros avançados e listagem paginada.
 - `size` (integer, opcional, padrão=20): Tamanho da página
 
 **Lógica de Filtragem:**
-1. **Período vs Datas Personalizadas**: Se `dataInicio` e `dataFim` forem fornecidos, eles sobrescrevem o parâmetro `periodo`
-2. **Períodos Pré-definidos**: Convertidos automaticamente para datas
-3. **Validação de Tipo**: Apenas tipos válidos do enum PropositionType são aceitos
-4. **Busca Parcial**: Filtros por `politico` e `status` usam LIKE (%termo%)
+1. **Múltiplos Tipos**: OR lógico - proposições que correspondam a QUALQUER tipo da lista
+2. **Múltiplos Status**: OR lógico - proposições que correspondam a QUALQUER status da lista (busca parcial)
+3. **Período vs Datas Personalizadas**: Se `dataInicio` e `dataFim` forem fornecidos, eles sobrescrevem o parâmetro `periodo`
+4. **Períodos Pré-definidos**: Convertidos automaticamente para datas
+5. **Validação de Tipo**: Apenas tipos válidos do enum PropositionType são aceitos
+6. **Combinação de Filtros**: AND lógico entre diferentes tipos de filtro (tipo AND status AND político AND período)
 
 **Exemplos:**
 ```
-# Proposições de PL em tramitação no último mês
-GET /api/v1/sdui/proposicoes?tipo=PL&status=tramitando&periodo=ultimo_mes
+# Proposições de PL ou PEC em tramitação no último mês
+GET /api/v1/sdui/proposicoes?tipo=PL,PEC&status=tramitando&periodo=ultimo_mes
 
 # Proposições de qualquer tipo de Bolsonaro
 GET /api/v1/sdui/proposicoes?politico=Bolsonaro
 
+# Proposições PL, PEC ou PLP que estão tramitando ou foram aprovadas
+GET /api/v1/sdui/proposicoes?tipo=PL,PEC,PLP&status=tramitando,aprovado
+
 # Proposições PEC aprovadas em período personalizado
-GET /api/v1/sdui/proposicoes?tipo=PEC&status=aprovad&dataInicio=2024-01-01&dataFim=2024-12-31
+GET /api/v1/sdui/proposicoes?tipo=PEC&status=aprovado&dataInicio=2024-01-01&dataFim=2024-12-31
 ```
 
 ---
@@ -309,7 +318,14 @@ Todos os endpoints SDUI retornam um `SDUIResponse`:
 
 **Tipos de Proposição:**
 - Apenas códigos válidos do enum PropositionType são aceitos
-- Códigos inválidos são logados como warning e ignorados
+- Códigos inválidos são filtrados e logados como warning
+- Lista vazia após validação = filtro não aplicado
+- Múltiplos tipos: OR lógico (proposição deve corresponder a pelo menos um tipo)
+
+**Status da Tramitação:**
+- Busca parcial case-insensitive com LIKE (%termo%)
+- Múltiplos status: OR lógico (proposição deve corresponder a pelo menos um status)
+- Lista vazia = filtro não aplicado
 
 **Datas:**
 - Formato: YYYY-MM-DD (ISO 8601)
@@ -324,11 +340,12 @@ Todos os endpoints SDUI retornam um `SDUIResponse`:
 ### 5.2 Regras de Filtragem
 
 **Proposições:**
-- Filtros são aplicados com AND lógico
+- Filtros são aplicados com AND lógico entre diferentes tipos de filtro
 - Busca por político: LIKE case-insensitive
-- Busca por status: LIKE case-insensitive com %
+- Múltiplos tipos: OR lógico dentro do filtro de tipos
+- Múltiplos status: OR lógico dentro do filtro de status
 - Tipo: Comparação exata (case-insensitive)
-- Múltiplos filtros podem ser combinados
+- Múltiplos filtros podem ser combinados livremente
 
 **Deputados:**
 - Busca por nome: LIKE case-insensitive
@@ -347,14 +364,30 @@ Todos os endpoints SDUI retornam um `SDUIResponse`:
 
 ### 6.1 Buscar Proposições Filtradas
 ```javascript
-// Frontend - Buscar PLs em tramitação do último mês
-const params = new URLSearchParams({
-  tipo: 'PL',
-  status: 'tramitando',
+// Frontend - Buscar PLs ou PECs em tramitação ou aprovadas
+const filtros = {
+  tipo: ['PL', 'PEC'],           // Múltiplos tipos
+  status: ['tramitando', 'aprovado'], // Múltiplos status
   periodo: 'ultimo_mes',
   page: 0,
   size: 20
+};
+
+// Converter arrays para strings separadas por vírgula
+const params = new URLSearchParams();
+if (filtros.tipo && filtros.tipo.length > 0) {
+  params.set('tipo', filtros.tipo.join(','));
+}
+if (filtros.status && filtros.status.length > 0) {
+  params.set('status', filtros.status.join(','));
+}
+Object.keys(filtros).forEach(key => {
+  if (key !== 'tipo' && key !== 'status' && filtros[key] != null) {
+    params.set(key, filtros[key].toString());
+  }
 });
+
+// Resultado: tipo=PL,PEC&status=tramitando,aprovado&periodo=ultimo_mes&page=0&size=20
 
 fetch(`/api/v1/sdui/proposicoes?${params}`, {
   headers: {
@@ -373,19 +406,29 @@ fetch(`/api/v1/sdui/proposicoes?${params}`, {
 ```javascript
 // Frontend - Aplicar filtros do componente AdvancedFilter
 function applyFilters(filterValues) {
-  const params = {
-    tipo: filterValues.tipo,
-    status: filterValues.status,
-    periodo: filterValues.periodo,
-    politico: filterValues.politico,
-    dataInicio: filterValues.dataInicio,
-    dataFim: filterValues.dataFim,
-    page: 0,
-    size: 20
-  };
+  const params = new URLSearchParams();
+
+  // Adicionar múltiplos tipos se selecionados
+  if (filterValues.tipos && filterValues.tipos.length > 0) {
+    filterValues.tipos.forEach(tipo => params.append('tipo', tipo));
+  }
+
+  // Adicionar múltiplos status se selecionados
+  if (filterValues.statuses && filterValues.statuses.length > 0) {
+    filterValues.statuses.forEach(status => params.append('status', status));
+  }
+
+  // Outros filtros únicos
+  if (filterValues.periodo) params.set('periodo', filterValues.periodo);
+  if (filterValues.politico) params.set('politico', filterValues.politico);
+  if (filterValues.dataInicio) params.set('dataInicio', filterValues.dataInicio);
+  if (filterValues.dataFim) params.set('dataFim', filterValues.dataFim);
+
+  params.set('page', '0');
+  params.set('size', '20');
 
   // Navegar para tela filtrada
-  navigateToScreen('proposicoes', params);
+  navigateToScreen('proposicoes', params.toString());
 }
 ```
 

@@ -3,7 +3,6 @@ package br.com.deolhonacamara.api.config;
 import br.com.deolhonacamara.api.BusinessCode;
 import br.com.deolhonacamara.api.service.JwtService;
 import br.com.deolhonacamara.exception.BusinessException;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,9 +60,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (BusinessException e) {
             // já é BusinessException com código específico, só relança
             throw e;
-        }catch (ExpiredJwtException e){
-            log.debug("⏰ Token JWT expirado para usuário: {}", email);
-            throw new AuthenticationException("Token expirado") {};
         } catch (Exception e) {
             log.error("❌ Erro ao processar token JWT: {}", e.getMessage());
             throw new AuthenticationException("Token inválido") {};
@@ -71,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtService.validateTokenExpired(token, email)) {
+            if (jwtService.validateTokenWithoutExpiration(token, email)) {
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(email,
                         null, null);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -79,7 +75,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.debug("✅ Autenticação JWT bem-sucedida para usuário: {}", email);
             } else {
                 log.error("❌ Token JWT inválido para usuário: {}", email);
-                throw new BusinessException(BusinessCode.TOKEN_NOT_FOUND_OR_EXPIRED, "Token inválido ou expirado.");
+                throw new BusinessException(BusinessCode.TOKEN_NOT_FOUND_OR_EXPIRED, "Token inválido.");
             }
         } else if (email != null) {
             log.debug("ℹ️ Usuário já autenticado: {}", email);

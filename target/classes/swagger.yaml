@@ -36,6 +36,8 @@ tags:
     description: User device management for push notifications
   - name: Sync
     description: Data synchronization endpoints
+  - name: SDUI
+    description: Server-Driven UI components for mobile app
 
 paths:
   /api/v1/auth/register:
@@ -487,6 +489,246 @@ paths:
               schema:
                 $ref: '#/components/schemas/SyncResponse'
 
+  /api/v1/politicians/{id}/votes-with-proposition:
+    get:
+      tags: [ Votes ]
+      summary: Get politician votes with proposition information
+      operationId: getPoliticianVotesWithProposition
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Paginated list of politician votes with proposition details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticianVoteWithPropositionResponseDTO'
+
+  /api/v1/votings-with-votes:
+    get:
+      tags: [ Votes ]
+      summary: Get votings with related votes
+      operationId: getVotingsWithVotes
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Paginated list of votings with their related votes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VotingWithVotesResponseDTO'
+
+  /api/screens/home:
+    get:
+      tags: [ SDUI ]
+      summary: Get home screen SDUI components
+      operationId: getHomeScreen
+      description: Returns server-driven UI components for the home screen with latest propositions and weekly statistics
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+      responses:
+        '200':
+          description: SDUI components for home screen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SDUIResponse'
+
+  /api/screens/deputados:
+    get:
+      tags: [ SDUI ]
+      summary: Get deputados screen SDUI components
+      operationId: getDeputadosScreen
+      description: Returns server-driven UI components for the deputados (politicians) screen with search and filters
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search query for politician name
+        - name: uf
+          in: query
+          schema:
+            type: string
+          description: Filter by state (UF)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Page number for pagination
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Page size for pagination
+      responses:
+        '200':
+          description: SDUI components for deputados screen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SDUIResponse'
+
+  /api/screens/proposicoes:
+    get:
+      tags: [ SDUI ]
+      summary: Get proposições screen SDUI components
+      operationId: getProposicoesScreen
+      description: Returns server-driven UI components for the proposições (propositions) screen with filters and details
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+        - name: tipo
+          in: query
+          schema:
+            type: string
+          description: Filter by proposition type (PL, PEC, etc.)
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by proposition status
+        - name: politico
+          in: query
+          schema:
+            type: string
+          description: Filter by politician name
+        - name: dataInicio
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter by start date (YYYY-MM-DD)
+        - name: dataFim
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter by end date (YYYY-MM-DD)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Page number for pagination
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Page size for pagination
+      responses:
+        '200':
+          description: SDUI components for proposições screen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SDUIResponse'
+
+  /api/screens/votacoes:
+    get:
+      tags: [ SDUI ]
+      summary: Get votações screen SDUI components
+      operationId: getVotacoesScreen
+      description: Returns server-driven UI components for the votações (votes) screen with results and details
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+        - name: periodo
+          in: query
+          schema:
+            type: string
+            enum: [today, week, month, all]
+            default: week
+          description: Filter by time period
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Page number for pagination
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Page size for pagination
+      responses:
+        '200':
+          description: SDUI components for votações screen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SDUIResponse'
+
+  /api/screens/configuracoes:
+    get:
+      tags: [ SDUI ]
+      summary: Get configurações screen SDUI components
+      operationId: getConfiguracoesScreen
+      description: Returns server-driven UI components for the configurações (settings) screen
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: token de autenticação do usuário
+      responses:
+        '200':
+          description: SDUI components for configurações screen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SDUIResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -531,7 +773,11 @@ components:
           example: Bearer
         expireIn:
           type: integer
-          example: 900
+          example: 3600
+        expireAt:
+          type: string
+          format: date-time
+          example: "2025-12-28T16:43:57.000Z"
 
     PoliticianResponseDTO:
       type: object
@@ -856,3 +1102,292 @@ components:
         status:
           type: string
           example: ACCEPTED
+
+    PoliticianVoteWithPropositionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        politicianId:
+          type: integer
+        vote:
+          type: string
+        voteId:
+          type: string
+        voteDate:
+          type: string
+          format: date
+        votingDescription:
+          type: string
+        propositionSummary:
+          type: string
+        propositionYear:
+          type: integer
+        propositionDetailedSummary:
+          type: string
+
+    PoliticianVoteWithPropositionResponseDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoliticianVoteWithPropositionDTO'
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        sizePage:
+          type: integer
+
+    VotingWithVotesDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        organAcronym:
+          type: string
+        votes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoliticianVoteSummaryDTO'
+
+    PoliticianVoteSummaryDTO:
+      type: object
+      properties:
+        politicianId:
+          type: integer
+        politicianName:
+          type: string
+        voteType:
+          type: string
+
+    VotingWithVotesResponseDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VotingWithVotesDTO'
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        sizePage:
+          type: integer
+
+    SDUIResponse:
+      type: object
+      properties:
+        screen:
+          $ref: '#/components/schemas/SDUIScreen'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SDUIAction'
+        metadata:
+          $ref: '#/components/schemas/SDUIMetadata'
+      required:
+        - screen
+
+    SDUIScreen:
+      type: object
+      properties:
+        id:
+          type: string
+          example: home
+        title:
+          type: string
+          example: "De Olho na Câmara"
+        navigation:
+          $ref: '#/components/schemas/SDUINavigation'
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/SDUIComponent'
+      required:
+        - id
+        - components
+
+    SDUIComponent:
+      type: object
+      properties:
+        id:
+          type: string
+          example: header-container
+        type:
+          type: string
+          enum: [Container, TextBlock, Button, Card, Image, Spacer, Input, Avatar, AdvancedFilter]
+          example: Container
+        title:
+          type: string
+        subtitle:
+          type: string
+        text:
+          type: string
+        variant:
+          type: string
+          enum: [display, headline, title, body, caption]
+        color:
+          type: string
+        fontSize:
+          type: integer
+        fontWeight:
+          type: string
+        textAlign:
+          type: string
+          enum: [left, center, right]
+        direction:
+          type: string
+          enum: [row, column]
+        justifyContent:
+          type: string
+          enum: [flex-start, center, flex-end, space-between, space-around]
+        alignItems:
+          type: string
+          enum: [flex-start, center, flex-end, stretch]
+        spacing:
+          type: integer
+        padding:
+          type: string
+        margin:
+          type: string
+        backgroundColor:
+          type: string
+        borderRadius:
+          type: integer
+        elevation:
+          type: integer
+        size:
+          type: string
+          enum: [small, medium, large]
+        scrollable:
+          type: boolean
+        horizontal:
+          type: boolean
+        sticky:
+          type: boolean
+        onPress:
+          type: string
+        actionParams:
+          type: object
+          additionalProperties: true
+        source:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        resizeMode:
+          type: string
+          enum: [cover, contain, stretch, center]
+        placeholder:
+          type: string
+        inputType:
+          type: string
+          enum: [text, email, password, number]
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/SDUIComponent'
+        style:
+          type: object
+          additionalProperties: true
+        props:
+          type: object
+          additionalProperties: true
+
+    SDUIAction:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [navigate, api, custom]
+        payload:
+          type: object
+          additionalProperties: true
+
+    SDUINavigation:
+      type: object
+      properties:
+        header:
+          type: object
+          properties:
+            title:
+              type: string
+            showBack:
+              type: boolean
+              default: false
+            actions:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                    enum: [icon, button]
+                  icon:
+                    type: string
+                  action:
+                    type: string
+
+    SDUIMetadata:
+      type: object
+      properties:
+        version:
+          type: string
+          example: "1.0.0"
+        cache:
+          type: boolean
+          default: true
+        ttl:
+          type: integer
+          description: Time to live in seconds
+
+    ComponentDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          example: title-1
+        type:
+          type: string
+          example: TextBlock
+        text:
+          type: string
+          example: Deputados que você segue
+        variant:
+          type: string
+          example: title
+        size:
+          type: string
+          example: medium
+        properties:
+          type: object
+          additionalProperties: true
+
+    SduiResponseDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          example: home
+        title:
+          type: string
+          example: Início
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentDTO'

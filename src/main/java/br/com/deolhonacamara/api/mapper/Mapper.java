@@ -39,6 +39,9 @@ public interface Mapper {
 
     VoteDto toDto(br.com.deolhonacamara.api.model.VotingEntity e);
 
+    @Mappings({
+            @Mapping(source = "voteType", target = "voteOption")
+    })
     PoliticianVoteDto toDto(PoliticianVoteEntity e);
 
     @Mappings({

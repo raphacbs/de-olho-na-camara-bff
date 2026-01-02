@@ -45,7 +45,7 @@ public class JwtService {
                     .setSubject(user.getEmail())
                     .claim("userId", user.getId())
                     .setIssuedAt(new Date())
-                    .setExpiration(java.sql.Timestamp.valueOf(LocalDateTime.now().plusMinutes(5)))
+                    .setExpiration(java.sql.Timestamp.valueOf(LocalDateTime.now().plusHours(propertiesConfig.getJwtExpirationHours())))
                     .signWith(SignatureAlgorithm.HS512, propertiesConfig.getJwtSecret())
                     .compact();
             log.debug("✅ Token JWT gerado com sucesso para usuário: {}", user.getEmail());
@@ -123,6 +123,44 @@ public class JwtService {
             return true;
         } catch (Exception e) {
             log.error("❌ Token JWT inválido - {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Valida se um token JWT é válido (assinatura correta, sem validar expiração).
+     *
+     * @param token token JWT a ser validado
+     * @return true se o token for válido, false caso contrário
+     */
+    public boolean validateTokenWithoutExpiration(String token) {
+        log.debug("🔍 Validando formato e assinatura do token JWT (sem verificar expiração)");
+        try {
+            Jwts.parser().setSigningKey(propertiesConfig.getJwtSecret()).parseClaimsJws(token);
+            log.debug("✅ Token JWT possui formato e assinatura válidos");
+            return true;
+        } catch (Exception e) {
+            log.error("❌ Token JWT inválido - {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Valida se um token JWT é válido para um usuário específico (assinatura correta, sem validar expiração).
+     *
+     * @param token token JWT a ser validado
+     * @param email email do usuário para validação
+     * @return true se o token for válido, false caso contrário
+     */
+    public boolean validateTokenWithoutExpiration(String token, String email) {
+        log.debug("🔍 Validando token JWT para usuário (sem verificar expiração): {}", email);
+        try {
+            final String username = extractUsername(token);
+            boolean isValid = username.equals(email);
+            log.debug("✅ Validação do token JWT concluída - Usuário: {} - Válido: {}", email, isValid);
+            return isValid;
+        } catch (Exception e) {
+            log.error("❌ Erro ao validar token JWT para usuário: {} - {}", email, e.getMessage());
             return false;
         }
     }

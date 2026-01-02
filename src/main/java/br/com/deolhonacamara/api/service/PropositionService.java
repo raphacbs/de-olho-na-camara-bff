@@ -46,8 +46,8 @@ public class PropositionService {
         return repository.findLatestPropositionsScreen(limit);
     }
 
-    public List<PropositionScreen> getFilteredPropositionsScreen(String politico, String tipo, String status, LocalDate dataInicio, LocalDate dataFim, int limit) {
-        return repository.findFilteredPropositionsScreen(politico, tipo, status, dataInicio, dataFim, limit);
+    public List<PropositionScreen> getFilteredPropositionsScreen(String politico, List<String> tipos, List<String> statuses, LocalDate dataInicio, LocalDate dataFim, int limit) {
+        return repository.findFilteredPropositionsScreen(politico, tipos, statuses, dataInicio, dataFim, limit);
     }
 
 }

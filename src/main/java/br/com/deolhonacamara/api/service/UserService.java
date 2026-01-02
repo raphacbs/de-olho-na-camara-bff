@@ -2,6 +2,7 @@ package br.com.deolhonacamara.api.service;
 
 
 import br.com.deolhonacamara.api.BusinessCode;
+import br.com.deolhonacamara.api.config.PropertiesConfig;
 import br.com.deolhonacamara.api.model.UserEntity;
 import br.com.deolhonacamara.api.repository.UserRepository;
 import br.com.deolhonacamara.exception.BusinessException;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static br.com.deolhonacamara.api.BusinessCode.INACTIVE_USER;
@@ -26,6 +29,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtUtil;
     private final UserRepository userRepository;
+    private final PropertiesConfig propertiesConfig;
 
     public AuthResponseDTO doLogin(RequestLogin login) {
 
@@ -41,9 +45,13 @@ public class UserService {
 
         log.info("✅ Tokens gerado com sucesso para o usuário: {} - ID: {}", user.getEmail(), user.getId());
 
+        OffsetDateTime expireAt = OffsetDateTime.now(ZoneOffset.UTC)
+                .plusHours(propertiesConfig.getJwtExpirationHours());
+
         return new AuthResponseDTO()
                 .accessToken(accessToken)
-                .expireIn(LocalDateTime.now().plusMinutes(5).getSecond())
+                .expireIn(propertiesConfig.getJwtExpirationHours() * 3600)
+                .expireAt(expireAt)
                 .tokenType("JWT")
                 .refreshToken(refreshToken);
 
@@ -71,9 +79,13 @@ public class UserService {
 
         log.info("✅ Tokens gerado com sucesso para o usuário: {} - ID: {}", newUser.getEmail(), newUser.getId());
 
+        OffsetDateTime expireAt = OffsetDateTime.now(ZoneOffset.UTC)
+                .plusHours(propertiesConfig.getJwtExpirationHours());
+
         return new AuthResponseDTO()
                 .accessToken(accessToken)
-                .expireIn(LocalDateTime.now().plusMinutes(5).getSecond())
+                .expireIn(propertiesConfig.getJwtExpirationHours() * 3600)
+                .expireAt(expireAt)
                 .tokenType("JWT")
                 .refreshToken(refreshToken);
 

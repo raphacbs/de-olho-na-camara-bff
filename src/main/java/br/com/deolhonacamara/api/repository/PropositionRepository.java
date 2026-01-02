@@ -288,7 +288,7 @@ public class PropositionRepository {
         });
     }
 
-    public List<PropositionScreen> findFilteredPropositionsScreen(String politico, String tipo, String status, LocalDate dataInicio, LocalDate dataFim, int limit) {
+    public List<PropositionScreen> findFilteredPropositionsScreen(String politico, List<String> tipos, List<String> statuses, LocalDate dataInicio, LocalDate dataFim, int limit) {
         StringBuilder sql = new StringBuilder("""
             SELECT p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
                    p.presentation_date, p.status_date_time, p.status_last_reporter_uri, p.status_tramitation_description,
@@ -319,24 +319,40 @@ public class PropositionRepository {
             params.put("politico", "%" + politico.trim() + "%");
         }
 
-        // Filtro por tipo (validado com enum)
-        if (tipo != null && !tipo.trim().isEmpty()) {
-            String tipoTrimmed = tipo.trim().toUpperCase();
-            // Valida se o tipo é válido usando o enum PropositionType
-            if (PropositionType.isValidCode(tipoTrimmed)) {
-                sql.append(" AND UPPER(p.type) = :tipo");
-                params.put("tipo", tipoTrimmed);
+        // Filtro por tipos (múltiplos valores permitidos)
+        if (tipos != null && !tipos.isEmpty()) {
+            List<String> tiposValidos = tipos.stream()
+                    .filter(t -> t != null && !t.trim().isEmpty())
+                    .map(t -> t.trim().toUpperCase())
+                    .filter(PropositionType::isValidCode)
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (!tiposValidos.isEmpty()) {
+                sql.append(" AND UPPER(p.type) IN (:tipos)");
+                params.put("tipos", tiposValidos);
             } else {
-                // Se o tipo não for válido, não aplica filtro (evita queries vazias)
-                log.warn("Tipo de proposição inválido fornecido: {}", tipoTrimmed);
+                // Se nenhum tipo for válido, não aplica filtro
+                log.warn("Nenhum tipo de proposição válido fornecido: {}", tipos);
             }
         }
 
-        // Filtro por status
-        if (status != null && !status.trim().isEmpty()) {
-            String statusTrimmed = status.trim().toLowerCase();
-            sql.append(" AND LOWER(p.status_tramitation_description) LIKE LOWER(:status)");
-            params.put("status", "%" + statusTrimmed + "%");
+        // Filtro por statuses (múltiplos valores permitidos)
+        if (statuses != null && !statuses.isEmpty()) {
+            List<String> statusesValidos = statuses.stream()
+                    .filter(s -> s != null && !s.trim().isEmpty())
+                    .map(s -> "%" + s.trim().toLowerCase() + "%")
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (!statusesValidos.isEmpty()) {
+                // Para múltiplos statuses com LIKE, usamos OR
+                sql.append(" AND (");
+                for (int i = 0; i < statusesValidos.size(); i++) {
+                    if (i > 0) sql.append(" OR ");
+                    sql.append("LOWER(p.status_tramitation_description) LIKE :status").append(i);
+                    params.put("status" + i, statusesValidos.get(i));
+                }
+                sql.append(")");
+            }
         }
 
         // Filtro por data inicial

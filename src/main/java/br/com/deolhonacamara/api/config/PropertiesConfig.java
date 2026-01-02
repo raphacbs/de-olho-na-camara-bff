@@ -12,6 +12,8 @@ public class PropertiesConfig {
     private String jwtSecret;
     @Value("${jwt.expiration.ms}")
     private  Integer jwtExpirationMs;
+    @Value("${jwt.expiration.hours:1}")
+    private Integer jwtExpirationHours;
 
     @Value("${spring.datasource.url}")
     private String databaseUrl;

@@ -1,26 +1,36 @@
 package br.com.deolhonacamara.api.repository;
 
-import br.com.deolhonacamara.api.model.PageResponse;
-import br.com.deolhonacamara.api.model.PropositionEntity;
-import br.com.deolhonacamara.api.model.input.Input;
-import br.com.deolhonacamara.api.model.input.PropositionInput;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Repository;
-
+import br.com.deolhonacamara.api.model.PropositionType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import br.com.deolhonacamara.api.model.PageResponse;
+import br.com.deolhonacamara.api.model.PropositionEntity;
+import br.com.deolhonacamara.api.model.input.Input;
+import br.com.deolhonacamara.api.model.input.PropositionInput;
+import br.com.deolhonacamara.api.model.screen.PoliticianScreen;
+import br.com.deolhonacamara.api.model.screen.PropositionScreen;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
 @Repository
 @RequiredArgsConstructor
 public class PropositionRepository {
@@ -204,6 +214,222 @@ public class PropositionRepository {
 
         jdbcTemplate.update(sql, params);
     }
+
+    public List<PropositionEntity> findLatestPropositions(int limit) {
+        String sql = """
+            SELECT p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
+                   p.presentation_date, p.status_date_time, p.status_last_reporter_uri, p.status_tramitation_description,
+                   p.status_tramitation_type_code, p.status_situation_description, p.status_situation_code,
+                   p.status_dispatch, p.status_url, p.status_scope, p.status_appreciation,
+                   p.uri_orgao_numerador, p.uri_autores, p.type_description, p.keywords,
+                   p.uri_prop_principal, p.uri_prop_anterior, p.uri_prop_posterior,
+                   p.url_inteiro_teor, p.urn_final, p.text, p.justification,
+                   p.status, p.created_at, p.updated_at
+            FROM proposition p
+            ORDER BY p.presentation_date DESC, p.year DESC
+            LIMIT :limit
+        """;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("limit", limit);
+
+        return jdbcTemplate.query(sql, params, (rs, i) -> mapRow(rs));
+    }
+
+    public List<PropositionScreen> findLatestPropositionsScreen(int limit) {
+        // Fazer a query para pegar as proposições mais recentes agrupando todos os autores de cada proposição
+        // Usando CTEs para garantir ordenação consistente e agregação correta dos autores
+        String sql = """
+            WITH ordered_propositions AS (
+                SELECT DISTINCT p.id, p.presentation_date, p.year
+                FROM proposition p
+                ORDER BY p.presentation_date DESC NULLS LAST, p.year DESC, p.id DESC
+                LIMIT :limit
+            ),
+            proposition_authors AS (
+                SELECT
+                    pp.proposition_id,
+                    json_agg(json_build_object(
+                        'id', pol.id,
+                        'name', pol.name,
+                        'party', pol.party,
+                        'photo_url', pol.photo_url,
+                        'state', pol.state
+                    ) ORDER BY pol.name) as authors
+                FROM politician_proposition pp
+                INNER JOIN politicians pol ON pol.id = pp.politician_id
+                GROUP BY pp.proposition_id
+            )
+            SELECT p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
+                   p.presentation_date, p.status_date_time, p.status_last_reporter_uri, p.status_tramitation_description,
+                   p.status_tramitation_type_code, p.status_situation_description, p.status_situation_code,
+                   p.status_dispatch, p.status_url, p.status_scope, p.status_appreciation,
+                   p.uri_orgao_numerador, p.uri_autores, p.type_description, p.keywords,
+                   p.uri_prop_principal, p.uri_prop_anterior, p.uri_prop_posterior,
+                   p.url_inteiro_teor, p.urn_final, p.text, p.justification,
+                   p.status, p.created_at, p.updated_at,
+                   COALESCE(pa.authors, '[]'::json) as authors
+            FROM ordered_propositions op
+            INNER JOIN proposition p ON p.id = op.id
+            LEFT JOIN proposition_authors pa ON pa.proposition_id = p.id
+            ORDER BY p.presentation_date DESC NULLS LAST, p.year DESC, p.id DESC
+        """;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("limit", limit);
+
+        return jdbcTemplate.query(sql, params, (rs, i) -> {
+            try {
+                return mapRowScreen(rs);
+            } catch (Exception e) {
+                log.error("Error mapping row to PropositionScreen", e);
+                return null;
+            }
+        });
+    }
+
+    public List<PropositionScreen> findFilteredPropositionsScreen(String politico, String tipo, LocalDate dataInicio, LocalDate dataFim, int limit) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
+                   p.presentation_date, p.status_date_time, p.status_last_reporter_uri, p.status_tramitation_description,
+                   p.status_tramitation_type_code, p.status_situation_description, p.status_situation_code,
+                   p.status_dispatch, p.status_url, p.status_scope, p.status_appreciation,
+                   p.uri_orgao_numerador, p.uri_autores, p.type_description, p.keywords,
+                   p.uri_prop_principal, p.uri_prop_anterior, p.uri_prop_posterior,
+                   p.url_inteiro_teor, p.urn_final, p.text, p.justification,
+                   p.status, p.created_at, p.updated_at,
+                   json_agg(json_build_object(
+                       'id', pol.id,
+                       'name', pol.name,
+                       'party', pol.party,
+                       'photo_url', pol.photo_url,
+                       'state', pol.state
+                   )) as authors
+            FROM proposition p
+            INNER JOIN politician_proposition pp ON pp.proposition_id = p.id
+            INNER JOIN politicians pol ON pol.id = pp.politician_id
+            WHERE 1=1
+        """);
+
+        Map<String, Object> params = new HashMap<>();
+
+        // Filtro por político (nome)
+        if (politico != null && !politico.trim().isEmpty()) {
+            sql.append(" AND LOWER(pol.name) LIKE LOWER(:politico)");
+            params.put("politico", "%" + politico.trim() + "%");
+        }
+
+        // Filtro por tipo (validado com enum)
+        if (tipo != null && !tipo.trim().isEmpty()) {
+            String tipoTrimmed = tipo.trim().toUpperCase();
+            // Valida se o tipo é válido usando o enum PropositionType
+            if (PropositionType.isValidCode(tipoTrimmed)) {
+                sql.append(" AND UPPER(p.type) = :tipo");
+                params.put("tipo", tipoTrimmed);
+            } else {
+                // Se o tipo não for válido, não aplica filtro (evita queries vazias)
+                log.warn("Tipo de proposição inválido fornecido: {}", tipoTrimmed);
+            }
+        }
+
+        // Filtro por data inicial
+        if (dataInicio != null) {
+            sql.append(" AND p.presentation_date >= :dataInicio");
+            params.put("dataInicio", dataInicio);
+        }
+
+        // Filtro por data final
+        if (dataFim != null) {
+            sql.append(" AND p.presentation_date <= :dataFim");
+            params.put("dataFim", dataFim);
+        }
+
+        sql.append("""
+            GROUP BY p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
+                     p.presentation_date, p.status_date_time, p.status_last_reporter_uri, p.status_tramitation_description,
+                     p.status_tramitation_type_code, p.status_situation_description, p.status_situation_code,
+                     p.status_dispatch, p.status_url, p.status_scope, p.status_appreciation,
+                     p.uri_orgao_numerador, p.uri_autores, p.type_description, p.keywords,
+                     p.uri_prop_principal, p.uri_prop_anterior, p.uri_prop_posterior,
+                     p.url_inteiro_teor, p.urn_final, p.text, p.justification,
+                     p.status, p.created_at, p.updated_at
+            ORDER BY p.presentation_date DESC NULLS LAST, p.year DESC, p.id DESC
+            LIMIT :limit
+        """);
+
+        params.put("limit", limit);
+
+        String finalSql = sql.toString();
+        @SuppressWarnings("null")
+        List<PropositionScreen> result = jdbcTemplate.query(finalSql, params, (rs, i) -> {
+            try {
+                return mapRowScreen(rs);
+            } catch (Exception e) {
+                log.error("Error mapping row to PropositionScreen", e);
+                return null;
+            }
+        });
+        return result;
+    }
+
+
+    private PropositionScreen mapRowScreen(ResultSet rs) throws SQLException, JsonMappingException, JsonProcessingException {
+        // Processar o array JSON de autores
+        String authorsJson = rs.getString("authors");
+        List<PoliticianScreen> authors = new ArrayList<>();
+
+        if (authorsJson != null && !authorsJson.equals("null")) {
+            try {
+                // Deserializar o array JSON de autores
+                List<Map<String, Object>> authorsData = objectMapper.readValue(authorsJson,
+                    new TypeReference<List<Map<String, Object>>>(){});
+
+                for (Map<String, Object> authorData : authorsData) {
+                    PoliticianScreen politicianScreen = PoliticianScreen.builder()
+                            .id(((Number) authorData.get("id")).intValue())
+                            .name((String) authorData.get("name"))
+                            .party((String) authorData.get("party"))
+                            .photoUrl((String) authorData.get("photo_url"))
+                            .state((String) authorData.get("state"))
+                            .build();
+                    authors.add(politicianScreen);
+                }
+            } catch (Exception e) {
+                log.warn("Erro ao processar autores da proposição {}: {}", rs.getInt("id"), e.getMessage());
+                // Fallback: criar lista vazia
+                authors = new ArrayList<>();
+            }
+        }
+
+        PropositionScreen.PropositionScreenBuilder builder = PropositionScreen.builder()
+                .id(rs.getInt("id"))
+                .presentationDate(rs.getTimestamp("presentation_date") != null ? rs.getTimestamp("presentation_date").toLocalDateTime().toLocalDate() : null)
+                .authors(authors)
+                .type(rs.getString("type"))
+                .codeType(rs.getString("code_type"))
+                .number(rs.getInt("number"))
+                .year(rs.getInt("year"))
+                .summary(rs.getString("summary"))
+                .detailedSummary(rs.getString("detailed_summary"))
+                .statusTramitationDescription(rs.getString("status_tramitation_description"));
+
+        // Parse status JSON into fields if explicit columns were null
+        String statusJson = rs.getString("status");
+        if (statusJson != null && builder.build().getStatusTramitationDescription() == null) {
+            try {
+                Map<String, Object> m = objectMapper.readValue(statusJson, new TypeReference<>(){});
+                Object descricaoTramitacao = m.get("descricaoTramitacao");
+                if (descricaoTramitacao != null) {
+                    builder.statusTramitationDescription(descricaoTramitacao.toString());
+                }
+            } catch (Exception ex) {
+                // ignore parsing errors
+            }
+        }
+
+        return builder.build();
+    }
+    
 
     private PropositionEntity mapRow(ResultSet rs) throws SQLException {
         PropositionEntity.PropositionEntityBuilder builder = PropositionEntity.builder()

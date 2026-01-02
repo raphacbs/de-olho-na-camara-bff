@@ -472,6 +472,12 @@ O projeto segue os seguintes padrões:
 5. Crie o repository se necessário
 6. Atualize o mapper se necessário
 
+### Adicionando Novos Tipos de Componentes SDUI
+
+Para adicionar novos tipos de componentes Server-Driven UI, consulte o guia específico:
+
+- **[Guia de Componentes SDUI](SDUI_COMPONENT_GUIDE.md)**: Processo completo para adicionar novos tipos de componentes SDUI
+
 ### Executando Testes
 
 ```bash

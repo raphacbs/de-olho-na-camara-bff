@@ -22,15 +22,14 @@ public class ExpenseController implements ExpensesApi {
 
         var expenseInput = InputBuilder
                 .builder(ExpenseInput.class)
+                .page(page != null ? page : 0)
+                .sizePage(size != null ? size : 20)
                 .build();
 
         expenseInput.setPoliticianId(id);
-        expenseInput.setPage(page != null ? page : 0);
-        expenseInput.setSizePage(size != null ? size : 20);
         expenseInput.setYear(year);
         expenseInput.setMonth(month);
 
         return ResponseEntity.ok(expenseService.getByPoliticianId(expenseInput));
     }
 }
-

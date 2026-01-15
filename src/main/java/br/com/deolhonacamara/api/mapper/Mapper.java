@@ -1,15 +1,14 @@
 package br.com.deolhonacamara.api.mapper;
 
 
-import br.com.deolhonacamara.api.dto.PropositionBodyDto;
-import br.com.deolhonacamara.api.dto.SpeechBodyDto;
-import br.com.deolhonacamara.api.dto.VoteBodyDto;
-import br.com.deolhonacamara.api.dto.VotingBodyByIdDto;
+import br.com.deolhonacamara.api.dto.*;
 import br.com.deolhonacamara.api.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.coelho.deolhonacamara.api.model.*;
+import net.coelho.deolhonacamara.api.model.PartyDto;
+import net.coelho.deolhonacamara.api.model.PoliticianDto;
 import org.mapstruct.Named;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
@@ -26,6 +25,8 @@ public interface Mapper {
     Mapper INSTANCE = Mappers.getMapper(Mapper.class);
 
     PoliticianDto toDto(PoliticianEntity e);
+    
+    PartyDto toDto(PartyEntity e);
 
 
     @Mappings({

@@ -10,6 +10,11 @@ import net.coelho.deolhonacamara.api.model.PropositionResponseDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @Log4j2
@@ -35,5 +40,27 @@ public class PropositionController implements PropositionsApi {
 
         return ResponseEntity.ok(propositionService.getByPoliticianId(input));
     }
-}
 
+    @Override
+    public ResponseEntity<PropositionResponseDTO> listPropositions(Integer page,
+                                                                   Integer size,
+                                                                   String politicianId,
+                                                                   List<String> types,
+                                                                   List<String> statuses,
+                                                                   LocalDate startDate,
+                                                                   LocalDate endDate) {
+
+        Map<String, Object> filters = new HashMap<>();
+        filters.put("page", page != null ? page : 0);
+        filters.put("size", size != null ? size : 20);
+        filters.put("politicianId", politicianId);
+        filters.put("types", types);
+        filters.put("statuses", statuses);
+        filters.put("startDate", startDate);
+        filters.put("endDate", endDate);
+
+
+
+        return ResponseEntity.ok(propositionService.getFilteredPropositions(filters));
+    }
+}

@@ -1,10 +1,12 @@
 package br.com.deolhonacamara.api.service;
 
 
+import br.com.deolhonacamara.api.BusinessCode;
 import br.com.deolhonacamara.api.mapper.Mapper;
 import br.com.deolhonacamara.api.model.PageResponse;
 import br.com.deolhonacamara.api.model.PoliticianEntity;
 import br.com.deolhonacamara.api.repository.PoliticianRepository;
+import br.com.deolhonacamara.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import net.coelho.deolhonacamara.api.model.PoliticianDto;
 import net.coelho.deolhonacamara.api.model.PoliticianResponseDTO;
@@ -38,9 +40,15 @@ public class PoliticianService {
         return portabilidadeResponseDto;
     }
 
-    public PoliticianResponseDTO getFollowedByUser(UUID userId, int page, int size) {
+    public PoliticianDto getById(Integer id) {
+        return repository.findById(id)
+                .map(mapper::toDto)
+                .orElseThrow(() -> new BusinessException(BusinessCode.POLITICIAN_NOT_FOUND, "Politician not found"));
+    }
+
+    public PoliticianResponseDTO getFollowedByUser(UUID userId, int page, int size, Map<String, Object> filters) {
         var pageable = PageRequest.of(page, size);
-        PageResponse<PoliticianEntity> pageRes = repository.findFollowedByUser(userId, pageable);
+        PageResponse<PoliticianEntity> pageRes = repository.findFollowedByUser(userId, pageable, filters);
         List<PoliticianDto> list = pageRes.getContent().stream().map(mapper::toDto).collect(Collectors.toList());
 
         var portabilidadeResponseDto = new PoliticianResponseDTO();

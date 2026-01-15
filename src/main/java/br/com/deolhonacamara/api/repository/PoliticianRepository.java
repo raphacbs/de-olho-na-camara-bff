@@ -64,13 +64,13 @@ public class PoliticianRepository {
 
         if (filters.containsKey("party")) {
             where.append(where.isEmpty() ? " WHERE " : " AND ");
-            where.append(" party = :party ");
+            where.append(" party IN (:party) ");
             params.put("party", filters.get("party"));
         }
 
         if (filters.containsKey("state")) {
             where.append(where.isEmpty() ? " WHERE " : " AND ");
-            where.append(" state = :state ");
+            where.append(" state IN (:state) ");
             params.put("state", filters.get("state"));
         }
 
@@ -107,24 +107,62 @@ public class PoliticianRepository {
     }
 
 
-    public PageResponse<PoliticianEntity> findFollowedByUser(UUID userId, Pageable pageable) {
+    public PageResponse<PoliticianEntity> findFollowedByUser(UUID userId, Pageable pageable, Map<String, Object> filters) {
+        StringBuilder where = new StringBuilder(" WHERE ufp.user_id = :userId ");
+        Map<String, Object> params = new HashMap<>();
+        params.put("userId", userId);
+
+        // ---- Filtros dinâmicos ----
+        if (filters.containsKey("name")) {
+            where.append(" AND p.name ILIKE :name ");
+            params.put("name", "%" + filters.get("name") + "%");
+        }
+
+        if (filters.containsKey("party")) {
+            where.append(" AND p.party IN (:party) ");
+            params.put("party", filters.get("party"));
+        }
+
+        if (filters.containsKey("state")) {
+            where.append(" AND p.state IN (:state) ");
+            params.put("state", filters.get("state"));
+        }
+
         String sql = """
             SELECT p.id, p.name, p.party, p.party_uri, p.state, p.legislature_id, p.email, p.uri, p.photo_url,
              p.updated_at, p.created_at
             FROM politicians p
             INNER JOIN user_followed_politicians ufp ON ufp.politician_id = p.id
-            WHERE ufp.user_id = :userId
-            ORDER BY p.name ASC
-            LIMIT :limit OFFSET :offset
-        """;
-        String countSql = "SELECT COUNT(*) FROM user_followed_politicians WHERE user_id = :userId";
+        """ + where +
+                """
+                    ORDER BY p.name ASC
+                    LIMIT :limit OFFSET :offset
+                """;
 
-        var params = Map.of("userId", userId, "limit", pageable.getPageSize(), "offset", pageable.getOffset());
+        String countSql = """
+            SELECT COUNT(*)
+            FROM politicians p
+            INNER JOIN user_followed_politicians ufp ON ufp.politician_id = p.id
+        """ + where;
+
+        params.put("limit", pageable.getPageSize());
+        params.put("offset", pageable.getOffset());
 
         List<PoliticianEntity> content = jdbcTemplate.query(sql, params, (rs, i) -> mapRow(rs));
         int total = Objects.requireNonNull(jdbcTemplate.queryForObject(countSql, params, Integer.class));
 
         return new PageResponse<>(content, total, pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+    }
+
+    public Optional<PoliticianEntity> findById(Integer id) {
+        String sql = """
+            SELECT id, name, party, party_uri, state, legislature_id, email, uri, photo_url, created_at, updated_at
+            FROM politicians
+            WHERE id = :id
+        """;
+        var params = Map.of("id", id);
+        List<PoliticianEntity> result = jdbcTemplate.query(sql, params, (rs, i) -> mapRow(rs));
+        return result.stream().findFirst();
     }
 
     public void followPolitician(UUID userId, int politicianId) {

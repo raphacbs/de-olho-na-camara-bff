@@ -481,5 +481,5 @@ function loadNextPage(currentPage, filters) {
 
 ---
 
-**Última atualização:** Janeiro 2025
+**Última atualização:** Janeiro 2026
 **Versão da API:** 1.0.0

@@ -36,8 +36,8 @@ tags:
     description: User device management for push notifications
   - name: Sync
     description: Data synchronization endpoints
-  - name: SDUI
-    description: Server-Driven UI components for mobile app
+  - name: Parties
+    description: Political parties data
 
 paths:
   /api/v1/auth/register:
@@ -98,11 +98,17 @@ paths:
           description: Partial name search (optional)
         - in: query
           name: party
-          schema: { type: string }
+          schema:
+            type: array
+            items:
+              type: string
           description: Party acronym filter
         - in: query
           name: state
-          schema: { type: string }
+          schema:
+            type: array
+            items:
+              type: string
           description: State acronym filter
       responses:
         '200':
@@ -149,6 +155,24 @@ paths:
         - in: query
           name: size
           schema: { type: integer, default: 20 }
+        - in: query
+          name: name
+          schema: { type: string }
+          description: Partial name search (optional)
+        - in: query
+          name: party
+          schema:
+            type: array
+            items:
+              type: string
+          description: Party acronym filter
+        - in: query
+          name: state
+          schema:
+            type: array
+            items:
+              type: string
+          description: State acronym filter
       security:
         - bearerAuth: [ ]
       responses:
@@ -307,6 +331,52 @@ paths:
           schema: { type: integer }
           description: Filter by year
 
+      responses:
+        '200':
+          description: Paginated list of propositions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropositionResponseDTO'
+
+  /api/v1/propositions:
+    get:
+      tags: [ Propositions ]
+      summary: List all propositions with filters
+      operationId: listPropositions
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: politicianId
+          schema: { type: string }
+          description: Filter by politician id
+        - in: query
+          name: types
+          schema: 
+            type: array
+            items:
+              type: string
+          description: Filter by proposition types
+        - in: query
+          name: statuses
+          schema: 
+            type: array
+            items:
+              type: string
+          description: Filter by proposition statuses
+        - in: query
+          name: startDate
+          schema: { type: string, format: date }
+          description: Start date filter (YYYY-MM-DD)
+        - in: query
+          name: endDate
+          schema: { type: string, format: date }
+          description: End date filter (YYYY-MM-DD)
       responses:
         '200':
           description: Paginated list of propositions
@@ -526,6 +596,18 @@ paths:
         - in: query
           name: size
           schema: { type: integer, default: 20 }
+        - in: query
+          name: voting-id
+          schema: { type: string }
+          description: Filter by voting ID
+        - in: query
+          name: politician-id
+          schema: { type: integer }
+          description: Filter by politician ID
+        - in: query
+          name: only-votes
+          schema: { type: boolean, default: false }
+          description: Return only votings with votes
       responses:
         '200':
           description: Paginated list of votings with their related votes
@@ -534,200 +616,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/VotingWithVotesResponseDTO'
 
-  /api/v1/sdui/home:
+  /api/v1/parties:
     get:
-      tags: [ SDUI ]
-      summary: Get home screen SDUI components
-      operationId: getHomeScreen
-      description: Returns server-driven UI components for the home screen with latest propositions and weekly statistics
-      security:
-        - bearerAuth: [ ]
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          description: token de autenticação do usuário
+      tags: [ Parties ]
+      summary: List all political parties
+      operationId: listParties
       responses:
         '200':
-          description: SDUI components for home screen
+          description: List of political parties
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SDUIResponse'
-
-  /api/v1/sdui/politicians:
-    get:
-      tags: [ SDUI ]
-      summary: Get deputados screen SDUI components
-      operationId: getDeputadosScreen
-      description: Returns server-driven UI components for the deputados (politicians) screen with search and filters
-      security:
-        - bearerAuth: [ ]
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          description: token de autenticação do usuário
-        - name: search
-          in: query
-          schema:
-            type: string
-          description: Search query for politician name
-        - name: uf
-          in: query
-          schema:
-            type: string
-          description: Filter by state (UF)
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-          description: Page number for pagination
-        - name: size
-          in: query
-          schema:
-            type: integer
-            default: 20
-          description: Page size for pagination
-      responses:
-        '200':
-          description: SDUI components for deputados screen
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SDUIResponse'
-
-  /api/v1/sdui/propositions:
-    get:
-      tags: [ SDUI ]
-      summary: Get proposições screen SDUI components
-      operationId: getProposicoesScreen
-      description: Returns server-driven UI components for the proposições (propositions) screen with filters and details
-      security:
-        - bearerAuth: [ ]
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          description: token de autenticação do usuário
-        - name: tipo
-          in: query
-          schema:
-            type: string
-          description: Filter by proposition type (PL, PEC, etc.)
-        - name: status
-          in: query
-          schema:
-            type: string
-          description: Filter by proposition status
-        - name: politico
-          in: query
-          schema:
-            type: string
-          description: Filter by politician name
-        - name: dataInicio
-          in: query
-          schema:
-            type: string
-            format: date
-          description: Filter by start date (YYYY-MM-DD)
-        - name: dataFim
-          in: query
-          schema:
-            type: string
-            format: date
-          description: Filter by end date (YYYY-MM-DD)
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-          description: Page number for pagination
-        - name: size
-          in: query
-          schema:
-            type: integer
-            default: 20
-          description: Page size for pagination
-      responses:
-        '200':
-          description: SDUI components for proposições screen
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SDUIResponse'
-
-  /api/v1/sdui/votings:
-    get:
-      tags: [ SDUI ]
-      summary: Get votações screen SDUI components
-      operationId: getVotacoesScreen
-      description: Returns server-driven UI components for the votações (votes) screen with results and details
-      security:
-        - bearerAuth: [ ]
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          description: token de autenticação do usuário
-        - name: periodo
-          in: query
-          schema:
-            type: string
-            enum: [today, week, month, all]
-            default: week
-          description: Filter by time period
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-          description: Page number for pagination
-        - name: size
-          in: query
-          schema:
-            type: integer
-            default: 20
-          description: Page size for pagination
-      responses:
-        '200':
-          description: SDUI components for votações screen
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SDUIResponse'
-
-  /api/v1/sdui/settings:
-    get:
-      tags: [ SDUI ]
-      summary: Get configurações screen SDUI components
-      operationId: getConfiguracoesScreen
-      description: Returns server-driven UI components for the configurações (settings) screen
-      security:
-        - bearerAuth: [ ]
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          description: token de autenticação do usuário
-      responses:
-        '200':
-          description: SDUI components for configurações screen
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SDUIResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartyDto'
 
 components:
   securitySchemes:
@@ -822,6 +724,22 @@ components:
         uri:
           type: string
           example: https://dadosabertos.camara.leg.br/api/v2/deputados/204379
+        photoUrl:
+          type: string
+          example: https://www.camara.leg.br/internet/deputado/bandep/204379.jpg
+
+    PoliticianSummaryDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 204379
+        name:
+          type: string
+          example: Acácio Favacho
+        party:
+          type: string
+          example: MDB
         photoUrl:
           type: string
           example: https://www.camara.leg.br/internet/deputado/bandep/204379.jpg
@@ -968,8 +886,6 @@ components:
     PropositionDto:
       type: object
       properties:
-        politicianId:
-          type: integer
         id:
           type: integer
         uri:
@@ -1037,6 +953,10 @@ components:
           type: string
         status:
           type: object
+        politicians:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoliticianDto'
 
     PropositionResponseDTO:
       type: object
@@ -1186,208 +1106,18 @@ components:
         sizePage:
           type: integer
 
-    SDUIResponse:
-      type: object
-      properties:
-        screen:
-          $ref: '#/components/schemas/SDUIScreen'
-        actions:
-          type: array
-          items:
-            $ref: '#/components/schemas/SDUIAction'
-        metadata:
-          $ref: '#/components/schemas/SDUIMetadata'
-      required:
-        - screen
-
-    SDUIScreen:
+    PartyDto:
       type: object
       properties:
         id:
-          type: string
-          example: home
-        title:
-          type: string
-          example: "De Olho na Câmara"
-        navigation:
-          $ref: '#/components/schemas/SDUINavigation'
-        components:
-          type: array
-          items:
-            $ref: '#/components/schemas/SDUIComponent'
-      required:
-        - id
-        - components
-
-    SDUIComponent:
-      type: object
-      properties:
-        id:
-          type: string
-          example: header-container
-        type:
-          type: string
-          enum: [Container, TextBlock, Button, Card, Image, Spacer, Input, Avatar, AdvancedFilter]
-          example: Container
-        title:
-          type: string
-        subtitle:
-          type: string
-        text:
-          type: string
-        variant:
-          type: string
-          enum: [display, headline, title, body, caption]
-        color:
-          type: string
-        fontSize:
           type: integer
-        fontWeight:
+          example: 36899
+        acronym:
           type: string
-        textAlign:
+          example: MDB
+        name:
           type: string
-          enum: [left, center, right]
-        direction:
-          type: string
-          enum: [row, column]
-        justifyContent:
-          type: string
-          enum: [flex-start, center, flex-end, space-between, space-around]
-        alignItems:
-          type: string
-          enum: [flex-start, center, flex-end, stretch]
-        spacing:
+          example: Movimento Democrático Brasileiro
+        electoralNumber:
           type: integer
-        padding:
-          type: string
-        margin:
-          type: string
-        backgroundColor:
-          type: string
-        borderRadius:
-          type: integer
-        elevation:
-          type: integer
-        size:
-          type: string
-          enum: [small, medium, large]
-        scrollable:
-          type: boolean
-        horizontal:
-          type: boolean
-        sticky:
-          type: boolean
-        onPress:
-          type: string
-        actionParams:
-          type: object
-          additionalProperties: true
-        source:
-          type: string
-        width:
-          type: integer
-        height:
-          type: integer
-        resizeMode:
-          type: string
-          enum: [cover, contain, stretch, center]
-        placeholder:
-          type: string
-        inputType:
-          type: string
-          enum: [text, email, password, number]
-        children:
-          type: array
-          items:
-            $ref: '#/components/schemas/SDUIComponent'
-        style:
-          type: object
-          additionalProperties: true
-        props:
-          type: object
-          additionalProperties: true
-
-    SDUIAction:
-      type: object
-      properties:
-        type:
-          type: string
-          enum: [navigate, api, custom]
-        payload:
-          type: object
-          additionalProperties: true
-
-    SDUINavigation:
-      type: object
-      properties:
-        header:
-          type: object
-          properties:
-            title:
-              type: string
-            showBack:
-              type: boolean
-              default: false
-            actions:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  type:
-                    type: string
-                    enum: [icon, button]
-                  icon:
-                    type: string
-                  action:
-                    type: string
-
-    SDUIMetadata:
-      type: object
-      properties:
-        version:
-          type: string
-          example: "1.0.0"
-        cache:
-          type: boolean
-          default: true
-        ttl:
-          type: integer
-          description: Time to live in seconds
-
-    ComponentDTO:
-      type: object
-      properties:
-        id:
-          type: string
-          example: title-1
-        type:
-          type: string
-          example: TextBlock
-        text:
-          type: string
-          example: Deputados que você segue
-        variant:
-          type: string
-          example: title
-        size:
-          type: string
-          example: medium
-        properties:
-          type: object
-          additionalProperties: true
-
-    SduiResponseDTO:
-      type: object
-      properties:
-        id:
-          type: string
-          example: home
-        title:
-          type: string
-          example: Início
-        components:
-          type: array
-          items:
-            $ref: '#/components/schemas/ComponentDTO'
+          example: 15

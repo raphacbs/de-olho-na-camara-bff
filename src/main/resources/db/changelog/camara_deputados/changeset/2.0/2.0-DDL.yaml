@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2.0-ADD_TABLE_PARTY
+      author: system
+      changes:
+        - sqlFile:
+            encoding: utf8
+            path: ddl/2.0-ADD_TABLE_PARTY.sql
+            relativeToChangelogFile: true
+        - sqlFile:
+            encoding: utf8
+            path: dml/2.0-INSERTS_PARTIES.SQL
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            path: ddl/2.0-ROLLBACK_ADD_TABLE_PARTY.sql
+            relativeToChangelogFile: true
+            dbms: postgresql
+            splitStatements: true # Mantenha o schema aqui para o rollback também

@@ -47,4 +47,7 @@ public class BusinessCode {
    public final static String USER_NOT_OWNER_CREDIT_CARD = "CREDIT-CARD-002";
    /** Código para orçamento mensal não encontrado */
    public final static String MONTHLY_BUDGET_NOT_FOUND = "BUDGET-001";
+
+   /** Código para político não encontrado */
+   public final static String POLITICIAN_NOT_FOUND = "POLITICIAN-001";
 }

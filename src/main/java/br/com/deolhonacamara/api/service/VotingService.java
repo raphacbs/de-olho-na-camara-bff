@@ -45,8 +45,7 @@ public class VotingService {
         return politicianVoteRepository.findVotesWithPropositionByPoliticianId(politicianId, PageRequest.of(page, size));
     }
 
-    public VotingWithVotesResponseDTO getVotingsWithVotes(int page, int size) {
-        return votingRepository.findVotingsWithVotes(PageRequest.of(page, size));
+    public VotingWithVotesResponseDTO getVotingsWithVotes(int page, int size, String votingId, Integer politicianId, boolean onlyVotes) {
+        return votingRepository.findVotingsWithVotes(PageRequest.of(page, size), votingId, politicianId, onlyVotes);
     }
 }
-

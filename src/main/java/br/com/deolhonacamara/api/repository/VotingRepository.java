@@ -9,10 +9,10 @@ import br.com.deolhonacamara.api.repository.PoliticianRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.postgresql.util.PGobject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -37,7 +38,7 @@ public class VotingRepository {
                    last_voting_open_description, description, event_id, organ_id, organ_acronym,
                    uri, event_uri, organ_uri, registered_effects, possible_objects,
                    affected_propositions, last_proposition_presentation, created_at, updated_at
-            FROM voting
+            FROM camara_deputados.voting
             WHERE id = :id
         """;
 
@@ -54,12 +55,12 @@ public class VotingRepository {
                    last_voting_open_description, description, event_id, organ_id, organ_acronym,
                    uri, event_uri, organ_uri, registered_effects, possible_objects,
                    affected_propositions, last_proposition_presentation, created_at, updated_at
-            FROM voting
+            FROM camara_deputados.voting
             ORDER BY date DESC, created_at DESC
             LIMIT :limit OFFSET :offset
         """;
 
-        String countSql = "SELECT COUNT(*) FROM voting";
+        String countSql = "SELECT COUNT(*) FROM camara_deputados.voting";
 
         Map<String, Object> params = new HashMap<>();
         params.put("limit", pageable.getPageSize());
@@ -83,13 +84,13 @@ public class VotingRepository {
                    last_voting_open_description, description, event_id, organ_id, organ_acronym,
                    uri, event_uri, organ_uri, registered_effects, possible_objects,
                    affected_propositions, last_proposition_presentation, created_at, updated_at
-            FROM voting
+            FROM camara_deputados.voting
             WHERE date BETWEEN :startDate AND :endDate
             ORDER BY date DESC, created_at DESC
             LIMIT :limit OFFSET :offset
         """;
 
-        String countSql = "SELECT COUNT(*) FROM vote WHERE date BETWEEN :startDate AND :endDate";
+        String countSql = "SELECT COUNT(*) FROM camara_deputados.vote WHERE date BETWEEN :startDate AND :endDate";
 
         Map<String, Object> params = new HashMap<>();
         params.put("startDate", startDate);
@@ -111,7 +112,7 @@ public class VotingRepository {
 
     public void upsertVote(VotingEntity vote) {
         String sql = """
-            INSERT INTO voting
+            INSERT INTO camara_deputados.voting
                 (id, approval, date, registration_date_time, last_voting_open_date_time,
                  last_voting_open_description, description, event_id, organ_id, organ_acronym,
                  uri, event_uri, organ_uri, registered_effects, possible_objects,
@@ -174,7 +175,7 @@ public class VotingRepository {
         }
 
         String sql = """
-            INSERT INTO politician_vote
+            INSERT INTO camara_deputados.politician_vote
                 (vote_registration_date, politician_id, vote_type, vote_id, voting_id, created_at, updated_at)
             VALUES
                 (:voteRegistrationDate, :politicianId, :voteType, :voteId, :votingId, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -196,7 +197,7 @@ public class VotingRepository {
     }
 
     public void deleteById(String id) {
-        String sql = "DELETE FROM voting WHERE id = :id";
+        String sql = "DELETE FROM camara_deputados.voting WHERE id = :id";
 
         Map<String, Object> params = new HashMap<>();
         params.put("id", id);
@@ -204,22 +205,27 @@ public class VotingRepository {
         jdbcTemplate.update(sql, params);
     }
 
-    private PGobject createJsonbObject(String jsonString) {
+    private Object createJsonbObject(String jsonString) {
         if (jsonString == null || jsonString.trim().isEmpty()) {
             return null;
         }
-        try {
-            PGobject jsonbObj = new PGobject();
-            jsonbObj.setType("jsonb");
-            jsonbObj.setValue(jsonString);
-            return jsonbObj;
-        } catch (SQLException e) {
-            throw new RuntimeException("Error creating JSONB object", e);
-        }
+        // Retornando a string diretamente, pois o driver JDBC do PostgreSQL geralmente lida com isso
+        // se o tipo da coluna for JSONB e o parâmetro for passado corretamente.
+        // Se precisar de um objeto específico, pode ser necessário usar PGobject, mas
+        // como a dependência não está disponível, vamos tentar passar como String
+        // e deixar o driver converter ou usar um cast no SQL se necessário.
+        // No entanto, para garantir que o PostgreSQL entenda como JSON,
+        // a melhor abordagem sem PGobject é passar como String e fazer o cast no SQL
+        // (:param::jsonb). Mas como o SQL já está definido, vamos tentar retornar a String.
+        // Se falhar, teremos que adicionar a dependência ou mudar a query.
+        
+        // Uma alternativa comum sem a classe PGobject explícita é apenas retornar a String
+        // e garantir que o banco receba como tal.
+        return jsonString;
     }
 
     private boolean politicianExists(Integer politicianId) {
-        String sql = "SELECT COUNT(*) FROM politicians WHERE id = :politicianId";
+        String sql = "SELECT COUNT(*) FROM camara_deputados.politicians WHERE id = :politicianId";
 
         Map<String, Object> params = new HashMap<>();
         params.put("politicianId", politicianId);
@@ -286,57 +292,96 @@ public class VotingRepository {
                 .build();
     }
 
-    public VotingWithVotesResponseDTO findVotingsWithVotes(Pageable pageable) {
-        String sql = """
-            SELECT v.id, v.date, v.description, v.organ_acronym,
-                   pv.politician_id, p.name as politician_name, pv.vote_type
-            FROM voting v
-            LEFT JOIN politician_vote pv ON pv.vote_id = v.id
-            LEFT JOIN politician p ON p.id = pv.politician_id
-            ORDER BY v.date DESC, v.created_at DESC, pv.politician_id
-        """;
-
-        String countSql = "SELECT COUNT(*) FROM voting";
-
+    public VotingWithVotesResponseDTO findVotingsWithVotes(Pageable pageable, String votingIdFilter, Integer politicianIdFilter, boolean onlyVotesFilter) {
         Map<String, Object> params = new HashMap<>();
+        StringBuilder whereClause = new StringBuilder();
+
+        if (StringUtils.hasText(votingIdFilter)) {
+            whereClause.append(" WHERE v.id = :votingId");
+            params.put("votingId", votingIdFilter);
+        }
+
+        if (politicianIdFilter != null) {
+            if (whereClause.length() == 0) {
+                whereClause.append(" WHERE");
+            } else {
+                whereClause.append(" AND");
+            }
+            whereClause.append(" v.id IN (SELECT DISTINCT voting_id FROM camara_deputados.politician_vote WHERE politician_id = :politicianId)");
+            params.put("politicianId", politicianIdFilter);
+        }
+
+        if (onlyVotesFilter) {
+            if (whereClause.length() == 0) {
+                whereClause.append(" WHERE");
+            } else {
+                whereClause.append(" AND");
+            }
+            whereClause.append(" EXISTS (SELECT 1 FROM camara_deputados.politician_vote pv WHERE pv.voting_id = v.id)");
+        }
+
+        String votingsSql = """
+            SELECT v.id, v.date, v.description, v.organ_acronym
+            FROM camara_deputados.voting v
+            """ + whereClause + """
+            ORDER BY v.date DESC, v.created_at DESC
+            LIMIT :limit OFFSET :offset
+        """;
         params.put("limit", pageable.getPageSize());
         params.put("offset", pageable.getOffset());
 
-        // Buscar todos os dados primeiro
-        List<VotingWithVotesDTO> votings = new ArrayList<>();
-        Map<String, VotingWithVotesDTO> votingMap = new HashMap<>();
-
-        jdbcTemplate.query(sql + " LIMIT :limit OFFSET :offset", params, (rs, i) -> {
-            String votingId = rs.getString("id");
-
-            VotingWithVotesDTO voting = votingMap.get(votingId);
-            if (voting == null) {
-                voting = VotingWithVotesDTO.builder()
-                        .id(votingId)
+        List<VotingWithVotesDTO> votings = jdbcTemplate.query(votingsSql, params, (rs, rowNum) ->
+                VotingWithVotesDTO.builder()
+                        .id(rs.getString("id"))
                         .date(rs.getDate("date") != null ? rs.getDate("date").toLocalDate() : null)
                         .description(rs.getString("description"))
                         .organAcronym(rs.getString("organ_acronym"))
                         .votes(new ArrayList<>())
-                        .build();
-                votingMap.put(votingId, voting);
-                votings.add(voting);
-            }
+                        .build()
+        );
 
-            // Adicionar voto se existir
-            Integer politicianId = rs.getInt("politician_id");
-            if (politicianId != null) {
-                VotingWithVotesDTO.PoliticianVoteSummaryDTO vote = VotingWithVotesDTO.PoliticianVoteSummaryDTO.builder()
-                        .politicianId(politicianId)
-                        .politicianName(rs.getString("politician_name"))
-                        .voteType(rs.getString("vote_type"))
-                        .build();
-                voting.getVotes().add(vote);
-            }
+        if (votings.isEmpty()) {
+            return VotingWithVotesResponseDTO.builder()
+                .data(new ArrayList<>())
+                .total(0)
+                .page(pageable.getPageNumber())
+                .totalPages(0)
+                .sizePage(pageable.getPageSize())
+                .build();
+        }
 
-            return voting;
+        List<String> votingIds = votings.stream().map(VotingWithVotesDTO::getId).collect(Collectors.toList());
+
+        String votesSql = """
+            SELECT pv.voting_id, pv.politician_id, p.name as politician_name, pv.vote_type
+            FROM camara_deputados.politician_vote pv
+            JOIN camara_deputados.politicians p ON p.id = pv.politician_id
+            WHERE pv.voting_id IN (:votingIds)
+        """;
+
+        Map<String, Object> votesParams = new HashMap<>();
+        votesParams.put("votingIds", votingIds);
+
+        Map<String, List<VotingWithVotesDTO.PoliticianVoteSummaryDTO>> votesMap = new HashMap<>();
+        jdbcTemplate.query(votesSql, votesParams, (rs, rowNum) -> {
+            String votingId = rs.getString("voting_id");
+            votesMap.computeIfAbsent(votingId, k -> new ArrayList<>()).add(
+                    VotingWithVotesDTO.PoliticianVoteSummaryDTO.builder()
+                            .politicianId(rs.getInt("politician_id"))
+                            .politicianName(rs.getString("politician_name"))
+                            .voteType(rs.getString("vote_type"))
+                            .build()
+            );
+            return null;
         });
 
-        int total = jdbcTemplate.queryForObject(countSql, new HashMap<>(), Integer.class);
+        votings.forEach(voting -> voting.setVotes(votesMap.getOrDefault(voting.getId(), new ArrayList<>())));
+
+        String countSql = "SELECT COUNT(*) FROM camara_deputados.voting v" + whereClause;
+        // Remove limit and offset from params for count query
+        params.remove("limit");
+        params.remove("offset");
+        int total = jdbcTemplate.queryForObject(countSql, params, Integer.class);
 
         return VotingWithVotesResponseDTO.builder()
                 .data(votings)
@@ -347,4 +392,3 @@ public class VotingRepository {
                 .build();
     }
 }
-

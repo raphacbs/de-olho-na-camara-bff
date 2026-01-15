@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,7 +22,7 @@ public class PoliticiansController implements PoliticiansApi {
 
     @Override
     public ResponseEntity<PoliticianResponseDTO> listPoliticians(Integer page, Integer size, String name,
-                                                                 String party, String state) {
+                                                                 List<String> party, List<String> state) {
 
         Map<String, Object> filters = new HashMap<>();
         if (name != null) filters.put("name", name);
@@ -33,6 +34,6 @@ public class PoliticiansController implements PoliticiansApi {
 
     @Override
     public ResponseEntity<PoliticianDto> politiciansIdGet(Integer id) {
-        return PoliticiansApi.super.politiciansIdGet(id);
+        return ResponseEntity.ok(politicianService.getById(id));
     }
 }

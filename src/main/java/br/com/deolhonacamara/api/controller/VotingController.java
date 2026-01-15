@@ -23,10 +23,10 @@ public class VotingController {
     @GetMapping("/politicians/{id}/votes-with-proposition")
     public ResponseEntity<PoliticianVoteWithPropositionResponseDTO> getPoliticianVotesWithProposition(
             @PathVariable Integer id,
-            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer size) {
 
-        int pageNum = page != null ? page : 0;
+        int pageNum = (page != null && page > 0) ? page - 1 : 0;
         int pageSize = size != null ? size : 20;
 
         PoliticianVoteWithPropositionResponseDTO response = votingService.getPoliticianVotesWithProposition(id, pageNum, pageSize);
@@ -35,13 +35,16 @@ public class VotingController {
 
     @GetMapping("/votings-with-votes")
     public ResponseEntity<VotingWithVotesResponseDTO> getVotingsWithVotes(
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "20") Integer size) {
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(name = "voting-id", required = false) String votingId,
+            @RequestParam(name = "politician-id", required = false) Integer politicianId,
+            @RequestParam(name = "only-votes", defaultValue = "false") boolean onlyVotes) {
 
-        int pageNum = page != null ? page : 0;
+        int pageNum = (page != null && page > 0) ? page - 1 : 0;
         int pageSize = size != null ? size : 20;
 
-        VotingWithVotesResponseDTO response = votingService.getVotingsWithVotes(pageNum, pageSize);
+        VotingWithVotesResponseDTO response = votingService.getVotingsWithVotes(pageNum, pageSize, votingId, politicianId, onlyVotes);
         return ResponseEntity.ok(response);
     }
 }

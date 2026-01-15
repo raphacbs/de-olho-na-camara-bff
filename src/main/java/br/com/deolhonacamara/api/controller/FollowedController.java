@@ -9,6 +9,10 @@ import net.coelho.deolhonacamara.api.model.PoliticianResponseDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @Log4j2
@@ -32,9 +36,21 @@ public class FollowedController implements FollowedApi {
     }
 
     @Override
-    public ResponseEntity<PoliticianResponseDTO> listFollowed(String token, Integer page, Integer size) {
+    public ResponseEntity<PoliticianResponseDTO> listFollowed(String token, Integer page, Integer size, String name, List<String> party, List<String> state) {
         var userId = jwtService.extractUserId(token);
-        var response = politicianService.getFollowedByUser(userId, page, size);
+
+        Map<String, Object> filters = new HashMap<>();
+        if (name != null) {
+            filters.put("name", name);
+        }
+        if (party != null && !party.isEmpty()) {
+            filters.put("party", party);
+        }
+        if (state != null && !state.isEmpty()) {
+            filters.put("state", state);
+        }
+
+        var response = politicianService.getFollowedByUser(userId, page, size, filters);
         return ResponseEntity.ok(response);
     }
 }

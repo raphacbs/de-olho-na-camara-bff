@@ -21,6 +21,9 @@ public class PoliticianEntity {
     private String email;
     private String uri;
     private String photoUrl;
+    private Integer propositionsTotal;
+    private Integer expenseTotal;
+    private Boolean isFollowed;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

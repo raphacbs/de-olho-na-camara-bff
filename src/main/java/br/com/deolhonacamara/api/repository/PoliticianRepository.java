@@ -182,6 +182,83 @@ public class PoliticianRepository {
         jdbcTemplate.update(sql, Map.of("userId", userId, "politicianId", politicianId));
     }
 
+    public Boolean isFollowedByUser(UUID userId, Integer politicianId) {
+        String sql = """
+            SELECT COUNT(*) > 0 FROM user_followed_politicians
+            WHERE user_id = :userId AND politician_id = :politicianId
+        """;
+        Boolean result = jdbcTemplate.queryForObject(sql,
+            Map.of("userId", userId, "politicianId", politicianId),
+            Boolean.class);
+        return result != null && result;
+    }
+
+    public PageResponse<PoliticianEntity> findAllWithFollowedFilter(UUID userId, Pageable pageable, Map<String, Object> filters) {
+        StringBuilder where = new StringBuilder();
+        Map<String, Object> params = new HashMap<>();
+
+        Boolean isFollowedFilter = (Boolean) filters.get("isFollowed");
+
+        if (isFollowedFilter != null) {
+            if (userId != null) {
+                if (isFollowedFilter) {
+                    where.append(where.isEmpty() ? " WHERE " : " AND ");
+                    where.append(" p.id IN (SELECT politician_id FROM user_followed_politicians WHERE user_id = :userId) ");
+                    params.put("userId", userId);
+                } else {
+                    where.append(where.isEmpty() ? " WHERE " : " AND ");
+                    where.append(" p.id NOT IN (SELECT politician_id FROM user_followed_politicians WHERE user_id = :userId) ");
+                    params.put("userId", userId);
+                }
+            } else if (isFollowedFilter) {
+                // Se não há usuário autenticado e quer filtrar por isFollowed=true, retorna vazio
+                return new PageResponse<>(new ArrayList<>(), 0, pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+            }
+        }
+
+        // ---- Filtros dinâmicos padrão ----
+        if (filters.containsKey("name")) {
+            where.append(where.isEmpty() ? " WHERE " : " AND ");
+            where.append(" p.name ILIKE :name ");
+            params.put("name", "%" + filters.get("name") + "%");
+        }
+
+        if (filters.containsKey("party")) {
+            where.append(where.isEmpty() ? " WHERE " : " AND ");
+            where.append(" p.party IN (:party) ");
+            params.put("party", filters.get("party"));
+        }
+
+        if (filters.containsKey("state")) {
+            where.append(where.isEmpty() ? " WHERE " : " AND ");
+            where.append(" p.state IN (:state) ");
+            params.put("state", filters.get("state"));
+        }
+
+        // ---- SQL de conteúdo ----
+        String sql = """
+        SELECT id, name, party, party_uri, state, legislature_id, email, uri, photo_url, created_at, updated_at
+        FROM politicians p
+    """ + where +
+                """
+                    ORDER BY name ASC
+                    LIMIT :limit OFFSET :offset
+                """;
+
+        // ---- SQL para contagem ----
+        String countSql = "SELECT COUNT(*) FROM politicians p " + where;
+
+        // ---- Paginação ----
+        params.put("limit", pageable.getPageSize());
+        params.put("offset", pageable.getOffset());
+
+        // ---- Execução ----
+        List<PoliticianEntity> content = jdbcTemplate.query(sql, params, (rs, i) -> mapRow(rs));
+        int total = jdbcTemplate.queryForObject(countSql, params, Integer.class);
+
+        return new PageResponse<>(content, total, pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+    }
+
     private PoliticianEntity mapRow(ResultSet rs) throws SQLException {
         return PoliticianEntity.builder()
                 .id(rs.getInt("id"))

@@ -826,4 +826,18 @@ public class PropositionRepository {
 
         return builder.build();
     }
+
+    public Integer countByPoliticianIdAndYear(Integer politicianId, Integer year) {
+        String sql = """
+            SELECT COUNT(*) FROM politician_proposition pp
+            INNER JOIN proposition p ON p.id = pp.proposition_id
+            WHERE pp.politician_id = :politicianId
+            AND p.year = :year
+        """;
+        Integer result = jdbcTemplate.queryForObject(sql,
+            java.util.Map.of("politicianId", politicianId, "year", year),
+            Integer.class);
+        log.debug("PropositionRepository.countByPoliticianIdAndYear - politicianId: {}, year: {}, result: {}", politicianId, year, result);
+        return result != null ? result : 0;
+    }
 }

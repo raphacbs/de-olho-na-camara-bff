@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-02T16:04:43.208263200-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-25T15:13:37.457952600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 @Validated
 @Tag(name = "Politicians", description = "Local synchronized politicians data")
 public interface PoliticiansApi {
@@ -51,6 +51,8 @@ public interface PoliticiansApi {
      * @param name Partial name search (optional) (optional)
      * @param party Party acronym filter (optional)
      * @param state State acronym filter (optional)
+     * @param isFollowed Filter by followed status (true/false) (optional)
+     * @param year Year for propositions and expenses count (default is current year) (optional, default to 2026)
      * @return Paginated list of politicians (status code 200)
      */
     @Operation(
@@ -73,13 +75,15 @@ public interface PoliticiansApi {
         @Parameter(name = "page", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
         @Parameter(name = "size", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "size", required = false, defaultValue = "20") Integer size,
         @Parameter(name = "name", description = "Partial name search (optional)", in = ParameterIn.QUERY) @Valid @RequestParam(value = "name", required = false) String name,
-        @Parameter(name = "party", description = "Party acronym filter", in = ParameterIn.QUERY) @Valid @RequestParam(value = "party", required = false) String party,
-        @Parameter(name = "state", description = "State acronym filter", in = ParameterIn.QUERY) @Valid @RequestParam(value = "state", required = false) String state
+        @Parameter(name = "party", description = "Party acronym filter", in = ParameterIn.QUERY) @Valid @RequestParam(value = "party", required = false) List<String> party,
+        @Parameter(name = "state", description = "State acronym filter", in = ParameterIn.QUERY) @Valid @RequestParam(value = "state", required = false) List<String> state,
+        @Parameter(name = "isFollowed", description = "Filter by followed status (true/false)", in = ParameterIn.QUERY) @Valid @RequestParam(value = "isFollowed", required = false) Boolean isFollowed,
+        @Parameter(name = "year", description = "Year for propositions and expenses count (default is current year)", in = ParameterIn.QUERY) @Valid @RequestParam(value = "year", required = false, defaultValue = "2026") Integer year
     ) {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"total\" : 0, \"data\" : [ { \"photoUrl\" : \"https://www.camara.leg.br/internet/deputado/bandep/204379.jpg\", \"partyUri\" : \"https://dadosabertos.camara.leg.br/api/v2/partidos/36899\", \"name\" : \"Acácio Favacho\", \"id\" : 204379, \"state\" : \"AP\", \"legislatureId\" : 57, \"uri\" : \"https://dadosabertos.camara.leg.br/api/v2/deputados/204379\", \"party\" : \"MDB\", \"email\" : \"dep.acaciofavacho@camara.leg.br\" }, { \"photoUrl\" : \"https://www.camara.leg.br/internet/deputado/bandep/204379.jpg\", \"partyUri\" : \"https://dadosabertos.camara.leg.br/api/v2/partidos/36899\", \"name\" : \"Acácio Favacho\", \"id\" : 204379, \"state\" : \"AP\", \"legislatureId\" : 57, \"uri\" : \"https://dadosabertos.camara.leg.br/api/v2/deputados/204379\", \"party\" : \"MDB\", \"email\" : \"dep.acaciofavacho@camara.leg.br\" } ], \"totalPages\" : 1, \"sizePage\" : 5, \"page\" : 6 }";
+                    String exampleString = "{ \"total\" : 0, \"data\" : [ { \"photoUrl\" : \"https://www.camara.leg.br/internet/deputado/bandep/204379.jpg\", \"propositionsTotal\" : 15, \"partyUri\" : \"https://dadosabertos.camara.leg.br/api/v2/partidos/36899\", \"name\" : \"Acácio Favacho\", \"expenseTotal\" : 25, \"id\" : 204379, \"state\" : \"AP\", \"legislatureId\" : 57, \"uri\" : \"https://dadosabertos.camara.leg.br/api/v2/deputados/204379\", \"party\" : \"MDB\", \"email\" : \"dep.acaciofavacho@camara.leg.br\", \"isFollowed\" : true }, { \"photoUrl\" : \"https://www.camara.leg.br/internet/deputado/bandep/204379.jpg\", \"propositionsTotal\" : 15, \"partyUri\" : \"https://dadosabertos.camara.leg.br/api/v2/partidos/36899\", \"name\" : \"Acácio Favacho\", \"expenseTotal\" : 25, \"id\" : 204379, \"state\" : \"AP\", \"legislatureId\" : 57, \"uri\" : \"https://dadosabertos.camara.leg.br/api/v2/deputados/204379\", \"party\" : \"MDB\", \"email\" : \"dep.acaciofavacho@camara.leg.br\", \"isFollowed\" : true } ], \"totalPages\" : 1, \"sizePage\" : 5, \"page\" : 6 }";
                     ApiUtil.setExampleResponse(request, "application/json", exampleString);
                     break;
                 }
@@ -94,6 +98,7 @@ public interface PoliticiansApi {
      * GET /api/v1/politicians/{id} : Get details of a specific politician
      *
      * @param id  (required)
+     * @param year Year for propositions and expenses count (default is current year) (optional, default to 2026)
      * @return Politician data (status code 200)
      */
     @Operation(
@@ -113,12 +118,13 @@ public interface PoliticiansApi {
     )
     
     default ResponseEntity<PoliticianDto> politiciansIdGet(
-        @Parameter(name = "id", description = "", required = true, in = ParameterIn.PATH) @PathVariable("id") Integer id
+        @Parameter(name = "id", description = "", required = true, in = ParameterIn.PATH) @PathVariable("id") Integer id,
+        @Parameter(name = "year", description = "Year for propositions and expenses count (default is current year)", in = ParameterIn.QUERY) @Valid @RequestParam(value = "year", required = false, defaultValue = "2026") Integer year
     ) {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"photoUrl\" : \"https://www.camara.leg.br/internet/deputado/bandep/204379.jpg\", \"partyUri\" : \"https://dadosabertos.camara.leg.br/api/v2/partidos/36899\", \"name\" : \"Acácio Favacho\", \"id\" : 204379, \"state\" : \"AP\", \"legislatureId\" : 57, \"uri\" : \"https://dadosabertos.camara.leg.br/api/v2/deputados/204379\", \"party\" : \"MDB\", \"email\" : \"dep.acaciofavacho@camara.leg.br\" }";
+                    String exampleString = "{ \"photoUrl\" : \"https://www.camara.leg.br/internet/deputado/bandep/204379.jpg\", \"propositionsTotal\" : 15, \"partyUri\" : \"https://dadosabertos.camara.leg.br/api/v2/partidos/36899\", \"name\" : \"Acácio Favacho\", \"expenseTotal\" : 25, \"id\" : 204379, \"state\" : \"AP\", \"legislatureId\" : 57, \"uri\" : \"https://dadosabertos.camara.leg.br/api/v2/deputados/204379\", \"party\" : \"MDB\", \"email\" : \"dep.acaciofavacho@camara.leg.br\", \"isFollowed\" : true }";
                     ApiUtil.setExampleResponse(request, "application/json", exampleString);
                     break;
                 }

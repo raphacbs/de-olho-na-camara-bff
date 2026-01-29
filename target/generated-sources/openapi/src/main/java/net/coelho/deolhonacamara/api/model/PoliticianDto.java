@@ -19,7 +19,7 @@ import jakarta.annotation.Generated;
  * PoliticianDto
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-02T16:04:43.208263200-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-25T15:13:37.457952600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 public class PoliticianDto {
 
   private @Nullable Integer id;
@@ -39,6 +39,12 @@ public class PoliticianDto {
   private @Nullable String uri;
 
   private @Nullable String photoUrl;
+
+  private @Nullable Integer propositionsTotal;
+
+  private @Nullable Integer expenseTotal;
+
+  private @Nullable Boolean isFollowed;
 
   public PoliticianDto id(Integer id) {
     this.id = id;
@@ -220,6 +226,66 @@ public class PoliticianDto {
     this.photoUrl = photoUrl;
   }
 
+  public PoliticianDto propositionsTotal(Integer propositionsTotal) {
+    this.propositionsTotal = propositionsTotal;
+    return this;
+  }
+
+  /**
+   * Total quantity of propositions in the current year
+   * @return propositionsTotal
+   */
+  
+  @Schema(name = "propositionsTotal", example = "15", description = "Total quantity of propositions in the current year", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("propositionsTotal")
+  public Integer getPropositionsTotal() {
+    return propositionsTotal;
+  }
+
+  public void setPropositionsTotal(Integer propositionsTotal) {
+    this.propositionsTotal = propositionsTotal;
+  }
+
+  public PoliticianDto expenseTotal(Integer expenseTotal) {
+    this.expenseTotal = expenseTotal;
+    return this;
+  }
+
+  /**
+   * Total quantity of expenses in the current year
+   * @return expenseTotal
+   */
+  
+  @Schema(name = "expenseTotal", example = "25", description = "Total quantity of expenses in the current year", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("expenseTotal")
+  public Integer getExpenseTotal() {
+    return expenseTotal;
+  }
+
+  public void setExpenseTotal(Integer expenseTotal) {
+    this.expenseTotal = expenseTotal;
+  }
+
+  public PoliticianDto isFollowed(Boolean isFollowed) {
+    this.isFollowed = isFollowed;
+    return this;
+  }
+
+  /**
+   * Whether the authenticated user follows this politician
+   * @return isFollowed
+   */
+  
+  @Schema(name = "isFollowed", example = "true", description = "Whether the authenticated user follows this politician", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("isFollowed")
+  public Boolean getIsFollowed() {
+    return isFollowed;
+  }
+
+  public void setIsFollowed(Boolean isFollowed) {
+    this.isFollowed = isFollowed;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -237,12 +303,15 @@ public class PoliticianDto {
         Objects.equals(this.legislatureId, politicianDto.legislatureId) &&
         Objects.equals(this.email, politicianDto.email) &&
         Objects.equals(this.uri, politicianDto.uri) &&
-        Objects.equals(this.photoUrl, politicianDto.photoUrl);
+        Objects.equals(this.photoUrl, politicianDto.photoUrl) &&
+        Objects.equals(this.propositionsTotal, politicianDto.propositionsTotal) &&
+        Objects.equals(this.expenseTotal, politicianDto.expenseTotal) &&
+        Objects.equals(this.isFollowed, politicianDto.isFollowed);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, party, partyUri, state, legislatureId, email, uri, photoUrl);
+    return Objects.hash(id, name, party, partyUri, state, legislatureId, email, uri, photoUrl, propositionsTotal, expenseTotal, isFollowed);
   }
 
   @Override
@@ -258,6 +327,9 @@ public class PoliticianDto {
     sb.append("    email: ").append(toIndentedString(email)).append("\n");
     sb.append("    uri: ").append(toIndentedString(uri)).append("\n");
     sb.append("    photoUrl: ").append(toIndentedString(photoUrl)).append("\n");
+    sb.append("    propositionsTotal: ").append(toIndentedString(propositionsTotal)).append("\n");
+    sb.append("    expenseTotal: ").append(toIndentedString(expenseTotal)).append("\n");
+    sb.append("    isFollowed: ").append(toIndentedString(isFollowed)).append("\n");
     sb.append("}");
     return sb.toString();
   }

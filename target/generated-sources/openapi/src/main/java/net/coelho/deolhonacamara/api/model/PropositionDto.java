@@ -5,6 +5,10 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import net.coelho.deolhonacamara.api.model.PoliticianDto;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -21,10 +25,8 @@ import jakarta.annotation.Generated;
  * PropositionDto
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-02T16:04:43.208263200-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-25T15:13:37.457952600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 public class PropositionDto {
-
-  private @Nullable Integer politicianId;
 
   private @Nullable Integer id;
 
@@ -93,25 +95,8 @@ public class PropositionDto {
 
   private @Nullable Object status;
 
-  public PropositionDto politicianId(Integer politicianId) {
-    this.politicianId = politicianId;
-    return this;
-  }
-
-  /**
-   * Get politicianId
-   * @return politicianId
-   */
-  
-  @Schema(name = "politicianId", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-  @JsonProperty("politicianId")
-  public Integer getPoliticianId() {
-    return politicianId;
-  }
-
-  public void setPoliticianId(Integer politicianId) {
-    this.politicianId = politicianId;
-  }
+  @Valid
+  private List<@Valid PoliticianDto> politicians = new ArrayList<>();
 
   public PropositionDto id(Integer id) {
     this.id = id;
@@ -773,6 +758,34 @@ public class PropositionDto {
     this.status = status;
   }
 
+  public PropositionDto politicians(List<@Valid PoliticianDto> politicians) {
+    this.politicians = politicians;
+    return this;
+  }
+
+  public PropositionDto addPoliticiansItem(PoliticianDto politiciansItem) {
+    if (this.politicians == null) {
+      this.politicians = new ArrayList<>();
+    }
+    this.politicians.add(politiciansItem);
+    return this;
+  }
+
+  /**
+   * Get politicians
+   * @return politicians
+   */
+  @Valid 
+  @Schema(name = "politicians", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("politicians")
+  public List<@Valid PoliticianDto> getPoliticians() {
+    return politicians;
+  }
+
+  public void setPoliticians(List<@Valid PoliticianDto> politicians) {
+    this.politicians = politicians;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -782,8 +795,7 @@ public class PropositionDto {
       return false;
     }
     PropositionDto propositionDto = (PropositionDto) o;
-    return Objects.equals(this.politicianId, propositionDto.politicianId) &&
-        Objects.equals(this.id, propositionDto.id) &&
+    return Objects.equals(this.id, propositionDto.id) &&
         Objects.equals(this.uri, propositionDto.uri) &&
         Objects.equals(this.type, propositionDto.type) &&
         Objects.equals(this.codeType, propositionDto.codeType) &&
@@ -815,19 +827,19 @@ public class PropositionDto {
         Objects.equals(this.justification, propositionDto.justification) &&
         Objects.equals(this.createdAt, propositionDto.createdAt) &&
         Objects.equals(this.updatedAt, propositionDto.updatedAt) &&
-        Objects.equals(this.status, propositionDto.status);
+        Objects.equals(this.status, propositionDto.status) &&
+        Objects.equals(this.politicians, propositionDto.politicians);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(politicianId, id, uri, type, codeType, number, year, summary, detailedSummary, presentationDate, statusDateTime, statusLastReporterUri, statusTramitationDescription, statusTramitationTypeCode, statusSituationDescription, statusSituationCode, statusDispatch, statusUrl, statusScope, statusAppreciation, uriOrgaoNumerador, uriAutores, typeDescription, keywords, uriPropPrincipal, uriPropAnterior, uriPropPosterior, urlInteiroTeor, urnFinal, text, justification, createdAt, updatedAt, status);
+    return Objects.hash(id, uri, type, codeType, number, year, summary, detailedSummary, presentationDate, statusDateTime, statusLastReporterUri, statusTramitationDescription, statusTramitationTypeCode, statusSituationDescription, statusSituationCode, statusDispatch, statusUrl, statusScope, statusAppreciation, uriOrgaoNumerador, uriAutores, typeDescription, keywords, uriPropPrincipal, uriPropAnterior, uriPropPosterior, urlInteiroTeor, urnFinal, text, justification, createdAt, updatedAt, status, politicians);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class PropositionDto {\n");
-    sb.append("    politicianId: ").append(toIndentedString(politicianId)).append("\n");
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    uri: ").append(toIndentedString(uri)).append("\n");
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
@@ -861,6 +873,7 @@ public class PropositionDto {
     sb.append("    createdAt: ").append(toIndentedString(createdAt)).append("\n");
     sb.append("    updatedAt: ").append(toIndentedString(updatedAt)).append("\n");
     sb.append("    status: ").append(toIndentedString(status)).append("\n");
+    sb.append("    politicians: ").append(toIndentedString(politicians)).append("\n");
     sb.append("}");
     return sb.toString();
   }

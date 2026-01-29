@@ -24,6 +24,11 @@ import java.util.Map;
 public interface Mapper {
     Mapper INSTANCE = Mappers.getMapper(Mapper.class);
 
+    @Mappings({
+            @Mapping(source = "propositionsTotal", target = "propositionsTotal"),
+            @Mapping(source = "expenseTotal", target = "expenseTotal"),
+            @Mapping(source = "isFollowed", target = "isFollowed")
+    })
     PoliticianDto toDto(PoliticianEntity e);
     
     PartyDto toDto(PartyEntity e);

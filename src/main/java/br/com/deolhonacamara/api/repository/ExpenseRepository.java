@@ -127,5 +127,17 @@ public class ExpenseRepository {
                 .updatedAt(rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toLocalDateTime() : null)
                 .build();
     }
+
+    public Integer countByPoliticianIdAndYear(Integer politicianId, Integer year) {
+        String sql = """
+            SELECT COUNT(*) FROM politician_expense
+            WHERE politician_id = :politicianId
+            AND year = :year
+        """;
+        Integer result = jdbcTemplate.queryForObject(sql,
+            java.util.Map.of("politicianId", politicianId, "year", year),
+            Integer.class);
+        return result != null ? result : 0;
+    }
 }
 

@@ -38,6 +38,8 @@ tags:
     description: Data synchronization endpoints
   - name: Parties
     description: Political parties data
+  - name: Dashboard
+    description: Dashboard statistics and analytics
 
 paths:
   /api/v1/auth/register:
@@ -110,6 +112,14 @@ paths:
             items:
               type: string
           description: State acronym filter
+        - in: query
+          name: isFollowed
+          schema: { type: boolean }
+          description: Filter by followed status (true/false)
+        - in: query
+          name: year
+          schema: { type: integer, default: 2026 }
+          description: Year for propositions and expenses count (default is current year)
       responses:
         '200':
           description: Paginated list of politicians
@@ -129,6 +139,10 @@ paths:
           required: true
           schema:
             type: integer
+        - in: query
+          name: year
+          schema: { type: integer, default: 2026 }
+          description: Year for propositions and expenses count (default is current year)
       responses:
         '200':
           description: Politician data
@@ -631,6 +645,27 @@ paths:
                 items:
                   $ref: '#/components/schemas/PartyDto'
 
+  /api/v1/dashboard/stats:
+    get:
+      tags: [ Dashboard ]
+      summary: Get dashboard statistics
+      operationId: getDashboardStats
+      description: Returns overall statistics about politicians, propositions, expenses, votes, and followed politicians.
+      parameters:
+        - name: ano
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Year to filter statistics; if omitted the current year is used.
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStatsDto'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -727,6 +762,18 @@ components:
         photoUrl:
           type: string
           example: https://www.camara.leg.br/internet/deputado/bandep/204379.jpg
+        propositionsTotal:
+          type: integer
+          example: 15
+          description: Total quantity of propositions in the current year
+        expenseTotal:
+          type: integer
+          example: 25
+          description: Total quantity of expenses in the current year
+        isFollowed:
+          type: boolean
+          example: true
+          description: Whether the authenticated user follows this politician
 
     PoliticianSummaryDto:
       type: object
@@ -1121,3 +1168,28 @@ components:
         electoralNumber:
           type: integer
           example: 15
+
+    DashboardStatsDto:
+      type: object
+      properties:
+        totalPropositions:
+          type: integer
+          description: Total number of propositions
+          example: 1250
+        totalExpenses:
+          type: integer
+          description: Total number of expenses
+          example: 5432
+        totalVotes:
+          type: integer
+          description: Total number of votes
+          example: 8765
+        totalPoliticians:
+          type: integer
+          description: Total number of politicians
+          example: 513
+        totalFollowing:
+          type: integer
+          description: Total number of politicians being followed by the user
+          example: 15
+

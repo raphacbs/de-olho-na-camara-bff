@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-02T16:04:43.208263200-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-25T15:13:37.457952600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 @Validated
 @Tag(name = "Votes", description = "Voting records and politician votes")
 public interface VotesApi {
@@ -135,6 +135,9 @@ public interface VotesApi {
      *
      * @param page  (optional, default to 0)
      * @param size  (optional, default to 20)
+     * @param votingId Filter by voting ID (optional)
+     * @param politicianId Filter by politician ID (optional)
+     * @param onlyVotes Return only votings with votes (optional, default to false)
      * @return Paginated list of votings with their related votes (status code 200)
      */
     @Operation(
@@ -155,7 +158,10 @@ public interface VotesApi {
     
     default ResponseEntity<VotingWithVotesResponseDTO> getVotingsWithVotes(
         @Parameter(name = "page", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
-        @Parameter(name = "size", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "size", required = false, defaultValue = "20") Integer size
+        @Parameter(name = "size", description = "", in = ParameterIn.QUERY) @Valid @RequestParam(value = "size", required = false, defaultValue = "20") Integer size,
+        @Parameter(name = "voting-id", description = "Filter by voting ID", in = ParameterIn.QUERY) @Valid @RequestParam(value = "voting-id", required = false) String votingId,
+        @Parameter(name = "politician-id", description = "Filter by politician ID", in = ParameterIn.QUERY) @Valid @RequestParam(value = "politician-id", required = false) Integer politicianId,
+        @Parameter(name = "only-votes", description = "Return only votings with votes", in = ParameterIn.QUERY) @Valid @RequestParam(value = "only-votes", required = false, defaultValue = "false") Boolean onlyVotes
     ) {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {

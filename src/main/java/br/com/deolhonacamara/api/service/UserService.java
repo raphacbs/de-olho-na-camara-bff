@@ -103,4 +103,10 @@ public class UserService {
         }
     }
 
+    public UUID getUserIdByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(UserEntity::getId)
+                .orElse(null);
+    }
+
 }

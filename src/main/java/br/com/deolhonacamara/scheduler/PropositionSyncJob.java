@@ -14,11 +14,14 @@ import br.com.deolhonacamara.api.service.SyncProgressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,6 +44,8 @@ public class PropositionSyncJob {
     private final PropositionRepository propositionRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
+    @Qualifier("syncExecutor")
+    private final Executor syncExecutor;
 
     // configurable period (months) used to compute dataApresentacaoInicio as first day of the month 'periodMonths' months ago
     @Value("${sync.propositions.period.months:1}")
@@ -150,26 +155,13 @@ public class PropositionSyncJob {
         if (propositionsResponse != null && propositionsResponse.getData() != null) {
             log.info("Found {} propositions for politician {} (ID: {}) on page {}", propositionsResponse.getData().size(), politician.getName(), politician.getId(), page);
 
-            for (PropositionBodyDto propositionDto : propositionsResponse.getData()) {
-                try {
-                    PropositionResponseBodyDto propositionFullResponse =
-                            camaraDeputadosService.getPropositionsById(propositionDto.getId());
+            List<CompletableFuture<Void>> tasks = propositionsResponse.getData().stream()
+                    .map(propositionDto -> CompletableFuture.runAsync(() ->
+                            savePropositionForPolitician(politician, page, propositionDto), syncExecutor))
+                    .toList();
 
-                    PropositionBodyDto fullPropositionDto = propositionFullResponse.getData();
-                    PropositionEntity entity = Mapper.INSTANCE.toEntity(fullPropositionDto);
-
-                    log.info("Saving proposition ID {} for politician {} (ID: {}) on page {}",
-                            entity.getId(), politician.getName(), politician.getId(), page);
-
-                    propositionRepository.upsertProposition(entity);
-                    propositionRepository.linkPoliticianToProposition(politician.getId(), entity.getId());
-
-                    // Tramitacoes removed from here; now handled by dedicated job
-
-                } catch (Exception e) {
-                    log.error("Error saving proposition {} for politician {} (ID: {}): ", propositionDto.getId(), politician.getName(), politician.getId(), e);
-                }
-            }
+            // Aguarda todas as requisições paralelas finalizarem antes de avançar para a próxima página
+            CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
 
             if (page < lastPage) {
                 log.info("Starting processing of next page {} for politician {} (ID: {})", page + 1, politician.getName(), politician.getId());
@@ -177,6 +169,30 @@ public class PropositionSyncJob {
             }
         } else {
             log.info("No proposition data found for politician {} (ID: {}) on page {}, this likely means we've reached the end", politician.getName(), politician.getId(), page);
+        }
+    }
+
+    private void savePropositionForPolitician(PoliticianEntity politician, Integer page, PropositionBodyDto propositionDto) {
+        try {
+            PropositionResponseBodyDto propositionFullResponse =
+                    camaraDeputadosService.getPropositionsById(propositionDto.getId());
+
+            if (propositionFullResponse == null || propositionFullResponse.getData() == null) {
+                log.warn("Empty response when fetching proposition {} for politician {} (ID: {}) on page {}", propositionDto.getId(), politician.getName(), politician.getId(), page);
+                return;
+            }
+
+            PropositionBodyDto fullPropositionDto = propositionFullResponse.getData();
+            PropositionEntity entity = Mapper.INSTANCE.toEntity(fullPropositionDto);
+
+            log.info("Saving proposition ID {} for politician {} (ID: {}) on page {}",
+                    entity.getId(), politician.getName(), politician.getId(), page);
+
+            propositionRepository.upsertProposition(entity);
+            propositionRepository.linkPoliticianToProposition(politician.getId(), entity.getId());
+
+        } catch (Exception e) {
+            log.error("Error saving proposition {} for politician {} (ID: {}): ", propositionDto.getId(), politician.getName(), politician.getId(), e);
         }
     }
 }

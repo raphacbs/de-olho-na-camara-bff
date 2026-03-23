@@ -19,7 +19,7 @@ import jakarta.annotation.Generated;
  * DeviceRequest
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-16T10:03:37.692134900-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-23T12:05:51.237913679Z[Etc/UTC]", comments = "Generator version: 7.13.0")
 public class DeviceRequest {
 
   private String fcmToken;

@@ -211,7 +211,7 @@ public class CamaraDeputadosService {
         HTTPShepherd<Void, PropositionResponseBodyDto> shepherd = HTTPShepherd
                 .<Void, PropositionResponseBodyDto>builder(httpClient, environment, PropositionResponseBodyDto.class, objectMapper)
                 .url(config.getApiCamaraBaseUrl())
-                .endpoint("/proposicoes/+" + id)
+                .endpoint("/proposicoes/" + id)
                 .timeout(config.getTimeout())
                 .contentType("application/json")
                 .repository(httpShepherdRepository)

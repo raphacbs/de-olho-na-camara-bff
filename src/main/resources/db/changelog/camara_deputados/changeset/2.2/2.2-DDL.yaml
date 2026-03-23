@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2.2-ADD_COLUMNS_SYNC_PROGRESS
+      author: raphacbs
+      changes:
+        - sqlFile:
+            encoding: utf8
+            path: ddl/2.2-ADD_COLUMNS_SYNC_PROGRESS.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            path: ddl/2.2-ROLLBACK_ADD_COLUMNS_SYNC_PROGRESS.sql
+            relativeToChangelogFile: true
+            dbms: postgresql
+            splitStatements: true
+

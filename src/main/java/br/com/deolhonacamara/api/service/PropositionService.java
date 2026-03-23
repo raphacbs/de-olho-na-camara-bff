@@ -10,10 +10,12 @@ import br.com.deolhonacamara.api.repository.PropositionRepository;
 import lombok.RequiredArgsConstructor;
 import net.coelho.deolhonacamara.api.model.PropositionDto;
 import net.coelho.deolhonacamara.api.model.PropositionResponseDTO;
+import net.coelho.deolhonacamara.api.model.PropositionTramitationDto;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class PropositionService {
 
     private final PropositionRepository repository;
+    private final PropositionTramitationService propositionTramitationService;
 
     public PropositionResponseDTO getByPoliticianId(PropositionInput input) {
         var pageable = PageRequest.of(input.getPage(), input.getSizePage());
@@ -134,6 +137,30 @@ public class PropositionService {
             dto.setUpdatedAt(p.getUpdatedAt().toString());
         }
         // Politician is not available in PropositionEntity, so it will be null
+        try {
+            var trams = propositionTramitationService.getLatestTramitation(p.getId(), 5);
+            var gen = trams.stream().map(t -> {
+                PropositionTramitationDto g = new PropositionTramitationDto();
+                g.setDateTime(java.time.OffsetDateTime.of(t.getDateTime(), java.time.ZoneOffset.UTC));
+                g.setSequence(t.getSequence());
+                g.setOrgAcronym(t.getOrgAcronym());
+                g.setOrgUri(t.getOrgUri());
+                g.setLastReporterUri(t.getLastReporterUri());
+                g.setRegime(t.getRegime());
+                g.setTramitationDescription(t.getTramitationDescription());
+                g.setTramitationTypeCode(t.getTramitationTypeCode());
+                g.setSituationDescription(t.getSituationDescription());
+                g.setSituationCode(t.getSituationCode());
+                g.setDispatch(t.getDispatch());
+                g.setUrl(t.getUrl());
+                g.setScope(t.getScope());
+                g.setAppreciation(t.getAppreciation());
+                return g;
+            }).collect(Collectors.toList());
+            dto.setLastTramitions(gen);
+        } catch (Exception e) {
+            // don't fail the proposition endpoint if tramitations cannot be fetched
+        }
         return dto;
     }
 

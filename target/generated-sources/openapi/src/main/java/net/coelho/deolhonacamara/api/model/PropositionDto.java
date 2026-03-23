@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.coelho.deolhonacamara.api.model.PoliticianDto;
+import net.coelho.deolhonacamara.api.model.PropositionTramitationDto;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -25,7 +26,7 @@ import jakarta.annotation.Generated;
  * PropositionDto
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-25T15:13:37.457952600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-16T10:03:37.692134900-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 public class PropositionDto {
 
   private @Nullable Integer id;
@@ -97,6 +98,9 @@ public class PropositionDto {
 
   @Valid
   private List<@Valid PoliticianDto> politicians = new ArrayList<>();
+
+  @Valid
+  private List<@Valid PropositionTramitationDto> lastTramitions = new ArrayList<>();
 
   public PropositionDto id(Integer id) {
     this.id = id;
@@ -786,6 +790,34 @@ public class PropositionDto {
     this.politicians = politicians;
   }
 
+  public PropositionDto lastTramitions(List<@Valid PropositionTramitationDto> lastTramitions) {
+    this.lastTramitions = lastTramitions;
+    return this;
+  }
+
+  public PropositionDto addLastTramitionsItem(PropositionTramitationDto lastTramitionsItem) {
+    if (this.lastTramitions == null) {
+      this.lastTramitions = new ArrayList<>();
+    }
+    this.lastTramitions.add(lastTramitionsItem);
+    return this;
+  }
+
+  /**
+   * Get lastTramitions
+   * @return lastTramitions
+   */
+  @Valid 
+  @Schema(name = "lastTramitions", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("lastTramitions")
+  public List<@Valid PropositionTramitationDto> getLastTramitions() {
+    return lastTramitions;
+  }
+
+  public void setLastTramitions(List<@Valid PropositionTramitationDto> lastTramitions) {
+    this.lastTramitions = lastTramitions;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -828,12 +860,13 @@ public class PropositionDto {
         Objects.equals(this.createdAt, propositionDto.createdAt) &&
         Objects.equals(this.updatedAt, propositionDto.updatedAt) &&
         Objects.equals(this.status, propositionDto.status) &&
-        Objects.equals(this.politicians, propositionDto.politicians);
+        Objects.equals(this.politicians, propositionDto.politicians) &&
+        Objects.equals(this.lastTramitions, propositionDto.lastTramitions);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, uri, type, codeType, number, year, summary, detailedSummary, presentationDate, statusDateTime, statusLastReporterUri, statusTramitationDescription, statusTramitationTypeCode, statusSituationDescription, statusSituationCode, statusDispatch, statusUrl, statusScope, statusAppreciation, uriOrgaoNumerador, uriAutores, typeDescription, keywords, uriPropPrincipal, uriPropAnterior, uriPropPosterior, urlInteiroTeor, urnFinal, text, justification, createdAt, updatedAt, status, politicians);
+    return Objects.hash(id, uri, type, codeType, number, year, summary, detailedSummary, presentationDate, statusDateTime, statusLastReporterUri, statusTramitationDescription, statusTramitationTypeCode, statusSituationDescription, statusSituationCode, statusDispatch, statusUrl, statusScope, statusAppreciation, uriOrgaoNumerador, uriAutores, typeDescription, keywords, uriPropPrincipal, uriPropAnterior, uriPropPosterior, urlInteiroTeor, urnFinal, text, justification, createdAt, updatedAt, status, politicians, lastTramitions);
   }
 
   @Override
@@ -874,6 +907,7 @@ public class PropositionDto {
     sb.append("    updatedAt: ").append(toIndentedString(updatedAt)).append("\n");
     sb.append("    status: ").append(toIndentedString(status)).append("\n");
     sb.append("    politicians: ").append(toIndentedString(politicians)).append("\n");
+    sb.append("    lastTramitions: ").append(toIndentedString(lastTramitions)).append("\n");
     sb.append("}");
     return sb.toString();
   }

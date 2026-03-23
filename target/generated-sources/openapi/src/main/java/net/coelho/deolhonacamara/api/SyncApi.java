@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-01-25T15:13:37.457952600-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-16T10:03:37.692134900-03:00[America/Fortaleza]", comments = "Generator version: 7.13.0")
 @Validated
 @Tag(name = "Sync", description = "Data synchronization endpoints")
 public interface SyncApi {
@@ -268,6 +268,48 @@ public interface SyncApi {
     )
     
     default ResponseEntity<SyncResponse> syncSpeeches(
+        
+    ) {
+        getRequest().ifPresent(request -> {
+            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
+                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
+                    String exampleString = "{ \"message\" : \"Synchronization started successfully\", \"status\" : \"ACCEPTED\" }";
+                    ApiUtil.setExampleResponse(request, "application/json", exampleString);
+                    break;
+                }
+            }
+        });
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+
+    }
+
+
+    /**
+     * POST /api/v1/sync/tramitations : Trigger synchronization of proposition tramitações only
+     * Starts an asynchronous synchronization process for proposition tramitações only (fetches tramitações for propositions and persists them). Returns immediately without waiting for completion.
+     *
+     * @return Synchronization started successfully (status code 202)
+     *         or Error starting synchronization (status code 500)
+     */
+    @Operation(
+        operationId = "syncTramitations",
+        summary = "Trigger synchronization of proposition tramitações only",
+        description = "Starts an asynchronous synchronization process for proposition tramitações only (fetches tramitações for propositions and persists them). Returns immediately without waiting for completion.",
+        tags = { "Sync" },
+        responses = {
+            @ApiResponse(responseCode = "202", description = "Synchronization started successfully", content = {
+                @Content(mediaType = "application/json", schema = @Schema(implementation = SyncResponse.class))
+            }),
+            @ApiResponse(responseCode = "500", description = "Error starting synchronization")
+        }
+    )
+    @RequestMapping(
+        method = RequestMethod.POST,
+        value = "/api/v1/sync/tramitations",
+        produces = { "application/json" }
+    )
+    
+    default ResponseEntity<SyncResponse> syncTramitations(
         
     ) {
         getRequest().ifPresent(request -> {

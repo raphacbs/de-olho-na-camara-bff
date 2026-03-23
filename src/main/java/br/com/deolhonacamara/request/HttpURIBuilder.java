@@ -19,19 +19,22 @@ public class HttpURIBuilder {
     }
 
     public HttpURIBuilder addQueryParam(String key, Object... values) {
+        // If key or values are invalid, do nothing
         if (key == null || key.isEmpty() || values == null || values.length == 0) {
-            List<String> valueStream = Arrays.stream(values).filter(Objects::nonNull).map(Object::toString).toList();
-            this.queryParams.compute(key, (k, v) -> {
-                if (v != null) {
-                    v.addAll(valueStream);
-                    return v;
-                } else {
-                    List<String> strings = new ArrayList<>(values.length);
-                    strings.addAll(valueStream);
-                    return strings;
-                }
-            });
+            return this;
         }
+
+        List<String> valueStream = Arrays.stream(values).filter(Objects::nonNull).map(Object::toString).toList();
+        this.queryParams.compute(key, (k, v) -> {
+            if (v != null) {
+                v.addAll(valueStream);
+                return v;
+            } else {
+                List<String> strings = new ArrayList<>(valueStream.size());
+                strings.addAll(valueStream);
+                return strings;
+            }
+        });
         return this;
     }
 

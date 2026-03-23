@@ -32,4 +32,8 @@ public class PropertiesConfig {
     @Value("${camara-deputados.api.timeout}")
     private String timeout ;
 
+    // New: chunk size for proposition tramitation sync job
+    @Value("${proposition.sync.chunk-size:500}")
+    private Integer propositionSyncChunkSize;
+
 }

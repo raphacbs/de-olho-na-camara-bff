@@ -12,6 +12,7 @@ import java.net.http.HttpClient;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import br.com.deolhonacamara.util.QueryStringBuilder;
 
 @Service
 public class CamaraDeputadosService {
@@ -190,11 +191,70 @@ public class CamaraDeputadosService {
         return shepherd.request();
     }
 
+    /**
+     * Convenience overload: accepts a Map of params (key -> value) and builds a query string.
+     * Keeps compatibility with getPropositionsWithParams(String).
+     */
+    public PropositionListResponseBodyDto getPropositions(Map<String, Object> params) {
+        if (params == null || params.isEmpty()) {
+            return getPropositionsWithParams("");
+        }
+        Map<String, String> stringParams = new HashMap<>();
+        for (Map.Entry<String, Object> e : params.entrySet()) {
+            stringParams.put(e.getKey(), e.getValue() == null ? "" : e.getValue().toString());
+        }
+        String query = QueryStringBuilder.build(stringParams);
+        return getPropositionsWithParams(query);
+    }
+
     public PropositionResponseBodyDto getPropositionsById(Integer id) {
         HTTPShepherd<Void, PropositionResponseBodyDto> shepherd = HTTPShepherd
                 .<Void, PropositionResponseBodyDto>builder(httpClient, environment, PropositionResponseBodyDto.class, objectMapper)
                 .url(config.getApiCamaraBaseUrl())
                 .endpoint("/proposicoes/+" + id)
+                .timeout(config.getTimeout())
+                .contentType("application/json")
+                .repository(httpShepherdRepository)
+                .build();
+
+        return shepherd.request();
+    }
+
+    public PropositionTramitationResponseBodyDto getTramitacoesByPropositionId(Integer propositionId) {
+        HTTPShepherd<Void, PropositionTramitationResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, PropositionTramitationResponseBodyDto>builder(httpClient, environment, PropositionTramitationResponseBodyDto.class, objectMapper)
+                .url(config.getApiCamaraBaseUrl())
+                .endpoint("/proposicoes/" + propositionId + "/tramitacoes")
+                .timeout(config.getTimeout())
+                .contentType("application/json")
+                .repository(httpShepherdRepository)
+                .build();
+
+        return shepherd.request();
+    }
+
+    /**
+     * New: Busca tramitacoes filtrando por dataInicio/dataFim (formato yyyy-MM-dd). Paginação suportada.
+     */
+    public PropositionTramitationResponseBodyDto getTramitacoesByPropositionId(Integer propositionId, LocalDate startDate, LocalDate endDate) {
+        return getTramitacoesByPropositionIdWithPage(propositionId, startDate, endDate, 1);
+    }
+
+    public PropositionTramitationResponseBodyDto getTramitacoesByPropositionIdWithPage(Integer propositionId, LocalDate startDate, LocalDate endDate, Integer page) {
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("As datas de início e fim são obrigatórias");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("A data de início não pode ser posterior à data de fim");
+        }
+        if (page == null || page < 1) {
+            page = 1;
+        }
+
+        HTTPShepherd<Void, PropositionTramitationResponseBodyDto> shepherd = HTTPShepherd
+                .<Void, PropositionTramitationResponseBodyDto>builder(httpClient, environment, PropositionTramitationResponseBodyDto.class, objectMapper)
+                .url(config.getApiCamaraBaseUrl())
+                .endpoint("/proposicoes/" + propositionId + "/tramitacoes?dataInicio=" + startDate + "&dataFim=" + endDate + "&pagina=" + page)
                 .timeout(config.getTimeout())
                 .contentType("application/json")
                 .repository(httpShepherdRepository)

@@ -399,6 +399,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/PropositionResponseDTO'
 
+  /api/v1/propositions/{id}/tramitation:
+    get:
+      tags: [ Propositions ]
+      summary: List all tramitation records for a proposition (paginated)
+      operationId: listTramitation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: startDate
+          schema: { type: string, format: date }
+          description: Start date filter (YYYY-MM-DD or ISO date-time)
+        - in: query
+          name: endDate
+          schema: { type: string, format: date }
+          description: End date filter (YYYY-MM-DD or ISO date-time)
+      responses:
+        '200':
+          description: Paginated list of tramitation records
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TramitationResponseDTO'
+
+  /api/v1/propositions/{id}/tramitation/last:
+    get:
+      tags: [ Propositions ]
+      summary: Get last 5 tramitation records for a proposition
+      operationId: getLastTramitation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Last 5 tramitation records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PropositionTramitationDto'
+
   /api/v1/politicians/{id}/presence:
     get:
       tags: [ Presence ]
@@ -572,6 +624,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SyncResponse'
+
+  /api/v1/sync/tramitations:
+    post:
+      tags: [ Sync ]
+      summary: Trigger synchronization of proposition tramitações only
+      operationId: syncTramitations
+      description: Starts an asynchronous synchronization process for proposition tramitações only (fetches tramitações for propositions and persists them). Returns immediately without waiting for completion.
+      responses:
+        '202':
+          description: Synchronization started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+        '500':
+          description: Error starting synchronization
 
   /api/v1/politicians/{id}/votes-with-proposition:
     get:
@@ -774,6 +842,10 @@ components:
           type: boolean
           example: true
           description: Whether the authenticated user follows this politician
+        lastTramitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PropositionTramitationDto'
 
     PoliticianSummaryDto:
       type: object
@@ -1004,6 +1076,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PoliticianDto'
+        lastTramitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PropositionTramitationDto'
 
     PropositionResponseDTO:
       type: object
@@ -1193,3 +1269,51 @@ components:
           description: Total number of politicians being followed by the user
           example: 15
 
+    PropositionTramitationDto:
+      type: object
+      properties:
+        dateTime:
+          type: string
+          format: date-time
+        sequence:
+          type: integer
+        orgAcronym:
+          type: string
+        orgUri:
+          type: string
+        lastReporterUri:
+          type: string
+        regime:
+          type: string
+        tramitationDescription:
+          type: string
+        tramitationTypeCode:
+          type: string
+        situationDescription:
+          type: string
+        situationCode:
+          type: string
+        dispatch:
+          type: string
+        url:
+          type: string
+        scope:
+          type: string
+        appreciation:
+          type: string
+
+    TramitationResponseDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PropositionTramitationDto'
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        sizePage:
+          type: integer

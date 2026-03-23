@@ -39,8 +39,11 @@ F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\Prese
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\PropositionBodyDto.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\PropositionListResponseBodyDto.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\PropositionResponseBodyDto.java
+F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\PropositionTramitationDto.java
+F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\PropositionTramitationResponseBodyDto.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\SpeechBodyDto.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\SpeechResponseBodyDto.java
+F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\TramitationResponseDTO.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\VoteBodyDto.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\VoteResponseBodyDto.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\dto\VotingBodyByIdDto.java
@@ -68,6 +71,7 @@ F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\model\Pre
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\model\PropositionDTO.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\model\PropositionEntity.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\model\PropositionPoliticianDTO.java
+F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\model\PropositionTramitationEntity.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\model\PropositionType.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\model\screen\PoliticianScreen.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\model\screen\PropositionScreen.java
@@ -84,6 +88,7 @@ F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\repositor
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\repository\PoliticianVoteRepository.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\repository\PresenceRepository.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\repository\PropositionRepository.java
+F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\repository\PropositionTramitationRepository.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\repository\SpeechRepository.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\repository\SyncProgressRepository.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\repository\UserDeviceRepository.java
@@ -97,6 +102,7 @@ F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\service\P
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\service\PoliticianService.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\service\PresenceService.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\service\PropositionService.java
+F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\service\PropositionTramitationService.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\service\SpeechService.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\service\SyncProgressService.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\api\service\SyncService.java
@@ -124,8 +130,10 @@ F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\scheduler\Exp
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\scheduler\PoliticianSyncJob.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\scheduler\PresenceSyncJob.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\scheduler\PropositionSyncJob.java
+F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\scheduler\PropositionTramitationSyncJob.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\scheduler\SpeechSyncJob.java
 F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\scheduler\VoteSyncJob.java
+F:\repos\de-olho-na-camara-bff\src\main\java\br\com\deolhonacamara\util\QueryStringBuilder.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\ApiUtil.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\AuthApi.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\DashboardApi.java
@@ -151,11 +159,13 @@ F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\ne
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\PresenceResponseDTO.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\PropositionDto.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\PropositionResponseDTO.java
+F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\PropositionTramitationDto.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\RequestLogin.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\RequestNewUser.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\SpeechDto.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\SpeechResponseDTO.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\SyncResponse.java
+F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\TramitationResponseDTO.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\VoteDto.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\VotingWithVotesDTO.java
 F:\repos\de-olho-na-camara-bff\target\generated-sources\openapi\src\main\java\net\coelho\deolhonacamara\api\model\VotingWithVotesResponseDTO.java

@@ -71,6 +71,27 @@ public class SyncProgressService {
     }
 
     /**
+     * Update last processed proposition/tramitacao info to allow resuming from a specific proposition
+     */
+    @Transactional
+    public void updateLastPropositionProgress(String flowName, String executionId, Long lastPropositionId, Long lastTramitacaoId, LocalDateTime updatedAt) {
+        Optional<SyncProgressEntity> execution = syncProgressRepository.findByFlowNameAndExecutionId(flowName, executionId);
+
+        if (execution.isPresent()) {
+            SyncProgressEntity progress = execution.get();
+            progress.setLastPropositionId(lastPropositionId);
+            progress.setLastTramitacaoId(lastTramitacaoId);
+            progress.setLastPropositionUpdatedAt(updatedAt == null ? LocalDateTime.now() : updatedAt);
+            progress.setLastUpdated(LocalDateTime.now());
+            progress.setUpdatedAt(LocalDateTime.now());
+            syncProgressRepository.save(progress);
+            log.debug("Updated last proposition progress for flow {} execution {} to propositionId={} tramitacaoId={}", flowName, executionId, lastPropositionId, lastTramitacaoId);
+        } else {
+            log.warn("Execution {} not found for flow {}", executionId, flowName);
+        }
+    }
+
+    /**
      * Update total pages for a specific execution
      */
     @Transactional

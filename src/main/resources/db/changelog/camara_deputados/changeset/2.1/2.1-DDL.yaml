@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2.1-ADD_TABLE_PROPOSITION_TRAMITACAO
+      author: system
+      changes:
+        - sqlFile:
+            encoding: utf8
+            path: ddl/2.1-ADD_TABLE_PROPOSITION_TRAMITACAO.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            path: ddl/2.1-ROLLBACK_ADD_TABLE_PROPOSITION_TRAMITACAO.sql
+            relativeToChangelogFile: true
+            dbms: postgresql
+            splitStatements: true

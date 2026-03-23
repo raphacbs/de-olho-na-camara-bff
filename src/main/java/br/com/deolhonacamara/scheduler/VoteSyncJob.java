@@ -58,12 +58,9 @@ public class VoteSyncJob {
             log.error("Error syncing Votings: ", e);
             // Mark execution as failed if something goes wrong
             try {
-                SyncProgressEntity currentExecution = syncProgressService.getCurrentProgress("Votings")
+                syncProgressService.getCurrentProgress("Votings")
                     .filter(SyncProgressEntity::isRunning)
-                    .orElse(null);
-                if (currentExecution != null) {
-                    syncProgressService.markExecutionFailed("Votings", currentExecution.getExecutionId());
-                }
+                    .ifPresent(exec -> syncProgressService.markExecutionFailed("Votings", exec.getExecutionId()));
             } catch (Exception e2) {
                 log.error("Error marking execution as failed: ", e2);
             }
@@ -172,7 +169,8 @@ public class VoteSyncJob {
 
     private VoteResponseBodyDto getVotesInVotingWithPage(String votingId, Integer page) {
         try {
-            return camaraDeputadosService.getVotesInVotingWithPage(votingId, page);
+            // endpoint does not support pagination; delegate to non-paginated method
+            return camaraDeputadosService.getVotesInVoting(votingId);
         } catch (Exception e) {
             log.warn("Error getting votes for voting {} page {}: {}", votingId, page, e.getMessage());
             return null;
@@ -209,16 +207,16 @@ public class VoteSyncJob {
             }
 
             if (votesResponse.getData() != null) {
-            log.info("Processing {} votes for voting {} in page {}", votesResponse.getData().size(), votingId, page);
+                log.info("Processing {} votes for voting {} in page {}", votesResponse.getData().size(), votingId, page);
 
-            for (VoteBodyDto voteBodyDto : votesResponse.getData()) {
-                try {
-                    var entity = mapper.toEntity(voteBodyDto, votingId, votingId);
-                    votingRepository.saveVote(entity);
-                } catch (Exception e) {
-                    log.error("Error saving vote for voting {}: ", votingId, e);
+                for (VoteBodyDto voteBodyDto : votesResponse.getData()) {
+                    try {
+                        var entity = mapper.toEntity(voteBodyDto, votingId, votingId);
+                        votingRepository.saveVote(entity);
+                    } catch (Exception e) {
+                        log.error("Error saving vote for voting {}: ", votingId, e);
+                    }
                 }
-            }
 
                 Integer lastPage = getLastPageNumberForVotes(votesResponse);
                 if (page < lastPage) {

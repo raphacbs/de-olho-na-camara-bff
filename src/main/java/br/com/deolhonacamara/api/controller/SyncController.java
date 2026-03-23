@@ -94,6 +94,13 @@ public class SyncController implements SyncApi {
     }
 
     @Override
+    public ResponseEntity<SyncResponse> syncTramitations() {
+        log.info("Sync tramitations endpoint called");
+        syncService.syncTramitations();
+        return SyncApi.super.syncTramitations();
+    }
+
+    @Override
     public ResponseEntity<SyncResponse> syncPropositions() {
         log.info("Sync propositions endpoint called");
         syncService.syncPropositions();
@@ -116,5 +123,7 @@ public class SyncController implements SyncApi {
         
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
+
+
 }
 

@@ -35,6 +35,16 @@ public class SyncProgressEntity {
     @Column("current_page")
     private Integer currentPage;
 
+    // New columns to support resuming proposition tramitation syncs
+    @Column("last_proposition_id")
+    private Long lastPropositionId;
+
+    @Column("last_tramitacao_id")
+    private Long lastTramitacaoId;
+
+    @Column("last_proposition_updated_at")
+    private LocalDateTime lastPropositionUpdatedAt;
+
     @Column("start_time")
     private LocalDateTime startTime;
 
@@ -61,5 +71,18 @@ public class SyncProgressEntity {
 
     public boolean isFailed() {
         return "failed".equals(status);
+    }
+
+    // Explicit setters for environments/static analysis that don't resolve Lombok-generated methods
+    public void setLastPropositionId(Long lastPropositionId) {
+        this.lastPropositionId = lastPropositionId;
+    }
+
+    public void setLastTramitacaoId(Long lastTramitacaoId) {
+        this.lastTramitacaoId = lastTramitacaoId;
+    }
+
+    public void setLastPropositionUpdatedAt(LocalDateTime lastPropositionUpdatedAt) {
+        this.lastPropositionUpdatedAt = lastPropositionUpdatedAt;
     }
 }

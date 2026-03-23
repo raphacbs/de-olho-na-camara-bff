@@ -13,12 +13,15 @@ import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.SyncProgressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -38,6 +41,10 @@ public class PropositionSyncJob {
     private final PropositionRepository propositionRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
+
+    // configurable period (months) used to compute dataApresentacaoInicio as first day of the month 'periodMonths' months ago
+    @Value("${sync.propositions.period.months:1}")
+    private int syncPropositionsPeriodMonths;
 
     // Runs daily at 04:00 (Brasília time)
     @Scheduled(cron = "0 0 4 * * *", zone = "America/Sao_Paulo")
@@ -81,12 +88,9 @@ public class PropositionSyncJob {
             log.error("Error syncing propositions: ", e);
             // Mark execution as failed if something goes wrong
             try {
-                SyncProgressEntity currentExecution = syncProgressService.getCurrentProgress("Propositions")
+                syncProgressService.getCurrentProgress("Propositions")
                     .filter(SyncProgressEntity::isRunning)
-                    .orElse(null);
-                if (currentExecution != null) {
-                    syncProgressService.markExecutionFailed("Propositions", currentExecution.getExecutionId());
-                }
+                    .ifPresent(currentExecution -> syncProgressService.markExecutionFailed("Propositions", currentExecution.getExecutionId()));
             } catch (Exception e2) {
                 log.error("Error marking execution as failed: ", e2);
             }
@@ -94,11 +98,27 @@ public class PropositionSyncJob {
     }
 
     private PropositionListResponseBodyDto getPropositions(Integer politicianId, Integer page) {
-        String params = "ano=" + YEARS_TO_SYNC + "&idDeputadoAutor=" + politicianId + "&ordem=DESC&ordenarPor=ano&pagina=" + page;
+
+        // calcula o período: primeiro dia do mês (syncPropositionsPeriodMonths) meses atrás até hoje
+        LocalDate hoje = LocalDate.now();
+        LocalDate inicioPeriodo = hoje.withDayOfMonth(1).minusMonths(Math.max(1, syncPropositionsPeriodMonths));
+        String dataInicio = inicioPeriodo.toString(); // formato YYYY-MM-DD
+        String dataFim = hoje.toString(); // hoje
+
+        // monta parâmetros em um map e delega ao serviço que aceita Map
         try {
-            return camaraDeputadosService.getPropositionsWithParams(params);
+            Map<String, Object> queryParams = new LinkedHashMap<>();
+            queryParams.put("ano", YEARS_TO_SYNC);
+            queryParams.put("idDeputadoAutor", politicianId);
+            queryParams.put("dataApresentacaoInicio", dataInicio);
+            queryParams.put("dataApresentacaoFim", dataFim);
+            queryParams.put("ordem", "DESC");
+            queryParams.put("ordenarPor", "ano");
+            queryParams.put("pagina", page);
+
+            return camaraDeputadosService.getPropositions(queryParams);
         } catch (Exception e) {
-            log.warn("Erro ao obter proposições para o deputado ID {} na página {}: {}", politicianId, page, e.getMessage());
+            log.warn("Erro ao montar/obter proposições para o deputado ID {} na página {} com filtro {}: {}", politicianId, page, "dataApresentacaoInicio=" + dataInicio + "&dataApresentacaoFim=" + dataFim, e.getMessage());
             return null;
         }
     }
@@ -144,6 +164,8 @@ public class PropositionSyncJob {
                     propositionRepository.upsertProposition(entity);
                     propositionRepository.linkPoliticianToProposition(politician.getId(), entity.getId());
 
+                    // Tramitacoes removed from here; now handled by dedicated job
+
                 } catch (Exception e) {
                     log.error("Error saving proposition {} for politician {} (ID: {}): ", propositionDto.getId(), politician.getName(), politician.getId(), e);
                 }
@@ -158,4 +180,3 @@ public class PropositionSyncJob {
         }
     }
 }
-

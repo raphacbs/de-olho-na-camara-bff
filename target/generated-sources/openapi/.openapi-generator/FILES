@@ -1,3 +1,4 @@
+.openapi-generator-ignore
 README.md
 pom.xml
 src/main/java/net/coelho/deolhonacamara/api/ApiUtil.java
@@ -32,11 +33,13 @@ src/main/java/net/coelho/deolhonacamara/api/model/PresenceDto.java
 src/main/java/net/coelho/deolhonacamara/api/model/PresenceResponseDTO.java
 src/main/java/net/coelho/deolhonacamara/api/model/PropositionDto.java
 src/main/java/net/coelho/deolhonacamara/api/model/PropositionResponseDTO.java
+src/main/java/net/coelho/deolhonacamara/api/model/PropositionTramitationDto.java
 src/main/java/net/coelho/deolhonacamara/api/model/RequestLogin.java
 src/main/java/net/coelho/deolhonacamara/api/model/RequestNewUser.java
 src/main/java/net/coelho/deolhonacamara/api/model/SpeechDto.java
 src/main/java/net/coelho/deolhonacamara/api/model/SpeechResponseDTO.java
 src/main/java/net/coelho/deolhonacamara/api/model/SyncResponse.java
+src/main/java/net/coelho/deolhonacamara/api/model/TramitationResponseDTO.java
 src/main/java/net/coelho/deolhonacamara/api/model/VoteDto.java
 src/main/java/net/coelho/deolhonacamara/api/model/VotingWithVotesDTO.java
 src/main/java/net/coelho/deolhonacamara/api/model/VotingWithVotesResponseDTO.java

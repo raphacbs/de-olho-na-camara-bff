@@ -398,12 +398,9 @@ public class PropositionRepository {
         return result;
     }
 
-    public PageResponse<PropositionEntity> findFilteredPropositions(String politico, List<String> tipos, List<String> statuses,
-                                                                    LocalDate dataInicio, LocalDate dataFim, Pageable pageable) {
-        boolean needsJoin = politico != null && !politico.trim().isEmpty();
-
-        StringBuilder sql = new StringBuilder("""
-            SELECT DISTINCT p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
+    public List<PropositionEntity> findPropositionsChunk(int offset, int size) {
+        String sql = """
+            SELECT p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
                    p.presentation_date, p.status_date_time, p.status_last_reporter_uri, p.status_tramitation_description,
                    p.status_tramitation_type_code, p.status_situation_description, p.status_situation_code,
                    p.status_dispatch, p.status_url, p.status_scope, p.status_appreciation,
@@ -412,108 +409,39 @@ public class PropositionRepository {
                    p.url_inteiro_teor, p.urn_final, p.text, p.justification,
                    p.status, p.created_at, p.updated_at
             FROM proposition p
-        """);
+            ORDER BY p.presentation_date DESC NULLS LAST, p.year DESC, p.id DESC
+            LIMIT :size OFFSET :offset
+        """;
 
-        StringBuilder countSql = new StringBuilder("SELECT COUNT(DISTINCT p.id) FROM proposition p");
         Map<String, Object> params = new HashMap<>();
+        params.put("size", size);
+        params.put("offset", offset);
 
-        // Filtro por político (nome) - precisa join
-        if (needsJoin) {
-            sql.append(" INNER JOIN politician_proposition pp ON pp.proposition_id = p.id ");
-            sql.append(" INNER JOIN politicians pol ON pol.id = pp.politician_id ");
-            countSql.append(" INNER JOIN politician_proposition pp ON pp.proposition_id = p.id ");
-            countSql.append(" INNER JOIN politicians pol ON pol.id = pp.politician_id ");
-        }
+        return jdbcTemplate.query(sql, params, (rs, i) -> mapRow(rs));
+    }
 
-        sql.append(" WHERE 1=1");
-        countSql.append(" WHERE 1=1");
+    // New: cursor-based pagination by id (efficient for large tables)
+    public List<PropositionEntity> findPropositionsAfterId(int lastId, int size) {
+        String sql = """
+            SELECT p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
+                   p.presentation_date, p.status_date_time, p.status_last_reporter_uri, p.status_tramitation_description,
+                   p.status_tramitation_type_code, p.status_situation_description, p.status_situation_code,
+                   p.status_dispatch, p.status_url, p.status_scope, p.status_appreciation,
+                   p.uri_orgao_numerador, p.uri_autores, p.type_description, p.keywords,
+                   p.uri_prop_principal, p.uri_prop_anterior, p.uri_prop_posterior,
+                   p.url_inteiro_teor, p.urn_final, p.text, p.justification,
+                   p.status, p.created_at, p.updated_at
+            FROM proposition p
+            WHERE p.id > :lastId
+            ORDER BY p.id ASC
+            LIMIT :size
+        """;
 
-        if (needsJoin) {
-            sql.append(" AND LOWER(pol.name) LIKE LOWER(:politico)");
-            countSql.append(" AND LOWER(pol.name) LIKE LOWER(:politico)");
-            params.put("politico", "%" + politico.trim() + "%");
-        }
+        Map<String, Object> params = new HashMap<>();
+        params.put("lastId", lastId);
+        params.put("size", size);
 
-        // Filtro por tipos (múltiplos valores permitidos)
-        if (tipos != null && !tipos.isEmpty()) {
-            List<String> tiposValidos = tipos.stream()
-                    .filter(t -> t != null && !t.trim().isEmpty())
-                    .map(t -> t.trim().toUpperCase())
-                    .filter(PropositionType::isValidCode)
-                    .collect(java.util.stream.Collectors.toList());
-
-            if (!tiposValidos.isEmpty()) {
-                sql.append(" AND UPPER(p.type) IN (:tipos)");
-                countSql.append(" AND UPPER(p.type) IN (:tipos)");
-                params.put("tipos", tiposValidos);
-            }
-        }
-
-        // Filtro por statuses (múltiplos valores permitidos)
-        if (statuses != null && !statuses.isEmpty()) {
-            List<String> statusesValidos = statuses.stream()
-                    .filter(s -> s != null && !s.trim().isEmpty())
-                    .map(s -> "%" + s.trim().toLowerCase() + "%")
-                    .collect(java.util.stream.Collectors.toList());
-
-            if (!statusesValidos.isEmpty()) {
-                sql.append(" AND (");
-                countSql.append(" AND (");
-                for (int i = 0; i < statusesValidos.size(); i++) {
-                    if (i > 0) {
-                        sql.append(" OR ");
-                        countSql.append(" OR ");
-                    }
-                    sql.append("LOWER(p.status_tramitation_description) LIKE :status").append(i);
-                    countSql.append("LOWER(p.status_tramitation_description) LIKE :status").append(i);
-                    params.put("status" + i, statusesValidos.get(i));
-                }
-                sql.append(")");
-                countSql.append(")");
-            }
-        }
-
-        // Filtro por data inicial
-        if (dataInicio != null) {
-            sql.append(" AND p.presentation_date >= :dataInicio");
-            countSql.append(" AND p.presentation_date >= :dataInicio");
-            params.put("dataInicio", dataInicio);
-        }
-
-        // Filtro por data final
-        if (dataFim != null) {
-            sql.append(" AND p.presentation_date <= :dataFim");
-            countSql.append(" AND p.presentation_date <= :dataFim");
-            params.put("dataFim", dataFim);
-        }
-
-        sql.append(" ORDER BY p.presentation_date DESC NULLS LAST, p.year DESC, p.id DESC");
-        sql.append(" LIMIT :limit OFFSET :offset");
-
-        params.put("limit", pageable.getPageSize());
-        params.put("offset", pageable.getOffset());
-
-        List<PropositionEntity> content = jdbcTemplate.query(sql.toString(), params, (rs, i) -> {
-            try {
-                return mapRow(rs);
-            } catch (Exception e) {
-                log.error("Error mapping row to PropositionEntity", e);
-                return null;
-            }
-        });
-
-        // Remover nulls
-        content = content.stream().filter(e -> e != null).collect(java.util.stream.Collectors.toList());
-
-        int total = jdbcTemplate.queryForObject(countSql.toString(), params, Integer.class);
-
-        return new PageResponse<>(
-                content,
-                total,
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                pageable.getSort()
-        );
+        return jdbcTemplate.query(sql, params, (rs, i) -> mapRow(rs));
     }
 
     /**
@@ -635,6 +563,139 @@ public class PropositionRepository {
                 size,
                 null
         );
+    }
+
+    public PageResponse<PropositionEntity> findFilteredPropositions(String politico, List<String> tipos, List<String> statuses,
+                                                                    LocalDate dataInicio, LocalDate dataFim, Pageable pageable) {
+        boolean needsJoin = politico != null && !politico.trim().isEmpty();
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT DISTINCT p.id, p.uri, p.type, p.code_type, p.number, p.year, p.summary, p.detailed_summary,
+                   p.presentation_date, p.status_date_time, p.status_last_reporter_uri, p.status_tramitation_description,
+                   p.status_tramitation_type_code, p.status_situation_description, p.status_situation_code,
+                   p.status_dispatch, p.status_url, p.status_scope, p.status_appreciation,
+                   p.uri_orgao_numerador, p.uri_autores, p.type_description, p.keywords,
+                   p.uri_prop_principal, p.uri_prop_anterior, p.uri_prop_posterior,
+                   p.url_inteiro_teor, p.urn_final, p.text, p.justification,
+                   p.status, p.created_at, p.updated_at
+            FROM proposition p
+        """);
+
+        StringBuilder countSql = new StringBuilder("SELECT COUNT(DISTINCT p.id) FROM proposition p");
+        Map<String, Object> params = new HashMap<>();
+
+        // Filtro por político (nome) - precisa join
+        if (needsJoin) {
+            sql.append(" INNER JOIN politician_proposition pp ON pp.proposition_id = p.id ");
+            sql.append(" INNER JOIN politicians pol ON pol.id = pp.politician_id ");
+            countSql.append(" INNER JOIN politician_proposition pp ON pp.proposition_id = p.id ");
+            countSql.append(" INNER JOIN politicians pol ON pol.id = pp.politician_id ");
+        }
+
+        sql.append(" WHERE 1=1");
+        countSql.append(" WHERE 1=1");
+
+        if (needsJoin) {
+            sql.append(" AND LOWER(pol.name) LIKE LOWER(:politico)");
+            countSql.append(" AND LOWER(pol.name) LIKE LOWER(:politico)");
+            params.put("politico", "%" + politico.trim() + "%");
+        }
+
+        // Filtro por tipos (múltiplos valores permitidos)
+        if (tipos != null && !tipos.isEmpty()) {
+            List<String> tiposValidos = tipos.stream()
+                    .filter(t -> t != null && !t.trim().isEmpty())
+                    .map(t -> t.trim().toUpperCase())
+                    .filter(PropositionType::isValidCode)
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (!tiposValidos.isEmpty()) {
+                sql.append(" AND UPPER(p.type) IN (:tipos)");
+                countSql.append(" AND UPPER(p.type) IN (:tipos)");
+                params.put("tipos", tiposValidos);
+            }
+        }
+
+        // Filtro por statuses (múltiplos valores permitidos)
+        if (statuses != null && !statuses.isEmpty()) {
+            List<String> statusesValidos = statuses.stream()
+                    .filter(s -> s != null && !s.trim().isEmpty())
+                    .map(s -> "%" + s.trim().toLowerCase() + "%")
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (!statusesValidos.isEmpty()) {
+                sql.append(" AND (");
+                countSql.append(" AND (");
+                for (int i = 0; i < statusesValidos.size(); i++) {
+                    if (i > 0) {
+                        sql.append(" OR ");
+                        countSql.append(" OR ");
+                    }
+                    sql.append("LOWER(p.status_tramitation_description) LIKE :status").append(i);
+                    countSql.append("LOWER(p.status_tramitation_description) LIKE :status").append(i);
+                    params.put("status" + i, statusesValidos.get(i));
+                }
+                sql.append(")");
+                countSql.append(")");
+            }
+        }
+
+        // Filtro por data inicial
+        if (dataInicio != null) {
+            sql.append(" AND p.presentation_date >= :dataInicio");
+            countSql.append(" AND p.presentation_date >= :dataInicio");
+            params.put("dataInicio", dataInicio);
+        }
+
+        // Filtro por data final
+        if (dataFim != null) {
+            sql.append(" AND p.presentation_date <= :dataFim");
+            countSql.append(" AND p.presentation_date <= :dataFim");
+            params.put("dataFim", dataFim);
+        }
+
+        sql.append(" ORDER BY p.presentation_date DESC NULLS LAST, p.year DESC, p.id DESC");
+        sql.append(" LIMIT :limit OFFSET :offset");
+
+        params.put("limit", pageable.getPageSize());
+        params.put("offset", pageable.getOffset());
+
+        List<PropositionEntity> content = jdbcTemplate.query(sql.toString(), params, (rs, i) -> {
+            try {
+                return mapRow(rs);
+            } catch (Exception e) {
+                log.error("Error mapping row to PropositionEntity", e);
+                return null;
+            }
+        });
+
+        // Remover nulls
+        content = content.stream().filter(e -> e != null).collect(java.util.stream.Collectors.toList());
+
+        Integer totalObj = jdbcTemplate.queryForObject(countSql.toString(), params, Integer.class);
+        int total = totalObj == null ? 0 : totalObj;
+
+        return new PageResponse<>(
+                content,
+                total,
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort()
+        );
+    }
+
+    public Integer countByPoliticianIdAndYear(Integer politicianId, Integer year) {
+        String sql = """
+            SELECT COUNT(*) FROM politician_proposition pp
+            INNER JOIN proposition p ON p.id = pp.proposition_id
+            WHERE pp.politician_id = :politicianId
+            AND p.year = :year
+        """;
+        Integer result = jdbcTemplate.queryForObject(sql,
+            java.util.Map.of("politicianId", politicianId, "year", year),
+            Integer.class);
+        log.debug("PropositionRepository.countByPoliticianIdAndYear - politicianId: {}, year: {}, result: {}", politicianId, year, result);
+        return result != null ? result : 0;
     }
 
     private PropositionDTO mapRowToDto(ResultSet rs) throws SQLException {
@@ -826,18 +887,5 @@ public class PropositionRepository {
 
         return builder.build();
     }
-
-    public Integer countByPoliticianIdAndYear(Integer politicianId, Integer year) {
-        String sql = """
-            SELECT COUNT(*) FROM politician_proposition pp
-            INNER JOIN proposition p ON p.id = pp.proposition_id
-            WHERE pp.politician_id = :politicianId
-            AND p.year = :year
-        """;
-        Integer result = jdbcTemplate.queryForObject(sql,
-            java.util.Map.of("politicianId", politicianId, "year", year),
-            Integer.class);
-        log.debug("PropositionRepository.countByPoliticianIdAndYear - politicianId: {}, year: {}, result: {}", politicianId, year, result);
-        return result != null ? result : 0;
-    }
 }
+

@@ -36,4 +36,8 @@ public class PropertiesConfig {
     @Value("${proposition.sync.chunk-size:500}")
     private Integer propositionSyncChunkSize;
 
+    // Max concurrent propositions fetched per chunk when syncing tramitations
+    @Value("${proposition.sync.max-in-flight:50}")
+    private Integer propositionSyncMaxInFlight;
+
 }

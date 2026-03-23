@@ -30,7 +30,7 @@ public class VoteSyncJob {
     private final Mapper mapper = Mapper.INSTANCE;
 
     // Runs daily at 02:00 (Brasília time)
-    @Scheduled(cron = "0 0 2 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 0 2 * * *", zone = "America/Recife")
     public void syncVotes() {
         // Schedule uses last 3 months as default
         syncVotes(null, null);

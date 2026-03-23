@@ -15,7 +15,7 @@ public class PresenceSyncJob {
      * - Integrar com o web service SOAP: ListarPresencasParlamentar ou ListarPresencasDia
      * - Ou consultar eventos: /eventos/{id}/presencas (mas requer ID do evento, não do deputado)
      */
-    // @Scheduled(cron = "0 0 5 * * *", zone = "America/Sao_Paulo")
+    // @Scheduled(cron = "0 0 5 * * *", zone = "America/Recife")
     public void syncPresence() {
         log.warn("Presence synchronization is disabled: endpoint /deputados/{id}/presencas does not exist in API REST v2");
         log.warn("Presences are only available via SOAP web service. See: https://www2.camara.leg.br/transparencia/dados-abertos/dados-abertos-legislativo/webservices/deputados");

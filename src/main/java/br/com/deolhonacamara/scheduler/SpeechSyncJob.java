@@ -30,7 +30,7 @@ public class SpeechSyncJob {
 
 
     // Runs daily at 03:00 (Brasília time)
-    @Scheduled(cron = "0 0 3 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 0 3 * * *", zone = "America/Recife")
     public void syncSpeeches() {
         log.info("Starting speech synchronization from Câmara API...");
 

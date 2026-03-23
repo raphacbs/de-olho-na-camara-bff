@@ -21,7 +21,7 @@ import jakarta.annotation.Generated;
  * ExpenseDto
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-23T15:20:20.561199168Z[Etc/UTC]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-23T17:37:11.794998653Z[Etc/UTC]", comments = "Generator version: 7.13.0")
 public class ExpenseDto {
 
   private @Nullable Integer id;

@@ -39,7 +39,7 @@ public class PropositionTramitationSyncJob {
     private final Executor syncExecutor;
 
     // Runs daily at 05:00 (Brasília time) to avoid overlapping with propositions job
-    @Scheduled(cron = "0 0 5 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 0 5 * * *", zone = "America/Recife")
     public void syncPropositionTramitations() {
         log.info("Starting proposition tramitation synchronization from Câmara API...");
 

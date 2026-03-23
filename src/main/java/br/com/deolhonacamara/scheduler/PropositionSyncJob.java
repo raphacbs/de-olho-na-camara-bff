@@ -155,12 +155,13 @@ public class PropositionSyncJob {
         if (propositionsResponse != null && propositionsResponse.getData() != null) {
             log.info("Found {} propositions for politician {} (ID: {}) on page {}", propositionsResponse.getData().size(), politician.getName(), politician.getId(), page);
 
+            // Repository methods are stateless/JdbcTemplate-backed and safe for concurrent usage with the limited executor
             List<CompletableFuture<Void>> tasks = propositionsResponse.getData().stream()
                     .map(propositionDto -> CompletableFuture.runAsync(() ->
                             savePropositionForPolitician(politician, page, propositionDto), syncExecutor))
                     .toList();
 
-            // Aguarda todas as requisições paralelas finalizarem antes de avançar para a próxima página
+            // Wait for all parallel requests to finish before moving to the next page
             CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
 
             if (page < lastPage) {

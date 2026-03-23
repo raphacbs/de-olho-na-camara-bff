@@ -51,8 +51,8 @@ public class RecentPropositionSyncJob {
     @Qualifier("syncExecutor")
     private final Executor syncExecutor;
 
-    // Runs daily at 06:00 (Brasília time), after the full sync jobs (04:00 and 05:00)
-    @Scheduled(cron = "0 0 6 * * *", zone = "America/Sao_Paulo")
+    // Runs daily at 06:00 (Recife/BRT time, UTC-3), after the full sync jobs (04:00 and 05:00)
+    @Scheduled(cron = "0 0 6 * * *", zone = "America/Recife")
     public void syncRecentPropositions() {
         log.info("Starting recent proposition synchronization from Câmara API...");
 

@@ -48,4 +48,8 @@ public class PropertiesConfig {
     @Value("${vote.sync.max-parallel-tasks:20}")
     private Integer voteSyncMaxParallelTasks;
 
+    // Timeout (minutes) to wait vote tasks completion
+    @Value("${vote.sync.timeout.minutes:5}")
+    private Integer voteSyncTimeoutMinutes;
+
 }

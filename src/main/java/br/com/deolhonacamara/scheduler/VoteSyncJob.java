@@ -1,33 +1,34 @@
 package br.com.deolhonacamara.scheduler;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.log4j.Log4j2;
+
+import br.com.deolhonacamara.api.config.PropertiesConfig;
 import br.com.deolhonacamara.api.dto.VoteBodyDto;
 import br.com.deolhonacamara.api.dto.VoteResponseBodyDto;
 import br.com.deolhonacamara.api.dto.VotingBodyDto;
 import br.com.deolhonacamara.api.dto.VotingByIdResponseBodyDto;
 import br.com.deolhonacamara.api.dto.VotingResponseBodyDto;
 import br.com.deolhonacamara.api.mapper.Mapper;
-import br.com.deolhonacamara.api.config.PropertiesConfig;
 import br.com.deolhonacamara.api.model.SyncProgressEntity;
 import br.com.deolhonacamara.api.model.VotingEntity;
 import br.com.deolhonacamara.api.repository.VotingRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.SyncProgressService;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
-import java.util.Objects;
-
-import org.springframework.beans.factory.annotation.Qualifier;
-import lombok.extern.log4j.Log4j2;
-
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 @Component
 @Log4j2
@@ -233,9 +234,10 @@ public class VoteSyncJob {
                 voteTasks.add(task);
             }
 
+            long timeoutMinutes = Math.max(1L, propertiesConfig.getVoteSyncTimeoutMinutes());
             try {
                 CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0]))
-                        .orTimeout(5, TimeUnit.MINUTES)
+                        .orTimeout(timeoutMinutes, TimeUnit.MINUTES)
                         .join();
             } catch (Exception aggregateException) {
                 log.error("Error waiting vote tasks completion for voting {}", votingId, aggregateException);
@@ -249,18 +251,22 @@ public class VoteSyncJob {
         try {
             // Vote-to-deputy association uses the deputado.id field returned by the Câmara API
             Integer deputyId = voteBodyDto.getDeputado() != null ? voteBodyDto.getDeputado().getId() : null;
-            String anonymousKey = votingId + ANONYMOUS_KEY_DELIMITER
-                    + Objects.toString(voteBodyDto.getDataRegistroVoto(), UNKNOWN_DATE)
-                    + ANONYMOUS_KEY_DELIMITER
-                    + Objects.toString(voteBodyDto.getTipoVoto(), UNKNOWN_TYPE);
-            String seed = deputyId != null
-                    ? votingId + ANONYMOUS_KEY_DELIMITER + "deputy" + ANONYMOUS_KEY_DELIMITER + deputyId
-                    : anonymousKey;
-            String voteId = UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8)).toString();
+            String voteId = generateVoteId(votingId, voteBodyDto, deputyId);
             var entity = mapper.toEntity(voteBodyDto, voteId, votingId);
             votingRepository.saveVote(entity);
         } catch (Exception e) {
             log.error("Error saving vote for voting {}: ", votingId, e);
         }
+    }
+
+    private String generateVoteId(String votingId, VoteBodyDto voteBodyDto, Integer deputyId) {
+        String anonymousKey = votingId + ANONYMOUS_KEY_DELIMITER
+                + Objects.toString(voteBodyDto.getDataRegistroVoto(), UNKNOWN_DATE)
+                + ANONYMOUS_KEY_DELIMITER
+                + Objects.toString(voteBodyDto.getTipoVoto(), UNKNOWN_TYPE);
+        String seed = deputyId != null
+                ? votingId + ANONYMOUS_KEY_DELIMITER + "deputy" + ANONYMOUS_KEY_DELIMITER + deputyId
+                : anonymousKey;
+        return UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8)).toString();
     }
 }

@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -698,6 +699,40 @@ public class PropositionRepository {
         return result != null ? result : 0;
     }
 
+    /**
+     * Returns the number of propositions per politician for the given year, restricted to the provided list of politician IDs.
+     *
+     * @param politicianIds politician IDs to consider
+     * @param year          target year
+     * @return map keyed by politician ID with the respective proposition count
+     */
+    public Map<Integer, Integer> countByPoliticianIdsAndYear(List<Integer> politicianIds, Integer year) {
+        if (politicianIds == null || politicianIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        String sql = """
+            SELECT pp.politician_id, COUNT(*) AS total
+            FROM politician_proposition pp
+            INNER JOIN proposition p ON p.id = pp.proposition_id
+            WHERE pp.politician_id IN (:politicianIds)
+              AND p.year = :year
+            GROUP BY pp.politician_id
+        """;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("politicianIds", politicianIds);
+        params.put("year", year);
+
+        return jdbcTemplate.query(sql, params, rs -> {
+            Map<Integer, Integer> result = new HashMap<>();
+            while (rs.next()) {
+                result.put(rs.getInt("politician_id"), rs.getInt("total"));
+            }
+            return result;
+        });
+    }
+
     private PropositionDTO mapRowToDto(ResultSet rs) throws SQLException {
         List<PoliticianDTO> politicians = null;
         String politiciansJson = rs.getString("politicians");
@@ -888,4 +923,3 @@ public class PropositionRepository {
         return builder.build();
     }
 }
-

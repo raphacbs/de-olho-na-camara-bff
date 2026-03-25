@@ -6,6 +6,7 @@ import br.com.deolhonacamara.api.dto.VotingBodyDto;
 import br.com.deolhonacamara.api.dto.VotingByIdResponseBodyDto;
 import br.com.deolhonacamara.api.dto.VotingResponseBodyDto;
 import br.com.deolhonacamara.api.mapper.Mapper;
+import br.com.deolhonacamara.api.config.PropertiesConfig;
 import br.com.deolhonacamara.api.model.SyncProgressEntity;
 import br.com.deolhonacamara.api.model.VotingEntity;
 import br.com.deolhonacamara.api.repository.VotingRepository;
@@ -19,6 +20,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import lombok.extern.log4j.Log4j2;
@@ -30,23 +32,24 @@ import org.springframework.stereotype.Component;
 @Log4j2
 public class VoteSyncJob {
 
-    private static final int MAX_PARALLEL_VOTE_TASKS = 20;
-
     private final VotingRepository votingRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
     private final Executor syncExecutor;
+    private final PropertiesConfig propertiesConfig;
     private final Mapper mapper = Mapper.INSTANCE;
 
     public VoteSyncJob(
             VotingRepository votingRepository,
             CamaraDeputadosService camaraDeputadosService,
             SyncProgressService syncProgressService,
-            @Qualifier("syncExecutor") Executor syncExecutor) {
+            @Qualifier("syncExecutor") Executor syncExecutor,
+            PropertiesConfig propertiesConfig) {
         this.votingRepository = votingRepository;
         this.camaraDeputadosService = camaraDeputadosService;
         this.syncProgressService = syncProgressService;
         this.syncExecutor = syncExecutor;
+        this.propertiesConfig = propertiesConfig;
     }
 
     // Runs daily at 02:00 (Brasília time)
@@ -199,7 +202,10 @@ public class VoteSyncJob {
 
             log.info("Processing {} votes for voting {}", votesResponse.getData().size(), votingId);
 
-            Semaphore limiter = new Semaphore(MAX_PARALLEL_VOTE_TASKS);
+            int maxParallel = propertiesConfig.getVoteSyncMaxParallelTasks() != null
+                    ? Math.max(1, propertiesConfig.getVoteSyncMaxParallelTasks())
+                    : 20;
+            Semaphore limiter = new Semaphore(maxParallel);
             List<CompletableFuture<Void>> voteTasks = new ArrayList<>();
             for (VoteBodyDto voteBodyDto : votesResponse.getData()) {
                 try {
@@ -234,10 +240,11 @@ public class VoteSyncJob {
         try {
             // Vote-to-deputy association uses the deputado.id field returned by the Câmara API
             Integer deputyId = voteBodyDto.getDeputado() != null ? voteBodyDto.getDeputado().getId() : null;
-            String anonymousKey = votingId + "|" + String.valueOf(voteBodyDto.getDataRegistroVoto()) + "|" + String.valueOf(voteBodyDto.getTipoVoto());
+            String anonymousKey = votingId + "|" + Objects.toString(voteBodyDto.getDataRegistroVoto(), "unknownDate")
+                    + "|" + Objects.toString(voteBodyDto.getTipoVoto(), "unknownType");
             String voteId = deputyId != null
                     ? votingId + "-" + deputyId
-                    : votingId + "-anonymous-" + UUID.nameUUIDFromBytes(anonymousKey.getBytes(StandardCharsets.UTF_8));
+                    : votingId + "-anon-" + UUID.nameUUIDFromBytes(anonymousKey.getBytes(StandardCharsets.UTF_8));
             var entity = mapper.toEntity(voteBodyDto, voteId, votingId);
             votingRepository.saveVote(entity);
         } catch (Exception e) {

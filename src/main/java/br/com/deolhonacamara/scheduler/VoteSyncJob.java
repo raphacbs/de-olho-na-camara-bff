@@ -1,5 +1,23 @@
 package br.com.deolhonacamara.scheduler;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.log4j.Log4j2;
+
+import br.com.deolhonacamara.api.config.PropertiesConfig;
 import br.com.deolhonacamara.api.dto.VoteBodyDto;
 import br.com.deolhonacamara.api.dto.VoteResponseBodyDto;
 import br.com.deolhonacamara.api.dto.VotingBodyDto;
@@ -11,23 +29,34 @@ import br.com.deolhonacamara.api.model.VotingEntity;
 import br.com.deolhonacamara.api.repository.VotingRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.SyncProgressService;
-import java.time.LocalDate;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 @Log4j2
 public class VoteSyncJob {
+
+    private static final String ANONYMOUS_KEY_DELIMITER = "|";
+    private static final String UNKNOWN_DATE = "unknownDate";
+    private static final String UNKNOWN_TYPE = "unknownType";
 
     private final VotingRepository votingRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
+    private final Executor syncExecutor;
+    private final PropertiesConfig propertiesConfig;
     private final Mapper mapper = Mapper.INSTANCE;
+
+    public VoteSyncJob(
+            VotingRepository votingRepository,
+            CamaraDeputadosService camaraDeputadosService,
+            SyncProgressService syncProgressService,
+            @Qualifier("syncExecutor") Executor syncExecutor,
+            PropertiesConfig propertiesConfig) {
+        this.votingRepository = votingRepository;
+        this.camaraDeputadosService = camaraDeputadosService;
+        this.syncProgressService = syncProgressService;
+        this.syncExecutor = syncExecutor;
+        this.propertiesConfig = propertiesConfig;
+    }
 
     // Runs daily at 02:00 (Brasília time)
     @Scheduled(cron = "0 0 2 * * *", zone = "America/Recife")
@@ -118,20 +147,7 @@ public class VoteSyncJob {
                 log.info("Found {} votings in page {}", votingsResponse.getData().size(), page);
 
                 for (VotingBodyDto votingDto : votingsResponse.getData()) {
-                    try {
-                        // busca as votações por id na api da camara
-                        VotingByIdResponseBodyDto voting = camaraDeputadosService.getVotingById(votingDto.getId());
-                        if (voting != null && voting.getBody() != null) {
-                            var body = voting.getBody();
-                            VotingEntity votingEntity = mapper.toEntity(body);
-                            votingRepository.upsertVote(votingEntity);
-
-                            // Process Votings with pagination
-                            processVotesInVoting(votingDto.getId(), 1);
-                        }
-                    } catch (Exception e) {
-                        log.error("Error processing voting {}: ", votingDto.getId(), e);
-                    }
+                    processSingleVoting(votingDto);
                 }
 
                 if (page < lastPage) {
@@ -167,80 +183,90 @@ public class VoteSyncJob {
         }
     }
 
-    private VoteResponseBodyDto getVotesInVotingWithPage(String votingId, Integer page) {
+    private void processSingleVoting(VotingBodyDto votingDto) {
         try {
-            // endpoint does not support pagination; delegate to non-paginated method
-            return camaraDeputadosService.getVotesInVoting(votingId);
+            VotingByIdResponseBodyDto voting = camaraDeputadosService.getVotingById(votingDto.getId());
+            if (voting != null && voting.getBody() != null) {
+                var body = voting.getBody();
+                VotingEntity votingEntity = mapper.toEntity(body);
+                votingRepository.upsertVote(votingEntity);
+
+                processVotesInVoting(votingDto.getId());
+            }
         } catch (Exception e) {
-            log.warn("Error getting votes for voting {} page {}: {}", votingId, page, e.getMessage());
-            return null;
+            log.error("Error processing voting {}: ", votingDto.getId(), e);
         }
     }
 
-    private Integer getLastPageNumberForVotes(VoteResponseBodyDto response) {
-        if (response != null && response.getLinks() != null) {
-            for (var link : response.getLinks()) {
-                Integer lastPage = link.getNumberLastPage();
-                if (lastPage != null) {
-                    return lastPage;
-                }
-            }
-        }
-        return 1;
-    }
-
-    private void processVotesInVoting(String votingId, Integer page) {
+    private void processVotesInVoting(String votingId) {
         try {
-            VoteResponseBodyDto votesResponse = getVotesInVotingWithPage(votingId, page);
-            if (votesResponse == null) {
-                log.warn("Failed to get votes for voting {} page {}, will retry once more", votingId, page);
-                // Try one more time for this page before giving up
-                votesResponse = getVotesInVotingWithPage(votingId, page);
-                if (votesResponse == null) {
-                    log.error("Failed to get votes for voting {} page {} after retry, skipping to next page", votingId, page);
-                    // Continue to next page instead of stopping completely
-                    if (page < 1000) {
-                        processVotesInVoting(votingId, page + 1);
-                    }
-                    return;
-                }
+            VoteResponseBodyDto votesResponse = camaraDeputadosService.getVotesInVoting(votingId);
+            if (votesResponse == null || votesResponse.getData() == null) {
+                log.info("No vote data found for voting {}, skipping vote processing", votingId);
+                return;
             }
 
-            if (votesResponse.getData() != null) {
-                log.info("Processing {} votes for voting {} in page {}", votesResponse.getData().size(), votingId, page);
+            log.info("Processing {} votes for voting {}", votesResponse.getData().size(), votingId);
 
-                for (VoteBodyDto voteBodyDto : votesResponse.getData()) {
-                    try {
-                        var entity = mapper.toEntity(voteBodyDto, votingId, votingId);
-                        votingRepository.saveVote(entity);
-                    } catch (Exception e) {
-                        log.error("Error saving vote for voting {}: ", votingId, e);
-                    }
-                }
-
-                Integer lastPage = getLastPageNumberForVotes(votesResponse);
-                if (page < lastPage) {
-                    log.info("Starting processing of next page {} for votes in voting {}", page + 1, votingId);
-                    processVotesInVoting(votingId, page + 1);
-                }
-            } else {
-                log.info("No vote data found for voting {} page {}, this likely means we've reached the end of available data", votingId, page);
-                // If no data is returned, it means we've reached the end, don't continue to next page
-            }
-        } catch (Exception e) {
-            log.error("Error processing votes for voting {} page {}: ", votingId, page, e);
-            // Continue to next page even if current page failed completely
-            // Add protection against infinite recursion
-            if (page < 1000) {  // Reasonable limit to prevent infinite recursion
+            int maxParallel = Math.max(1, propertiesConfig.getVoteSyncMaxParallelTasks());
+            Semaphore limiter = new Semaphore(maxParallel);
+            List<CompletableFuture<Void>> voteTasks = new ArrayList<>();
+            for (VoteBodyDto voteBodyDto : votesResponse.getData()) {
+                CompletableFuture<Void> task;
                 try {
-                    log.info("Attempting to continue with next page {} for voting {} after error", page + 1, votingId);
-                    processVotesInVoting(votingId, page + 1);
-                } catch (Exception e2) {
-                    log.error("Failed to continue processing votes for voting {} after page {} error: ", votingId, page, e2);
+                    limiter.acquire();
+                    task = CompletableFuture.runAsync(() -> {
+                        try {
+                            saveVote(votingId, voteBodyDto);
+                        } finally {
+                            limiter.release();
+                        }
+                    }, syncExecutor).exceptionally(ex -> {
+                        log.error("Async error saving vote for voting {}: ", votingId, ex);
+                        return null;
+                    });
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                    log.error("Vote save interrupted while waiting for permit for voting {}: ", votingId, interruptedException);
+                    break;
                 }
-            } else {
-                log.warn("Reached maximum page limit ({}) for voting {}, stopping processing to prevent infinite recursion", page, votingId);
+
+                voteTasks.add(task);
             }
+
+            long timeoutMinutes = Math.max(1L, propertiesConfig.getVoteSyncTimeoutMinutes());
+            try {
+                CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0]))
+                        .orTimeout(timeoutMinutes, TimeUnit.MINUTES)
+                        .join();
+            } catch (Exception aggregateException) {
+                log.error("Error waiting vote tasks completion for voting {}", votingId, aggregateException);
+            }
+        } catch (Exception e) {
+            log.error("Error processing votes for voting {}: ", votingId, e);
         }
+    }
+
+    private void saveVote(String votingId, VoteBodyDto voteBodyDto) {
+        try {
+            // Vote-to-deputy association uses the deputado.id field returned by the Câmara API
+            Integer deputyId = voteBodyDto.getDeputado() != null ? voteBodyDto.getDeputado().getId() : null;
+            String voteId = generateVoteId(votingId, voteBodyDto, deputyId);
+            var entity = mapper.toEntity(voteBodyDto, voteId, votingId);
+            votingRepository.saveVote(entity);
+        } catch (Exception e) {
+            log.error("Error saving vote for voting {}: ", votingId, e);
+        }
+    }
+
+    private String generateVoteId(String votingId, VoteBodyDto voteBodyDto, Integer deputyId) {
+        String anonymousKey = votingId + ANONYMOUS_KEY_DELIMITER
+                + Objects.toString(voteBodyDto.getDataRegistroVoto(), UNKNOWN_DATE)
+                + ANONYMOUS_KEY_DELIMITER
+                + Objects.toString(voteBodyDto.getTipoVoto(), UNKNOWN_TYPE);
+        String seed = deputyId != null
+                ? votingId + ANONYMOUS_KEY_DELIMITER + "deputy" + ANONYMOUS_KEY_DELIMITER + deputyId
+                : anonymousKey;
+        return UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8)).toString();
     }
 }

@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import lombok.extern.log4j.Log4j2;
@@ -25,6 +26,8 @@ import org.springframework.stereotype.Component;
 @Component
 @Log4j2
 public class VoteSyncJob {
+
+    private static final int VOTE_BATCH_SIZE = 100;
 
     private final VotingRepository votingRepository;
     private final CamaraDeputadosService camaraDeputadosService;
@@ -199,15 +202,20 @@ public class VoteSyncJob {
 
             log.info("Processing {} votes for voting {}", votesResponse.getData().size(), votingId);
 
-            List<CompletableFuture<Void>> voteTasks = votesResponse.getData().stream()
-                    .map(voteBodyDto -> CompletableFuture.runAsync(() -> saveVote(votingId, voteBodyDto), syncExecutor)
-                            .exceptionally(ex -> {
-                                log.error("Async error saving vote for voting {}: ", votingId, ex);
-                                return null;
-                            }))
-                    .toList();
+            for (int i = 0; i < votesResponse.getData().size(); i += VOTE_BATCH_SIZE) {
+                List<VoteBodyDto> batch = votesResponse.getData()
+                        .subList(i, Math.min(i + VOTE_BATCH_SIZE, votesResponse.getData().size()));
 
-            CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
+                List<CompletableFuture<Void>> voteTasks = batch.stream()
+                        .map(voteBodyDto -> CompletableFuture.runAsync(() -> saveVote(votingId, voteBodyDto), syncExecutor)
+                                .exceptionally(ex -> {
+                                    log.error("Async error saving vote for voting {}: ", votingId, ex);
+                                    return null;
+                                }))
+                        .toList();
+
+                CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
+            }
         } catch (Exception e) {
             log.error("Error processing votes for voting {}: ", votingId, e);
         }
@@ -217,7 +225,11 @@ public class VoteSyncJob {
         try {
             // Vote-to-deputy association uses the deputado.id field returned by the Câmara API
             Integer deputyId = voteBodyDto.getDeputado() != null ? voteBodyDto.getDeputado().getId() : null;
-            String voteId = deputyId != null ? votingId + "-" + deputyId : votingId;
+            String voteId = deputyId != null
+                    ? votingId + "-" + deputyId
+                    : votingId + "-anonymous-" + (voteBodyDto.getDataRegistroVoto() != null
+                    ? voteBodyDto.getDataRegistroVoto()
+                    : UUID.randomUUID());
             var entity = mapper.toEntity(voteBodyDto, voteId, votingId);
             votingRepository.saveVote(entity);
         } catch (Exception e) {

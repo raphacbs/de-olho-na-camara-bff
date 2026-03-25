@@ -12,10 +12,12 @@ import br.com.deolhonacamara.api.repository.VotingRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.SyncProgressService;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -135,15 +137,9 @@ public class VoteSyncJob {
             if (votingsResponse.getData() != null) {
                 log.info("Found {} votings in page {}", votingsResponse.getData().size(), page);
 
-                List<CompletableFuture<Void>> votingTasks = votingsResponse.getData().stream()
-                        .map(votingDto -> CompletableFuture.runAsync(() -> processSingleVoting(votingDto), syncExecutor)
-                                .exceptionally(ex -> {
-                                    log.error("Async error processing voting {}: ", votingDto.getId(), ex);
-                                    return null;
-                                }))
-                        .toList();
-
-                CompletableFuture.allOf(votingTasks.toArray(new CompletableFuture[0])).join();
+                for (VotingBodyDto votingDto : votingsResponse.getData()) {
+                    processSingleVoting(votingDto);
+                }
 
                 if (page < lastPage) {
                     // Update progress before moving to next page
@@ -204,22 +200,29 @@ public class VoteSyncJob {
             log.info("Processing {} votes for voting {}", votesResponse.getData().size(), votingId);
 
             Semaphore limiter = new Semaphore(MAX_PARALLEL_VOTE_TASKS);
-            List<CompletableFuture<Void>> voteTasks = votesResponse.getData().stream()
-                    .map(voteBodyDto -> CompletableFuture.runAsync(() -> {
-                        try {
-                            limiter.acquire();
-                            saveVote(votingId, voteBodyDto);
-                        } catch (InterruptedException interruptedException) {
-                            Thread.currentThread().interrupt();
-                            log.error("Vote save interrupted for voting {}: ", votingId, interruptedException);
-                        } finally {
-                            limiter.release();
-                        }
-                    }, syncExecutor).exceptionally(ex -> {
-                        log.error("Async error saving vote for voting {}: ", votingId, ex);
-                        return null;
-                    }))
-                    .toList();
+            List<CompletableFuture<Void>> voteTasks = new ArrayList<>();
+            for (VoteBodyDto voteBodyDto : votesResponse.getData()) {
+                try {
+                    limiter.acquire();
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                    log.error("Vote save interrupted while waiting for permit for voting {}: ", votingId, interruptedException);
+                    break;
+                }
+
+                CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
+                    try {
+                        saveVote(votingId, voteBodyDto);
+                    } finally {
+                        limiter.release();
+                    }
+                }, syncExecutor).exceptionally(ex -> {
+                    log.error("Async error saving vote for voting {}: ", votingId, ex);
+                    return null;
+                });
+
+                voteTasks.add(task);
+            }
 
             CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
         } catch (Exception e) {
@@ -231,9 +234,10 @@ public class VoteSyncJob {
         try {
             // Vote-to-deputy association uses the deputado.id field returned by the Câmara API
             Integer deputyId = voteBodyDto.getDeputado() != null ? voteBodyDto.getDeputado().getId() : null;
+            String anonymousKey = votingId + "|" + String.valueOf(voteBodyDto.getDataRegistroVoto()) + "|" + String.valueOf(voteBodyDto.getTipoVoto());
             String voteId = deputyId != null
                     ? votingId + "-" + deputyId
-                    : votingId + "-anonymous-" + UUID.randomUUID();
+                    : votingId + "-anonymous-" + UUID.nameUUIDFromBytes(anonymousKey.getBytes(StandardCharsets.UTF_8));
             var entity = mapper.toEntity(voteBodyDto, voteId, votingId);
             votingRepository.saveVote(entity);
         } catch (Exception e) {

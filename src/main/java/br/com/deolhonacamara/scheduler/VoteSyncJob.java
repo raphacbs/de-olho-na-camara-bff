@@ -12,7 +12,11 @@ import br.com.deolhonacamara.api.repository.VotingRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.SyncProgressService;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -27,6 +31,8 @@ public class VoteSyncJob {
     private final VotingRepository votingRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
+    @Qualifier("syncExecutor")
+    private final Executor syncExecutor;
     private final Mapper mapper = Mapper.INSTANCE;
 
     // Runs daily at 02:00 (Brasília time)
@@ -117,22 +123,11 @@ public class VoteSyncJob {
             if (votingsResponse.getData() != null) {
                 log.info("Found {} votings in page {}", votingsResponse.getData().size(), page);
 
-                for (VotingBodyDto votingDto : votingsResponse.getData()) {
-                    try {
-                        // busca as votações por id na api da camara
-                        VotingByIdResponseBodyDto voting = camaraDeputadosService.getVotingById(votingDto.getId());
-                        if (voting != null && voting.getBody() != null) {
-                            var body = voting.getBody();
-                            VotingEntity votingEntity = mapper.toEntity(body);
-                            votingRepository.upsertVote(votingEntity);
+                List<CompletableFuture<Void>> votingTasks = votingsResponse.getData().stream()
+                        .map(votingDto -> CompletableFuture.runAsync(() -> processSingleVoting(votingDto), syncExecutor))
+                        .toList();
 
-                            // Process Votings with pagination
-                            processVotesInVoting(votingDto.getId(), 1);
-                        }
-                    } catch (Exception e) {
-                        log.error("Error processing voting {}: ", votingDto.getId(), e);
-                    }
-                }
+                CompletableFuture.allOf(votingTasks.toArray(new CompletableFuture[0])).join();
 
                 if (page < lastPage) {
                     // Update progress before moving to next page
@@ -167,80 +162,48 @@ public class VoteSyncJob {
         }
     }
 
-    private VoteResponseBodyDto getVotesInVotingWithPage(String votingId, Integer page) {
+    private void processSingleVoting(VotingBodyDto votingDto) {
         try {
-            // endpoint does not support pagination; delegate to non-paginated method
-            return camaraDeputadosService.getVotesInVoting(votingId);
+            VotingByIdResponseBodyDto voting = camaraDeputadosService.getVotingById(votingDto.getId());
+            if (voting != null && voting.getBody() != null) {
+                var body = voting.getBody();
+                VotingEntity votingEntity = mapper.toEntity(body);
+                votingRepository.upsertVote(votingEntity);
+
+                processVotesInVoting(votingDto.getId());
+            }
         } catch (Exception e) {
-            log.warn("Error getting votes for voting {} page {}: {}", votingId, page, e.getMessage());
-            return null;
+            log.error("Error processing voting {}: ", votingDto.getId(), e);
         }
     }
 
-    private Integer getLastPageNumberForVotes(VoteResponseBodyDto response) {
-        if (response != null && response.getLinks() != null) {
-            for (var link : response.getLinks()) {
-                Integer lastPage = link.getNumberLastPage();
-                if (lastPage != null) {
-                    return lastPage;
-                }
+    private void processVotesInVoting(String votingId) {
+        try {
+            VoteResponseBodyDto votesResponse = camaraDeputadosService.getVotesInVoting(votingId);
+            if (votesResponse == null || votesResponse.getData() == null) {
+                log.info("No vote data found for voting {}, skipping vote processing", votingId);
+                return;
             }
+
+            log.info("Processing {} votes for voting {}", votesResponse.getData().size(), votingId);
+
+            List<CompletableFuture<Void>> voteTasks = votesResponse.getData().stream()
+                    .map(voteBodyDto -> CompletableFuture.runAsync(() -> saveVote(votingId, voteBodyDto), syncExecutor))
+                    .toList();
+
+            CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
+        } catch (Exception e) {
+            log.error("Error processing votes for voting {}: ", votingId, e);
         }
-        return 1;
     }
 
-    private void processVotesInVoting(String votingId, Integer page) {
+    private void saveVote(String votingId, VoteBodyDto voteBodyDto) {
         try {
-            VoteResponseBodyDto votesResponse = getVotesInVotingWithPage(votingId, page);
-            if (votesResponse == null) {
-                log.warn("Failed to get votes for voting {} page {}, will retry once more", votingId, page);
-                // Try one more time for this page before giving up
-                votesResponse = getVotesInVotingWithPage(votingId, page);
-                if (votesResponse == null) {
-                    log.error("Failed to get votes for voting {} page {} after retry, skipping to next page", votingId, page);
-                    // Continue to next page instead of stopping completely
-                    if (page < 1000) {
-                        processVotesInVoting(votingId, page + 1);
-                    }
-                    return;
-                }
-            }
-
-            if (votesResponse.getData() != null) {
-                log.info("Processing {} votes for voting {} in page {}", votesResponse.getData().size(), votingId, page);
-
-                for (VoteBodyDto voteBodyDto : votesResponse.getData()) {
-                    try {
-                        var entity = mapper.toEntity(voteBodyDto, votingId, votingId);
-                        votingRepository.saveVote(entity);
-                    } catch (Exception e) {
-                        log.error("Error saving vote for voting {}: ", votingId, e);
-                    }
-                }
-
-                Integer lastPage = getLastPageNumberForVotes(votesResponse);
-                if (page < lastPage) {
-                    log.info("Starting processing of next page {} for votes in voting {}", page + 1, votingId);
-                    processVotesInVoting(votingId, page + 1);
-                }
-            } else {
-                log.info("No vote data found for voting {} page {}, this likely means we've reached the end of available data", votingId, page);
-                // If no data is returned, it means we've reached the end, don't continue to next page
-            }
+            // Associação do voto ao deputado é feita via campo deputado.id retornado pela API da Câmara
+            var entity = mapper.toEntity(voteBodyDto, votingId, votingId);
+            votingRepository.saveVote(entity);
         } catch (Exception e) {
-            log.error("Error processing votes for voting {} page {}: ", votingId, page, e);
-            // Continue to next page even if current page failed completely
-            // Add protection against infinite recursion
-            if (page < 1000) {  // Reasonable limit to prevent infinite recursion
-                try {
-                    log.info("Attempting to continue with next page {} for voting {} after error", page + 1, votingId);
-                    processVotesInVoting(votingId, page + 1);
-                } catch (Exception e2) {
-                    log.error("Failed to continue processing votes for voting {} after page {} error: ", votingId, page, e2);
-                }
-            } else {
-                log.warn("Reached maximum page limit ({}) for voting {}, stopping processing to prevent infinite recursion", page, votingId);
-            }
+            log.error("Error saving vote for voting {}: ", votingId, e);
         }
     }
 }

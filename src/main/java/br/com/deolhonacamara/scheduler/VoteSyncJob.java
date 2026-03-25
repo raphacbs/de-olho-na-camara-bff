@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -27,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Log4j2
 public class VoteSyncJob {
 
-    private static final int VOTE_BATCH_SIZE = 100;
+    private static final int MAX_PARALLEL_VOTE_TASKS = 20;
 
     private final VotingRepository votingRepository;
     private final CamaraDeputadosService camaraDeputadosService;
@@ -202,20 +203,25 @@ public class VoteSyncJob {
 
             log.info("Processing {} votes for voting {}", votesResponse.getData().size(), votingId);
 
-            for (int i = 0; i < votesResponse.getData().size(); i += VOTE_BATCH_SIZE) {
-                List<VoteBodyDto> batch = votesResponse.getData()
-                        .subList(i, Math.min(i + VOTE_BATCH_SIZE, votesResponse.getData().size()));
+            Semaphore limiter = new Semaphore(MAX_PARALLEL_VOTE_TASKS);
+            List<CompletableFuture<Void>> voteTasks = votesResponse.getData().stream()
+                    .map(voteBodyDto -> CompletableFuture.runAsync(() -> {
+                        try {
+                            limiter.acquire();
+                            saveVote(votingId, voteBodyDto);
+                        } catch (InterruptedException interruptedException) {
+                            Thread.currentThread().interrupt();
+                            log.error("Vote save interrupted for voting {}: ", votingId, interruptedException);
+                        } finally {
+                            limiter.release();
+                        }
+                    }, syncExecutor).exceptionally(ex -> {
+                        log.error("Async error saving vote for voting {}: ", votingId, ex);
+                        return null;
+                    }))
+                    .toList();
 
-                List<CompletableFuture<Void>> voteTasks = batch.stream()
-                        .map(voteBodyDto -> CompletableFuture.runAsync(() -> saveVote(votingId, voteBodyDto), syncExecutor)
-                                .exceptionally(ex -> {
-                                    log.error("Async error saving vote for voting {}: ", votingId, ex);
-                                    return null;
-                                }))
-                        .toList();
-
-                CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
-            }
+            CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
         } catch (Exception e) {
             log.error("Error processing votes for voting {}: ", votingId, e);
         }
@@ -227,9 +233,7 @@ public class VoteSyncJob {
             Integer deputyId = voteBodyDto.getDeputado() != null ? voteBodyDto.getDeputado().getId() : null;
             String voteId = deputyId != null
                     ? votingId + "-" + deputyId
-                    : votingId + "-anonymous-" + (voteBodyDto.getDataRegistroVoto() != null
-                    ? voteBodyDto.getDataRegistroVoto()
-                    : UUID.randomUUID());
+                    : votingId + "-anonymous-" + UUID.randomUUID();
             var entity = mapper.toEntity(voteBodyDto, voteId, votingId);
             votingRepository.saveVote(entity);
         } catch (Exception e) {

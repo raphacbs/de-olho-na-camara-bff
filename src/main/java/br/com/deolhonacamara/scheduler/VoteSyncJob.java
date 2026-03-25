@@ -124,7 +124,11 @@ public class VoteSyncJob {
                 log.info("Found {} votings in page {}", votingsResponse.getData().size(), page);
 
                 List<CompletableFuture<Void>> votingTasks = votingsResponse.getData().stream()
-                        .map(votingDto -> CompletableFuture.runAsync(() -> processSingleVoting(votingDto), syncExecutor))
+                        .map(votingDto -> CompletableFuture.runAsync(() -> processSingleVoting(votingDto), syncExecutor)
+                                .exceptionally(ex -> {
+                                    log.error("Async error processing voting {}: ", votingDto.getId(), ex);
+                                    return null;
+                                }))
                         .toList();
 
                 CompletableFuture.allOf(votingTasks.toArray(new CompletableFuture[0])).join();
@@ -188,7 +192,11 @@ public class VoteSyncJob {
             log.info("Processing {} votes for voting {}", votesResponse.getData().size(), votingId);
 
             List<CompletableFuture<Void>> voteTasks = votesResponse.getData().stream()
-                    .map(voteBodyDto -> CompletableFuture.runAsync(() -> saveVote(votingId, voteBodyDto), syncExecutor))
+                    .map(voteBodyDto -> CompletableFuture.runAsync(() -> saveVote(votingId, voteBodyDto), syncExecutor)
+                            .exceptionally(ex -> {
+                                log.error("Async error saving vote for voting {}: ", votingId, ex);
+                                return null;
+                            }))
                     .toList();
 
             CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
@@ -199,7 +207,7 @@ public class VoteSyncJob {
 
     private void saveVote(String votingId, VoteBodyDto voteBodyDto) {
         try {
-            // Associação do voto ao deputado é feita via campo deputado.id retornado pela API da Câmara
+            // Vote-to-deputy association uses the deputado.id field returned by the Câmara API
             var entity = mapper.toEntity(voteBodyDto, votingId, votingId);
             votingRepository.saveVote(entity);
         } catch (Exception e) {

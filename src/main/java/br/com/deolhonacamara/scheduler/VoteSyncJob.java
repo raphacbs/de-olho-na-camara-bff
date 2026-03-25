@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.Objects;
@@ -210,30 +211,32 @@ public class VoteSyncJob {
             Semaphore limiter = new Semaphore(maxParallel);
             List<CompletableFuture<Void>> voteTasks = new ArrayList<>();
             for (VoteBodyDto voteBodyDto : votesResponse.getData()) {
+                CompletableFuture<Void> task;
                 try {
                     limiter.acquire();
+                    task = CompletableFuture.runAsync(() -> {
+                        try {
+                            saveVote(votingId, voteBodyDto);
+                        } finally {
+                            limiter.release();
+                        }
+                    }, syncExecutor).exceptionally(ex -> {
+                        log.error("Async error saving vote for voting {}: ", votingId, ex);
+                        return null;
+                    });
                 } catch (InterruptedException interruptedException) {
                     Thread.currentThread().interrupt();
                     log.error("Vote save interrupted while waiting for permit for voting {}: ", votingId, interruptedException);
                     break;
                 }
 
-                CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
-                    try {
-                        saveVote(votingId, voteBodyDto);
-                    } finally {
-                        limiter.release();
-                    }
-                }, syncExecutor).exceptionally(ex -> {
-                    log.error("Async error saving vote for voting {}: ", votingId, ex);
-                    return null;
-                });
-
                 voteTasks.add(task);
             }
 
             try {
-                CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
+                CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0]))
+                        .orTimeout(5, TimeUnit.MINUTES)
+                        .join();
             } catch (Exception aggregateException) {
                 log.error("Error waiting vote tasks completion for voting {}", votingId, aggregateException);
             }
@@ -250,9 +253,10 @@ public class VoteSyncJob {
                     + Objects.toString(voteBodyDto.getDataRegistroVoto(), UNKNOWN_DATE)
                     + ANONYMOUS_KEY_DELIMITER
                     + Objects.toString(voteBodyDto.getTipoVoto(), UNKNOWN_TYPE);
-            String voteId = deputyId != null
-                    ? votingId + "-" + deputyId
-                    : votingId + "-anon-" + UUID.nameUUIDFromBytes(anonymousKey.getBytes(StandardCharsets.UTF_8));
+            String seed = deputyId != null
+                    ? votingId + ANONYMOUS_KEY_DELIMITER + "deputy" + ANONYMOUS_KEY_DELIMITER + deputyId
+                    : anonymousKey;
+            String voteId = UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8)).toString();
             var entity = mapper.toEntity(voteBodyDto, voteId, votingId);
             votingRepository.saveVote(entity);
         } catch (Exception e) {

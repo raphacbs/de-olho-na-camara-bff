@@ -10,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -41,11 +40,13 @@ public class JwtService {
     public String generateToken(UserEntity user) {
         log.debug("🔑 Gerando token JWT para usuário: {}", user.getEmail());
         try {
+            long expirationMs = propertiesConfig.getJwtExpirationMs();
+            Date expirationDate = new Date(System.currentTimeMillis() + expirationMs);
             String token = Jwts.builder()
                     .setSubject(user.getEmail())
                     .claim("userId", user.getId())
                     .setIssuedAt(new Date())
-                    .setExpiration(java.sql.Timestamp.valueOf(LocalDateTime.now().plusHours(propertiesConfig.getJwtExpirationHours())))
+                    .setExpiration(expirationDate)
                     .signWith(SignatureAlgorithm.HS512, propertiesConfig.getJwtSecret())
                     .compact();
             log.debug("✅ Token JWT gerado com sucesso para usuário: {}", user.getEmail());

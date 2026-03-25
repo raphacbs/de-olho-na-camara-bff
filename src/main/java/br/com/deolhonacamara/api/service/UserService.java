@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -45,12 +46,14 @@ public class UserService {
 
         log.info("✅ Tokens gerado com sucesso para o usuário: {} - ID: {}", user.getEmail(), user.getId());
 
+        Duration expirationDuration = Duration.ofMillis(propertiesConfig.getJwtExpirationMs());
         OffsetDateTime expireAt = OffsetDateTime.now(ZoneOffset.UTC)
-                .plusHours(propertiesConfig.getJwtExpirationHours());
+                .plus(expirationDuration);
+        int expireInSeconds = Math.toIntExact(expirationDuration.getSeconds());
 
         return new AuthResponseDTO()
                 .accessToken(accessToken)
-                .expireIn(propertiesConfig.getJwtExpirationHours() * 3600)
+                .expireIn(expireInSeconds)
                 .expireAt(expireAt)
                 .tokenType("JWT")
                 .refreshToken(refreshToken);
@@ -79,12 +82,14 @@ public class UserService {
 
         log.info("✅ Tokens gerado com sucesso para o usuário: {} - ID: {}", newUser.getEmail(), newUser.getId());
 
+        Duration expirationDuration = Duration.ofMillis(propertiesConfig.getJwtExpirationMs());
         OffsetDateTime expireAt = OffsetDateTime.now(ZoneOffset.UTC)
-                .plusHours(propertiesConfig.getJwtExpirationHours());
+                .plus(expirationDuration);
+        int expireInSeconds = Math.toIntExact(expirationDuration.getSeconds());
 
         return new AuthResponseDTO()
                 .accessToken(accessToken)
-                .expireIn(propertiesConfig.getJwtExpirationHours() * 3600)
+                .expireIn(expireInSeconds)
                 .expireAt(expireAt)
                 .tokenType("JWT")
                 .refreshToken(refreshToken);

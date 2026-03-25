@@ -347,7 +347,7 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 
 # JWT
 jwt.secret=supersecretkey
-jwt.expiration.ms=86400000
+jwt.expiration.ms=604800000
 
 # Domain
 domain.url=https://seusite.com
@@ -371,7 +371,7 @@ As configurações podem ser sobrescritas por variáveis de ambiente:
 - `SPRING_DATASOURCE_USERNAME`
 - `SPRING_DATASOURCE_PASSWORD`
 - `JWT_SECRET`
-- `JWT_EXPIRATION_MS`
+- `JWT_EXPIRATION_MS` (padrão: 604800000 ms — 7 dias)
 - `CAMARA_DEPUTADOS_API_BASE_URL`
 
 ## 🚀 Como Executar

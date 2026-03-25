@@ -52,7 +52,7 @@ public class PropositionSyncJob {
     private int syncPropositionsPeriodMonths;
 
     // Runs daily at 04:00 (Brasília time)
-    @Scheduled(cron = "0 0 4 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 0 4 * * *", zone = "America/Recife")
     public void syncPropositions() {
         log.info("Starting proposition synchronization from Câmara API...");
 

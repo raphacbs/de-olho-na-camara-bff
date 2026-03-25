@@ -19,7 +19,7 @@ public class PoliticianSyncJob {
     private final PoliticianRepository politicianRepository;
 
     // Runs daily at 23:00 (Brasília time)
-    @Scheduled(cron = "0 0 23 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 0 23 * * *", zone = "America/Recife")
     public void syncPoliticians() {
         log.info("Starting politician synchronization from Câmara API...");
 

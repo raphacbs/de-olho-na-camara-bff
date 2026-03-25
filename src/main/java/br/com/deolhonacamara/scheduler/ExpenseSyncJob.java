@@ -27,7 +27,7 @@ public class ExpenseSyncJob {
     private final SyncProgressService syncProgressService;
 
     // Runs daily at 01:00 (Brasília time) - after politician sync
-    @Scheduled(cron = "0 0 1 * * *", zone = "America/Sao_Paulo")
+    @Scheduled(cron = "0 0 1 * * *", zone = "America/Recife")
     public void syncExpenses() {
         log.info("Starting expense synchronization from Câmara API...");
 

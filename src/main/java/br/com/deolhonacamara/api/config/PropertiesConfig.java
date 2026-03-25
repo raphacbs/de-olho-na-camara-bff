@@ -40,4 +40,8 @@ public class PropertiesConfig {
     @Value("${proposition.sync.max-in-flight:50}")
     private Integer propositionSyncMaxInFlight;
 
+    // Number of days to look back when syncing recent propositions/tramitations
+    @Value("${proposition.recent.sync.days:3}")
+    private Integer propositionRecentSyncDays;
+
 }

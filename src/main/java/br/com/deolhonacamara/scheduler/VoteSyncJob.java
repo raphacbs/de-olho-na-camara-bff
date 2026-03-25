@@ -17,23 +17,31 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 @Log4j2
 public class VoteSyncJob {
 
     private final VotingRepository votingRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
-    @Qualifier("syncExecutor")
     private final Executor syncExecutor;
     private final Mapper mapper = Mapper.INSTANCE;
+
+    public VoteSyncJob(
+            VotingRepository votingRepository,
+            CamaraDeputadosService camaraDeputadosService,
+            SyncProgressService syncProgressService,
+            @Qualifier("syncExecutor") Executor syncExecutor) {
+        this.votingRepository = votingRepository;
+        this.camaraDeputadosService = camaraDeputadosService;
+        this.syncProgressService = syncProgressService;
+        this.syncExecutor = syncExecutor;
+    }
 
     // Runs daily at 02:00 (Brasília time)
     @Scheduled(cron = "0 0 2 * * *", zone = "America/Recife")
@@ -208,7 +216,9 @@ public class VoteSyncJob {
     private void saveVote(String votingId, VoteBodyDto voteBodyDto) {
         try {
             // Vote-to-deputy association uses the deputado.id field returned by the Câmara API
-            var entity = mapper.toEntity(voteBodyDto, votingId, votingId);
+            Integer deputyId = voteBodyDto.getDeputado() != null ? voteBodyDto.getDeputado().getId() : null;
+            String voteId = deputyId != null ? votingId + "-" + deputyId : votingId;
+            var entity = mapper.toEntity(voteBodyDto, voteId, votingId);
             votingRepository.saveVote(entity);
         } catch (Exception e) {
             log.error("Error saving vote for voting {}: ", votingId, e);

@@ -32,6 +32,10 @@ import org.springframework.stereotype.Component;
 @Log4j2
 public class VoteSyncJob {
 
+    private static final String ANONYMOUS_KEY_DELIMITER = "|";
+    private static final String UNKNOWN_DATE = "unknownDate";
+    private static final String UNKNOWN_TYPE = "unknownType";
+
     private final VotingRepository votingRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
@@ -202,9 +206,7 @@ public class VoteSyncJob {
 
             log.info("Processing {} votes for voting {}", votesResponse.getData().size(), votingId);
 
-            int maxParallel = propertiesConfig.getVoteSyncMaxParallelTasks() != null
-                    ? Math.max(1, propertiesConfig.getVoteSyncMaxParallelTasks())
-                    : 20;
+            int maxParallel = Math.max(1, propertiesConfig.getVoteSyncMaxParallelTasks());
             Semaphore limiter = new Semaphore(maxParallel);
             List<CompletableFuture<Void>> voteTasks = new ArrayList<>();
             for (VoteBodyDto voteBodyDto : votesResponse.getData()) {
@@ -230,7 +232,11 @@ public class VoteSyncJob {
                 voteTasks.add(task);
             }
 
-            CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
+            try {
+                CompletableFuture.allOf(voteTasks.toArray(new CompletableFuture[0])).join();
+            } catch (Exception aggregateException) {
+                log.error("Error waiting vote tasks completion for voting {}", votingId, aggregateException);
+            }
         } catch (Exception e) {
             log.error("Error processing votes for voting {}: ", votingId, e);
         }
@@ -240,8 +246,10 @@ public class VoteSyncJob {
         try {
             // Vote-to-deputy association uses the deputado.id field returned by the Câmara API
             Integer deputyId = voteBodyDto.getDeputado() != null ? voteBodyDto.getDeputado().getId() : null;
-            String anonymousKey = votingId + "|" + Objects.toString(voteBodyDto.getDataRegistroVoto(), "unknownDate")
-                    + "|" + Objects.toString(voteBodyDto.getTipoVoto(), "unknownType");
+            String anonymousKey = votingId + ANONYMOUS_KEY_DELIMITER
+                    + Objects.toString(voteBodyDto.getDataRegistroVoto(), UNKNOWN_DATE)
+                    + ANONYMOUS_KEY_DELIMITER
+                    + Objects.toString(voteBodyDto.getTipoVoto(), UNKNOWN_TYPE);
             String voteId = deputyId != null
                     ? votingId + "-" + deputyId
                     : votingId + "-anon-" + UUID.nameUUIDFromBytes(anonymousKey.getBytes(StandardCharsets.UTF_8));

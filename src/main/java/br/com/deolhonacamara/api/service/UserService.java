@@ -27,6 +27,8 @@ import static br.com.deolhonacamara.api.BusinessCode.INACTIVE_USER;
 @RequiredArgsConstructor
 @Log4j2
 public class UserService {
+    private static final Duration MIN_TOKEN_EXPIRATION = Duration.ofSeconds(1);
+    private static final Duration MAX_TOKEN_EXPIRATION = Duration.ofDays(365);
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtUtil;
     private final UserRepository userRepository;
@@ -46,15 +48,12 @@ public class UserService {
 
         log.info("✅ Tokens gerado com sucesso para o usuário: {} - ID: {}", user.getEmail(), user.getId());
 
-        Duration expirationDuration = Duration.ofMillis(propertiesConfig.getJwtExpirationMs());
-        OffsetDateTime expireAt = OffsetDateTime.now(ZoneOffset.UTC)
-                .plus(expirationDuration);
-        int expireInSeconds = Math.toIntExact(expirationDuration.getSeconds());
+        Expiration expiration = resolveExpiration();
 
         return new AuthResponseDTO()
                 .accessToken(accessToken)
-                .expireIn(expireInSeconds)
-                .expireAt(expireAt)
+                .expireIn(expiration.expireInSecondsAsInt())
+                .expireAt(expiration.expireAt())
                 .tokenType("JWT")
                 .refreshToken(refreshToken);
 
@@ -82,15 +81,12 @@ public class UserService {
 
         log.info("✅ Tokens gerado com sucesso para o usuário: {} - ID: {}", newUser.getEmail(), newUser.getId());
 
-        Duration expirationDuration = Duration.ofMillis(propertiesConfig.getJwtExpirationMs());
-        OffsetDateTime expireAt = OffsetDateTime.now(ZoneOffset.UTC)
-                .plus(expirationDuration);
-        int expireInSeconds = Math.toIntExact(expirationDuration.getSeconds());
+        Expiration expiration = resolveExpiration();
 
         return new AuthResponseDTO()
                 .accessToken(accessToken)
-                .expireIn(expireInSeconds)
-                .expireAt(expireAt)
+                .expireIn(expiration.expireInSecondsAsInt())
+                .expireAt(expiration.expireAt())
                 .tokenType("JWT")
                 .refreshToken(refreshToken);
 
@@ -112,6 +108,24 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .map(UserEntity::getId)
                 .orElse(null);
+    }
+
+    private Expiration resolveExpiration() {
+        long configuredMs = propertiesConfig.getJwtExpirationMs();
+        Duration expirationDuration = Duration.ofMillis(configuredMs);
+        if (expirationDuration.compareTo(MIN_TOKEN_EXPIRATION) < 0 || expirationDuration.compareTo(MAX_TOKEN_EXPIRATION) > 0) {
+            throw new IllegalArgumentException("Configured JWT expiration (" + configuredMs + " ms) must be between 1 second and 365 days.");
+        }
+        long expireInSeconds = expirationDuration.getSeconds();
+        OffsetDateTime expireAt = OffsetDateTime.now(ZoneOffset.UTC).plus(expirationDuration);
+        return new Expiration(expireAt, expireInSeconds);
+    }
+
+    private record Expiration(OffsetDateTime expireAt, long expireInSeconds) {
+        int expireInSecondsAsInt() {
+            // Validation in resolveExpiration caps this at 31,536,000 seconds (365 days), which fits in int.
+            return (int) expireInSeconds;
+        }
     }
 
 }

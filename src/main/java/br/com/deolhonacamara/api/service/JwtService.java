@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
@@ -41,7 +42,8 @@ public class JwtService {
         log.debug("🔑 Gerando token JWT para usuário: {}", user.getEmail());
         try {
             long expirationMs = propertiesConfig.getJwtExpirationMs();
-            Date expirationDate = new Date(System.currentTimeMillis() + expirationMs);
+            Instant expirationInstant = Instant.now().plusMillis(expirationMs);
+            Date expirationDate = Date.from(expirationInstant);
             String token = Jwts.builder()
                     .setSubject(user.getEmail())
                     .claim("userId", user.getId())

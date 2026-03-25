@@ -7,10 +7,11 @@ import org.springframework.stereotype.Component;
 @Getter
 @Component
 public class PropertiesConfig {
+    public static final long DEFAULT_JWT_EXPIRATION_MS = 604800000L; // 7 days
 
     @Value("${jwt.secret}")
     private String jwtSecret;
-    @Value("${jwt.expiration.ms:604800000}")
+    @Value("${jwt.expiration.ms:#{T(br.com.deolhonacamara.api.config.PropertiesConfig).DEFAULT_JWT_EXPIRATION_MS}}")
     private Long jwtExpirationMs;
 
     @Value("${spring.datasource.url}")

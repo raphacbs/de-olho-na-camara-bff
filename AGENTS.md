@@ -13,7 +13,7 @@ Where to look (quick)
 
 - Note: there are two swagger files present: `src/main/resources/swagger.yaml` and `src/main/resources/swagger-camara.yaml` (use `README.md` or resources to confirm the authoritative file).
 
-- Application config holder: `src/main/java/br/com/deolhonacamara/api/config/PropertiesConfig.java` — contains keys used by runtime and schedulers (examples: `jwt.secret`, `jwt.expiration.hours`, `camara-deputados.api.base-url`, `proposition.sync.chunk-size`).
+- Application config holder: `src/main/java/br/com/deolhonacamara/api/config/PropertiesConfig.java` — contains keys used by runtime and schedulers (examples: `jwt.secret`, `jwt.expiration.ms`, `camara-deputados.api.base-url`, `proposition.sync.chunk-size`).
 
 Note: some runtime properties use milliseconds (for example `jwt.expiration.ms`) and additional keys like `camara-deputados.api.timeout` appear in `application-*.properties` and `README.md`. Check `src/main/resources/application-*.properties` and `src/main/java/br/com/deolhonacamara/api/config/PropertiesConfig.java` for authoritative key names before using a property.
 

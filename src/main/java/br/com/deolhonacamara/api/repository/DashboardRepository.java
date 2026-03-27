@@ -15,18 +15,18 @@ public class DashboardRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public Long countTotalPropositions() {
-        String sql = "SELECT COUNT(*) FROM propositions";
+        String sql = "SELECT COUNT(*) FROM proposition";
         return jdbcTemplate.queryForObject(sql, new java.util.HashMap<>(), Long.class);
     }
 
     public Long countTotalPropositions(int year) {
-        String sql = "SELECT COUNT(*) FROM propositions WHERE year = :year";
+        String sql = "SELECT COUNT(*) FROM proposition WHERE year = :year";
         var params = java.util.Map.of("year", year);
         return jdbcTemplate.queryForObject(sql, params, Long.class);
     }
 
     public Long countTotalExpenses() {
-        String sql = "SELECT COUNT(*) FROM expenses";
+        String sql = "SELECT COUNT(*) FROM politician_expense";
         return jdbcTemplate.queryForObject(sql, new java.util.HashMap<>(), Long.class);
     }
 
@@ -37,7 +37,7 @@ public class DashboardRepository {
     }
 
     public Long countTotalVotes() {
-        String sql = "SELECT COUNT(*) FROM politician_votes";
+        String sql = "SELECT COUNT(*) FROM politician_vote";
         return jdbcTemplate.queryForObject(sql, new java.util.HashMap<>(), Long.class);
     }
 
@@ -48,7 +48,7 @@ public class DashboardRepository {
 
     public Long countTotalFollowing(UUID userId) {
         String sql = """
-            SELECT COUNT(*) FROM followed_politicians
+            SELECT COUNT(*) FROM user_followed_politicians
             WHERE user_id = :userId
             """;
         var params = java.util.Map.of("userId", userId);
@@ -56,7 +56,7 @@ public class DashboardRepository {
     }
 
     public BigDecimal sumMonthlyExpenses(int year, int month) {
-        String sql = "SELECT COALESCE(SUM(net_value), 0) FROM expenses WHERE year = :year AND month = :month";
+        String sql = "SELECT COALESCE(SUM(net_value), 0) FROM politician_expense WHERE year = :year AND month = :month";
         var params = Map.of("year", year, "month", month);
         return jdbcTemplate.queryForObject(sql, params, BigDecimal.class);
     }

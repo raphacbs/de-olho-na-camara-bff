@@ -8,6 +8,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import br.com.deolhonacamara.exception.BusinessException;
+import br.com.deolhonacamara.api.BusinessCode;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -201,17 +203,32 @@ public class JwtService {
     public UUID extractUserId(String token) {
         log.debug("🔍 Extraindo userId do token JWT");
         try {
+            if (token == null || token.isBlank()) {
+                log.error("❌ Token JWT vazio ou ausente ao extrair userId");
+                throw new BusinessException(BusinessCode.TOKEN_NOT_FOUND_OR_EXPIRED, "Token não encontrado");
+            }
+
+            String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+
             Claims claims = Jwts.parser()
                     .setSigningKey(propertiesConfig.getJwtSecret())
-                    .parseClaimsJws(token.replace("Bearer ", ""))
+                    .parseClaimsJws(cleanToken)
                     .getBody();
-            String userId = claims.get("userId", String.class);
+
+            Object userIdObj = claims.get("userId");
+            if (userIdObj == null) {
+                log.error("❌ userId não encontrado nas claims do token");
+                throw new BusinessException(BusinessCode.INVALID_USER, "userId ausente no token JWT");
+            }
+
+            String userId = userIdObj.toString();
             UUID uuid = UUID.fromString(userId);
             log.debug("✅ UserId extraído com sucesso: {}", uuid);
             return uuid;
         } catch (Exception e) {
             log.error("❌ Erro ao extrair userId do token JWT: {}", e.getMessage());
-            throw e;
+            if (e instanceof BusinessException) throw (BusinessException) e;
+            throw new BusinessException(BusinessCode.TOKEN_INVALID, e.getMessage());
         }
     }
 }

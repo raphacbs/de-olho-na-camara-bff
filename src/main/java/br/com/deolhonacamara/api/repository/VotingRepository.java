@@ -90,7 +90,7 @@ public class VotingRepository {
             LIMIT :limit OFFSET :offset
         """;
 
-        String countSql = "SELECT COUNT(*) FROM camara_deputados.vote WHERE date BETWEEN :startDate AND :endDate";
+        String countSql = "SELECT COUNT(*) FROM camara_deputados.voting WHERE date BETWEEN :startDate AND :endDate";
 
         Map<String, Object> params = new HashMap<>();
         params.put("startDate", startDate);

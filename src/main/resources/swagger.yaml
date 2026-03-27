@@ -750,7 +750,11 @@ paths:
           required: false
           schema:
             type: integer
-          description: Year to filter statistics; if omitted the current year is used.
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
         - $ref: '#/components/parameters/XAppVersion'
         - $ref: '#/components/parameters/XAppPlatform'
         - $ref: '#/components/parameters/XOsVersion'
@@ -776,6 +780,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
         - name: name
           in: query
           required: false
@@ -843,6 +852,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
         - name: politicianId
           in: query
           required: false
@@ -912,6 +926,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
         - name: id
           in: path
           required: true
@@ -944,6 +963,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
         - name: id
           in: path
           required: true

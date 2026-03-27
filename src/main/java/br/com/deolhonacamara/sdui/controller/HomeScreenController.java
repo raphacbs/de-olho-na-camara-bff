@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,13 +36,13 @@ public class HomeScreenController implements SduiApi {
 
     @Override
     public ResponseEntity<HomeScreenResponse> getHomeScreen(
+            String authorization,
             Integer ano,
             String xAppVersion, String xAppPlatform, String xOSVersion,
             String xDeviceModel, String xDeviceId, String xAppLanguage) {
         var clientInfo = ClientInfo.of(xAppVersion, xAppPlatform, xOSVersion, xDeviceModel, xDeviceId, xAppLanguage);
         log.info("Fetching SDUI home screen [client={}]", clientInfo);
-        var request = getRequest();
-        var rawToken = request.map(r -> r.getHeader("Authorization")).orElse(null);
+        var rawToken = authorization != null ? authorization : getAuthorizationHeader();
         var userId = jwtService.extractUserId(rawToken);
         var cleanToken = rawToken != null ? rawToken.replace("Bearer ", "") : "";
         var userEmail = jwtService.extractUsername(cleanToken);
@@ -50,14 +53,14 @@ public class HomeScreenController implements SduiApi {
 
     @Override
     public ResponseEntity<HomeScreenResponse> getSduiPoliticiansScreen(
+            String authorization,
             String name, String party, String state, Boolean isFollowed,
             Integer year, Integer page, Integer size,
             String xAppVersion, String xAppPlatform, String xOSVersion,
             String xDeviceModel, String xDeviceId, String xAppLanguage) {
         var clientInfo = ClientInfo.of(xAppVersion, xAppPlatform, xOSVersion, xDeviceModel, xDeviceId, xAppLanguage);
         log.info("Fetching SDUI politicians screen [client={}]", clientInfo);
-        var request = getRequest();
-        var rawToken = request.map(r -> r.getHeader("Authorization")).orElse(null);
+        var rawToken = authorization != null ? authorization : getAuthorizationHeader();
         UUID userId = jwtService.extractUserId(rawToken);
 
         Map<String, Object> filters = new HashMap<>();
@@ -76,6 +79,7 @@ public class HomeScreenController implements SduiApi {
 
     @Override
     public ResponseEntity<HomeScreenResponse> getSduiPropositionsScreen(
+            String authorization,
             Integer politicianId, List<String> types, List<String> statuses,
             LocalDate startDate, LocalDate endDate, Integer page, Integer size,
             String xAppVersion, String xAppPlatform, String xOSVersion,
@@ -91,6 +95,7 @@ public class HomeScreenController implements SduiApi {
 
     @Override
     public ResponseEntity<HomeScreenResponse> getSduiPropositionDetailScreen(
+            String authorization,
             Integer id,
             String xAppVersion, String xAppPlatform, String xOSVersion,
             String xDeviceModel, String xDeviceId, String xAppLanguage) {
@@ -102,6 +107,7 @@ public class HomeScreenController implements SduiApi {
 
     @Override
     public ResponseEntity<HomeScreenResponse> getSduiPoliticianExpensesScreen(
+            String authorization,
             Integer id, Integer year, Integer month, Integer page, Integer size,
             String xAppVersion, String xAppPlatform, String xOSVersion,
             String xDeviceModel, String xDeviceId, String xAppLanguage) {
@@ -111,5 +117,16 @@ public class HomeScreenController implements SduiApi {
         int s = size != null ? size : 20;
         var screen = expensesScreenService.buildExpensesScreen(id, year, month, p, s);
         return ResponseEntity.ok(screen);
+    }
+
+    private String getAuthorizationHeader() {
+        // Prefer generated getRequest() when available
+        var opt = getRequest().map(r -> r.getHeader("Authorization"));
+        if (opt.isPresent()) return opt.get();
+
+        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) return null;
+        HttpServletRequest req = attrs.getRequest();
+        return req != null ? req.getHeader("Authorization") : null;
     }
 }

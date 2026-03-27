@@ -761,6 +761,202 @@ paths:
         '401':
           description: Unauthorized
 
+  /api/v1/sdui/politicians:
+    get:
+      tags: [ SDUI ]
+      summary: Get SDUI politicians list screen definition
+      operationId: getSduiPoliticiansScreen
+      description: Returns a server-driven UI definition for the politicians list screen.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by politician name
+        - name: party
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by party acronym
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by state acronym
+        - name: isFollowed
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Filter by followed status
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Year to filter data; if omitted the current year is used
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Politicians list SDUI screen definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeScreenResponse'
+        '401':
+          description: Unauthorized
+
+  /api/v1/sdui/propositions:
+    get:
+      tags: [ SDUI ]
+      summary: Get SDUI propositions list screen definition
+      operationId: getSduiPropositionsScreen
+      description: Returns a server-driven UI definition for the propositions list screen.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: politicianId
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filter by politician ID
+        - name: types
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: statuses
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Propositions list SDUI screen definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeScreenResponse'
+        '401':
+          description: Unauthorized
+
+  /api/v1/sdui/propositions/{id}:
+    get:
+      tags: [ SDUI ]
+      summary: Get SDUI proposition detail screen definition
+      operationId: getSduiPropositionDetailScreen
+      description: Returns a server-driven UI definition for the proposition detail screen.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Proposition detail SDUI screen definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeScreenResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Proposition not found
+
+  /api/v1/sdui/politicians/{id}/expenses:
+    get:
+      tags: [ SDUI ]
+      summary: Get SDUI politician expenses screen definition
+      operationId: getSduiPoliticianExpensesScreen
+      description: Returns a server-driven UI definition for the politician expenses screen.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Politician expenses SDUI screen definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeScreenResponse'
+        '401':
+          description: Unauthorized
+
 components:
   securitySchemes:
     bearerAuth:

@@ -1,0 +1,17 @@
+package br.com.deolhonacamara.sdui.model.properties;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuthorCardProperties {
+    private Integer id;
+    private String photoUrl;
+    private String name;
+    private String partyState;
+}

@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
@@ -731,6 +732,28 @@ public class PropositionRepository {
             }
             return result;
         });
+    }
+
+    public Optional<PropositionDTO> findById(Integer id) {
+        String sql = """
+            SELECT p.*,
+                   (SELECT json_agg(json_build_object('id', pol.id, 'name', pol.name, 'party', pol.party, 'photoUrl', pol.photo_url, 'state', pol.state))
+                    FROM politicians pol
+                    JOIN politician_proposition pp ON pol.id = pp.politician_id
+                    WHERE pp.proposition_id = p.id
+                   ) as politicians
+            FROM proposition p
+            WHERE p.id = :id
+        """;
+        List<PropositionDTO> results = jdbcTemplate.query(sql, Map.of("id", id), (rs, i) -> {
+            try {
+                return mapRowToDto(rs);
+            } catch (Exception e) {
+                log.error("Error mapping row to PropositionDTO for id {}", id, e);
+                return null;
+            }
+        });
+        return results.stream().filter(java.util.Objects::nonNull).findFirst();
     }
 
     private PropositionDTO mapRowToDto(ResultSet rs) throws SQLException {

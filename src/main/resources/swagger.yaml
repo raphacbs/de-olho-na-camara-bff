@@ -751,9 +751,235 @@ paths:
           schema:
             type: integer
           description: Year to filter statistics; if omitted the current year is used.
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
       responses:
         '200':
           description: Home screen SDUI definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeScreenResponse'
+        '401':
+          description: Unauthorized
+
+  /api/v1/sdui/politicians:
+    get:
+      tags: [ SDUI ]
+      summary: Get SDUI politicians list screen definition
+      operationId: getSduiPoliticiansScreen
+      description: Returns a server-driven UI definition for the politicians list screen.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by politician name
+        - name: party
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by party acronym
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by state acronym
+        - name: isFollowed
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Filter by followed status
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Year to filter data; if omitted the current year is used
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
+      responses:
+        '200':
+          description: Politicians list SDUI screen definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeScreenResponse'
+        '401':
+          description: Unauthorized
+
+  /api/v1/sdui/propositions:
+    get:
+      tags: [ SDUI ]
+      summary: Get SDUI propositions list screen definition
+      operationId: getSduiPropositionsScreen
+      description: Returns a server-driven UI definition for the propositions list screen.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: politicianId
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filter by politician ID
+        - name: types
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: statuses
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
+      responses:
+        '200':
+          description: Propositions list SDUI screen definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeScreenResponse'
+        '401':
+          description: Unauthorized
+
+  /api/v1/sdui/propositions/{id}:
+    get:
+      tags: [ SDUI ]
+      summary: Get SDUI proposition detail screen definition
+      operationId: getSduiPropositionDetailScreen
+      description: Returns a server-driven UI definition for the proposition detail screen.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
+      responses:
+        '200':
+          description: Proposition detail SDUI screen definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeScreenResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Proposition not found
+
+  /api/v1/sdui/politicians/{id}/expenses:
+    get:
+      tags: [ SDUI ]
+      summary: Get SDUI politician expenses screen definition
+      operationId: getSduiPoliticianExpensesScreen
+      description: Returns a server-driven UI definition for the politician expenses screen.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
+      responses:
+        '200':
+          description: Politician expenses SDUI screen definition
           content:
             application/json:
               schema:
@@ -767,6 +993,57 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+  parameters:
+    XAppVersion:
+      name: X-App-Version
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Version of the client application (e.g. "1.2.3")
+      example: "1.2.3"
+    XAppPlatform:
+      name: X-App-Platform
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: [ android, ios, web ]
+      description: Client platform / operating system
+      example: android
+    XOsVersion:
+      name: X-OS-Version
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Operating-system version of the client device (e.g. "14.0")
+      example: "14.0"
+    XDeviceModel:
+      name: X-Device-Model
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Hardware model of the client device (e.g. "Samsung Galaxy S21")
+      example: "Samsung Galaxy S21"
+    XDeviceId:
+      name: X-Device-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Stable unique identifier for the client device (used for analytics)
+      example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    XAppLanguage:
+      name: X-App-Language
+      in: header
+      required: false
+      schema:
+        type: string
+      description: BCP-47 language tag representing the app locale (e.g. "pt-BR")
+      example: "pt-BR"
 
   schemas:
     RequestNewUser:

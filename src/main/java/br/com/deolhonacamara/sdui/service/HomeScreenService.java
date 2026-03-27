@@ -3,8 +3,6 @@ package br.com.deolhonacamara.sdui.service;
 import br.com.deolhonacamara.api.repository.DashboardRepository;
 import br.com.deolhonacamara.api.repository.UserRepository;
 import br.com.deolhonacamara.sdui.model.ComponentAction;
-import br.com.deolhonacamara.sdui.model.HomeScreenResponse;
-import br.com.deolhonacamara.sdui.model.ScreenComponent;
 import br.com.deolhonacamara.sdui.model.properties.GreetingHeaderProperties;
 import br.com.deolhonacamara.sdui.model.properties.QuickAccessGridProperties;
 import br.com.deolhonacamara.sdui.model.properties.QuickAccessItem;
@@ -14,6 +12,8 @@ import br.com.deolhonacamara.sdui.model.properties.StatsGridProperties;
 import br.com.deolhonacamara.sdui.model.properties.YearSelectorBannerProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import net.coelho.deolhonacamara.api.model.HomeScreenResponse;
+import net.coelho.deolhonacamara.api.model.ScreenComponent;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -44,17 +44,17 @@ public class HomeScreenService {
         long totalPropositions = dashboardRepository.countTotalPropositions(year);
         BigDecimal monthlyExpenses = dashboardRepository.sumMonthlyExpenses(year, currentMonth);
 
-        return HomeScreenResponse.builder()
-                .screenId(SCREEN_ID)
-                .version(SCREEN_VERSION)
-                .components(List.of(
-                        buildYearSelectorBanner(year),
-                        buildGreetingHeader(displayName),
-                        buildStatsGrid(totalPoliticians, totalFollowing, totalPropositions, monthlyExpenses),
-                        buildQuickAccessGrid(),
-                        buildFollowedSectionHeader((int) totalFollowing)
-                ))
-                .build();
+        var response = new HomeScreenResponse();
+        response.setScreenId(SCREEN_ID);
+        response.setVersion(SCREEN_VERSION);
+        response.setComponents(List.of(
+                buildYearSelectorBanner(year),
+                buildGreetingHeader(displayName),
+                buildStatsGrid(totalPoliticians, totalFollowing, totalPropositions, monthlyExpenses),
+                buildQuickAccessGrid(),
+                buildFollowedSectionHeader((int) totalFollowing)
+        ));
+        return response;
     }
 
     private String resolveDisplayName(String userEmail) {
@@ -75,35 +75,27 @@ public class HomeScreenService {
     }
 
     private ScreenComponent buildYearSelectorBanner(int year) {
-        return ScreenComponent.builder()
-                .id("year-selector-banner")
-                .type("YEAR_SELECTOR_BANNER")
-                .properties(YearSelectorBannerProperties.builder()
+        return component("year-selector-banner", "YEAR_SELECTOR_BANNER",
+                YearSelectorBannerProperties.builder()
                         .title("Dados exibidos referentes ao ano selecionado")
                         .subtitle("Altere o ano para filtrar todas as consultas")
                         .selectedYear(year)
                         .buttonBackgroundColor("#D32F2F")
-                        .build())
-                .build();
+                        .build());
     }
 
     private ScreenComponent buildGreetingHeader(String displayName) {
-        return ScreenComponent.builder()
-                .id("greeting-header")
-                .type("GREETING_HEADER")
-                .properties(GreetingHeaderProperties.builder()
+        return component("greeting-header", "GREETING_HEADER",
+                GreetingHeaderProperties.builder()
                         .greeting("Olá, " + displayName + " \uD83D\uDC4B")
                         .subtitle("Acompanhe a atividade dos deputados federais")
-                        .build())
-                .build();
+                        .build());
     }
 
     private ScreenComponent buildStatsGrid(long totalPoliticians, long totalFollowing,
                                            long totalPropositions, BigDecimal monthlyExpenses) {
-        return ScreenComponent.builder()
-                .id("stats-grid")
-                .type("STATS_GRID")
-                .properties(StatsGridProperties.builder()
+        return component("stats-grid", "STATS_GRID",
+                StatsGridProperties.builder()
                         .columns(2)
                         .items(List.of(
                                 StatCardItem.builder()
@@ -151,15 +143,12 @@ public class HomeScreenService {
                                                 .build())
                                         .build()
                         ))
-                        .build())
-                .build();
+                        .build());
     }
 
     private ScreenComponent buildQuickAccessGrid() {
-        return ScreenComponent.builder()
-                .id("quick-access-grid")
-                .type("QUICK_ACCESS_GRID")
-                .properties(QuickAccessGridProperties.builder()
+        return component("quick-access-grid", "QUICK_ACCESS_GRID",
+                QuickAccessGridProperties.builder()
                         .title("Acesso Rápido")
                         .columns(2)
                         .items(List.of(
@@ -200,15 +189,12 @@ public class HomeScreenService {
                                                 .build())
                                         .build()
                         ))
-                        .build())
-                .build();
+                        .build());
     }
 
     private ScreenComponent buildFollowedSectionHeader(int followingCount) {
-        return ScreenComponent.builder()
-                .id("followed-section-header")
-                .type("SECTION_HEADER_WITH_BADGE")
-                .properties(SectionHeaderWithBadgeProperties.builder()
+        return component("followed-section-header", "SECTION_HEADER_WITH_BADGE",
+                SectionHeaderWithBadgeProperties.builder()
                         .title("Deputados que Você Segue")
                         .badgeCount(followingCount)
                         .badgeBackgroundColor("#2E7D32")
@@ -216,8 +202,15 @@ public class HomeScreenService {
                                 .type(ACTION_NAVIGATE)
                                 .route("/followed")
                                 .build())
-                        .build())
-                .build();
+                        .build());
+    }
+
+    private ScreenComponent component(String id, String type, Object properties) {
+        var comp = new ScreenComponent();
+        comp.setId(id);
+        comp.setType(type);
+        comp.setProperties(properties);
+        return comp;
     }
 
     private String formatCurrency(BigDecimal amount) {

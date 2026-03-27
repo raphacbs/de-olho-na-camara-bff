@@ -751,6 +751,12 @@ paths:
           schema:
             type: integer
           description: Year to filter statistics; if omitted the current year is used.
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
       responses:
         '200':
           description: Home screen SDUI definition
@@ -812,6 +818,12 @@ paths:
           schema:
             type: integer
             default: 20
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
       responses:
         '200':
           description: Politicians list SDUI screen definition
@@ -875,6 +887,12 @@ paths:
           schema:
             type: integer
             default: 20
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
       responses:
         '200':
           description: Propositions list SDUI screen definition
@@ -899,6 +917,12 @@ paths:
           required: true
           schema:
             type: integer
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
       responses:
         '200':
           description: Proposition detail SDUI screen definition
@@ -947,6 +971,12 @@ paths:
           schema:
             type: integer
             default: 20
+        - $ref: '#/components/parameters/XAppVersion'
+        - $ref: '#/components/parameters/XAppPlatform'
+        - $ref: '#/components/parameters/XOsVersion'
+        - $ref: '#/components/parameters/XDeviceModel'
+        - $ref: '#/components/parameters/XDeviceId'
+        - $ref: '#/components/parameters/XAppLanguage'
       responses:
         '200':
           description: Politician expenses SDUI screen definition
@@ -963,6 +993,57 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+  parameters:
+    XAppVersion:
+      name: X-App-Version
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Version of the client application (e.g. "1.2.3")
+      example: "1.2.3"
+    XAppPlatform:
+      name: X-App-Platform
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: [ android, ios, web ]
+      description: Client platform / operating system
+      example: android
+    XOsVersion:
+      name: X-OS-Version
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Operating-system version of the client device (e.g. "14.0")
+      example: "14.0"
+    XDeviceModel:
+      name: X-Device-Model
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Hardware model of the client device (e.g. "Samsung Galaxy S21")
+      example: "Samsung Galaxy S21"
+    XDeviceId:
+      name: X-Device-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Stable unique identifier for the client device (used for analytics)
+      example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    XAppLanguage:
+      name: X-App-Language
+      in: header
+      required: false
+      schema:
+        type: string
+      description: BCP-47 language tag representing the app locale (e.g. "pt-BR")
+      example: "pt-BR"
 
   schemas:
     RequestNewUser:

@@ -1,6 +1,7 @@
 package br.com.deolhonacamara.sdui.controller;
 
 import br.com.deolhonacamara.api.service.JwtService;
+import br.com.deolhonacamara.sdui.model.ClientInfo;
 import br.com.deolhonacamara.sdui.service.ExpensesScreenService;
 import br.com.deolhonacamara.sdui.service.HomeScreenService;
 import br.com.deolhonacamara.sdui.service.PoliticiansScreenService;
@@ -31,8 +32,12 @@ public class HomeScreenController implements SduiApi {
     private final ExpensesScreenService expensesScreenService;
 
     @Override
-    public ResponseEntity<HomeScreenResponse> getHomeScreen(Integer ano) {
-        log.info("Fetching SDUI home screen");
+    public ResponseEntity<HomeScreenResponse> getHomeScreen(
+            Integer ano,
+            String xAppVersion, String xAppPlatform, String xOSVersion,
+            String xDeviceModel, String xDeviceId, String xAppLanguage) {
+        var clientInfo = ClientInfo.of(xAppVersion, xAppPlatform, xOSVersion, xDeviceModel, xDeviceId, xAppLanguage);
+        log.info("Fetching SDUI home screen [client={}]", clientInfo);
         var request = getRequest();
         var rawToken = request.map(r -> r.getHeader("Authorization")).orElse(null);
         var userId = jwtService.extractUserId(rawToken);
@@ -46,8 +51,11 @@ public class HomeScreenController implements SduiApi {
     @Override
     public ResponseEntity<HomeScreenResponse> getSduiPoliticiansScreen(
             String name, String party, String state, Boolean isFollowed,
-            Integer year, Integer page, Integer size) {
-        log.info("Fetching SDUI politicians screen");
+            Integer year, Integer page, Integer size,
+            String xAppVersion, String xAppPlatform, String xOSVersion,
+            String xDeviceModel, String xDeviceId, String xAppLanguage) {
+        var clientInfo = ClientInfo.of(xAppVersion, xAppPlatform, xOSVersion, xDeviceModel, xDeviceId, xAppLanguage);
+        log.info("Fetching SDUI politicians screen [client={}]", clientInfo);
         var request = getRequest();
         var rawToken = request.map(r -> r.getHeader("Authorization")).orElse(null);
         UUID userId = jwtService.extractUserId(rawToken);
@@ -69,8 +77,11 @@ public class HomeScreenController implements SduiApi {
     @Override
     public ResponseEntity<HomeScreenResponse> getSduiPropositionsScreen(
             Integer politicianId, List<String> types, List<String> statuses,
-            LocalDate startDate, LocalDate endDate, Integer page, Integer size) {
-        log.info("Fetching SDUI propositions screen");
+            LocalDate startDate, LocalDate endDate, Integer page, Integer size,
+            String xAppVersion, String xAppPlatform, String xOSVersion,
+            String xDeviceModel, String xDeviceId, String xAppLanguage) {
+        var clientInfo = ClientInfo.of(xAppVersion, xAppPlatform, xOSVersion, xDeviceModel, xDeviceId, xAppLanguage);
+        log.info("Fetching SDUI propositions screen [client={}]", clientInfo);
         int p = page != null ? page : 0;
         int s = size != null ? size : 20;
         var screen = propositionsScreenService.buildPropositionsScreen(
@@ -79,16 +90,23 @@ public class HomeScreenController implements SduiApi {
     }
 
     @Override
-    public ResponseEntity<HomeScreenResponse> getSduiPropositionDetailScreen(Integer id) {
-        log.info("Fetching SDUI proposition detail screen for id {}", id);
+    public ResponseEntity<HomeScreenResponse> getSduiPropositionDetailScreen(
+            Integer id,
+            String xAppVersion, String xAppPlatform, String xOSVersion,
+            String xDeviceModel, String xDeviceId, String xAppLanguage) {
+        var clientInfo = ClientInfo.of(xAppVersion, xAppPlatform, xOSVersion, xDeviceModel, xDeviceId, xAppLanguage);
+        log.info("Fetching SDUI proposition detail screen for id {} [client={}]", id, clientInfo);
         var screen = propositionsScreenService.buildPropositionDetailScreen(id);
         return ResponseEntity.ok(screen);
     }
 
     @Override
     public ResponseEntity<HomeScreenResponse> getSduiPoliticianExpensesScreen(
-            Integer id, Integer year, Integer month, Integer page, Integer size) {
-        log.info("Fetching SDUI expenses screen for politician {}", id);
+            Integer id, Integer year, Integer month, Integer page, Integer size,
+            String xAppVersion, String xAppPlatform, String xOSVersion,
+            String xDeviceModel, String xDeviceId, String xAppLanguage) {
+        var clientInfo = ClientInfo.of(xAppVersion, xAppPlatform, xOSVersion, xDeviceModel, xDeviceId, xAppLanguage);
+        log.info("Fetching SDUI expenses screen for politician {} [client={}]", id, clientInfo);
         int p = page != null ? page : 0;
         int s = size != null ? size : 20;
         var screen = expensesScreenService.buildExpensesScreen(id, year, month, p, s);

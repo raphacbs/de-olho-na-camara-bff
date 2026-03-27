@@ -310,6 +310,7 @@ O BFF expõe endpoints SDUI que retornam definições de tela em vez de dados br
 | `HomeScreenResponse` | Envelope raiz — contém `screenId`, `version` e a lista de `components` |
 | `ScreenComponent` | Unidade de renderização — possui `id`, `type` e `properties` (shape varia por tipo) |
 | Propriedades | POJO com `@Builder` no pacote `sdui/model/properties/` que define os dados do componente |
+| `ClientInfo` | Record que agrupa os headers de contexto do dispositivo/app enviados pelo cliente |
 
 **Exemplo de resposta:**
 ```json
@@ -343,6 +344,31 @@ O BFF expõe endpoints SDUI que retornam definições de tela em vez de dados br
 | `GET /api/v1/sdui/propositions` | `propositions` | `PROPOSITION_CARD_LIST` |
 | `GET /api/v1/sdui/propositions/{id}` | `proposition-detail-{id}` | `PROPOSITION_DETAIL_HEADER`, `DETAIL_SECTION` ×N, `TEXT_LINK_SECTION`, `AUTHOR_CARD_LIST` |
 | `GET /api/v1/sdui/politicians/{id}/expenses` | `politician-expenses-{id}` | `EXPENSE_CARD_LIST` |
+
+### Headers de contexto do cliente (todos os endpoints SDUI)
+
+Todos os endpoints SDUI aceitam os seguintes headers opcionais para identificação e contextualização do dispositivo/app. Os dados são usados para logging e análise; nenhum header é obrigatório — clientes mais antigos que não os enviem continuam funcionando normalmente.
+
+| Header | Tipo | Exemplo | Descrição |
+|---|---|---|---|
+| `X-App-Version` | `string` | `"1.2.3"` | Versão do aplicativo cliente |
+| `X-App-Platform` | `string` (enum) | `"android"` / `"ios"` / `"web"` | Sistema operacional / plataforma do dispositivo |
+| `X-OS-Version` | `string` | `"14.0"` | Versão do sistema operacional |
+| `X-Device-Model` | `string` | `"Samsung Galaxy S21"` | Modelo do hardware do dispositivo |
+| `X-Device-Id` | `string` (UUID) | `"a1b2c3d4-..."` | Identificador único e estável do dispositivo (usado para analytics) |
+| `X-App-Language` | `string` (BCP-47) | `"pt-BR"` | Locale/idioma configurado no app |
+
+**Exemplo de requisição com headers:**
+```http
+GET /api/v1/sdui/home HTTP/1.1
+Authorization: Bearer <token>
+X-App-Version: 1.2.3
+X-App-Platform: android
+X-OS-Version: 13
+X-Device-Model: Samsung Galaxy S21
+X-Device-Id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+X-App-Language: pt-BR
+```
 
 ### Tipos de componentes e suas propriedades
 
@@ -395,7 +421,7 @@ Siga os 5 passos abaixo usando o endpoint de deputados como referência.
 
 #### Passo 1 — Definir o endpoint no `swagger.yaml`
 
-Adicione o path dentro da seção `paths:`, com a tag `SDUI` e operationId único:
+Adicione o path dentro da seção `paths:`, com a tag `SDUI` e operationId único. Referencie sempre os 6 headers de contexto do cliente definidos em `components/parameters`:
 
 ```yaml
 /api/v1/sdui/minha-tela:
@@ -411,6 +437,13 @@ Adicione o path dentro da seção `paths:`, com a tag `SDUI` e operationId únic
         required: false
         schema:
           type: string
+      # headers de contexto do cliente (obrigatório em todos os endpoints SDUI)
+      - $ref: '#/components/parameters/XAppVersion'
+      - $ref: '#/components/parameters/XAppPlatform'
+      - $ref: '#/components/parameters/XOsVersion'
+      - $ref: '#/components/parameters/XDeviceModel'
+      - $ref: '#/components/parameters/XDeviceId'
+      - $ref: '#/components/parameters/XAppLanguage'
     responses:
       '200':
         description: Minha tela SDUI definition
@@ -517,14 +550,18 @@ public class MinhaTelaScreenService {
 
 #### Passo 5 — Implementar o método no controller
 
-Em `HomeScreenController.java`, adicione o campo injetado e sobrescreva o método gerado:
+Em `HomeScreenController.java`, adicione o campo injetado e sobrescreva o método gerado. Aceite os 6 headers de contexto do cliente e construa um `ClientInfo` para logging:
 
 ```java
 private final MinhaTelaScreenService minhaTelaScreenService;
 
 @Override
-public ResponseEntity<HomeScreenResponse> getSduiMinhaTela(String filtro) {
-    log.info("Fetching SDUI minha-tela screen");
+public ResponseEntity<HomeScreenResponse> getSduiMinhaTela(
+        String filtro,
+        String xAppVersion, String xAppPlatform, String xOSVersion,
+        String xDeviceModel, String xDeviceId, String xAppLanguage) {
+    var clientInfo = ClientInfo.of(xAppVersion, xAppPlatform, xOSVersion, xDeviceModel, xDeviceId, xAppLanguage);
+    log.info("Fetching SDUI minha-tela screen [client={}]", clientInfo);
     var screen = minhaTelaScreenService.buildMinhaTelaScreen(filtro);
     return ResponseEntity.ok(screen);
 }

@@ -23,7 +23,7 @@ import jakarta.annotation.Generated;
  * PoliticianResponseDTO
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-23T17:37:11.794998653Z[Etc/UTC]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-27T00:40:47.670976210Z[Etc/UTC]", comments = "Generator version: 7.13.0")
 public class PoliticianResponseDTO {
 
   @Valid

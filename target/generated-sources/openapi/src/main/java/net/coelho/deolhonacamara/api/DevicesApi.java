@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-23T17:37:11.794998653Z[Etc/UTC]", comments = "Generator version: 7.13.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-03-27T00:40:47.670976210Z[Etc/UTC]", comments = "Generator version: 7.13.0")
 @Validated
 @Tag(name = "Devices", description = "User device management for push notifications")
 public interface DevicesApi {

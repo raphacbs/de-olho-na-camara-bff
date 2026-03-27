@@ -73,6 +73,7 @@ br/com/deolhonacamara/api/dto/LinkDto.class
 br/com/deolhonacamara/api/dto/PoliticianVoteWithPropositionResponseDTO.class
 br/com/deolhonacamara/api/handler/GlobalExceptionHandler.class
 net/coelho/deolhonacamara/api/model/VotingWithVotesResponseDTO.class
+br/com/deolhonacamara/api/service/UserService$Expiration.class
 br/com/deolhonacamara/api/model/input/InputBuilder.class
 br/com/deolhonacamara/api/config/JwtAuthenticationFilter$2.class
 br/com/deolhonacamara/api/dto/TramitationResponseDTO.class

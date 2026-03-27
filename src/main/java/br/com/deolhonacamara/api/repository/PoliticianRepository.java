@@ -193,6 +193,32 @@ public class PoliticianRepository {
         return result != null && result;
     }
 
+    /**
+     * Returns the politician IDs from the provided list that are followed by the given user.
+     *
+     * @param userId         user identifier
+     * @param politicianIds  politician IDs to check
+     * @return set of politician IDs followed by the user
+     */
+    public Set<Integer> findFollowedPoliticianIds(UUID userId, List<Integer> politicianIds) {
+        if (userId == null || politicianIds == null || politicianIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        String sql = """
+            SELECT politician_id
+            FROM user_followed_politicians
+            WHERE user_id = :userId
+              AND politician_id IN (:politicianIds)
+        """;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("userId", userId);
+        params.put("politicianIds", politicianIds);
+
+        return new HashSet<>(jdbcTemplate.query(sql, params, (rs, i) -> rs.getInt("politician_id")));
+    }
+
     public PageResponse<PoliticianEntity> findAllWithFollowedFilter(UUID userId, Pageable pageable, Map<String, Object> filters) {
         StringBuilder where = new StringBuilder();
         Map<String, Object> params = new HashMap<>();

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,5 +140,37 @@ public class ExpenseRepository {
             Integer.class);
         return result != null ? result : 0;
     }
-}
 
+    /**
+     * Returns the number of expenses per politician for the given year, restricted to the provided list of politician IDs.
+     *
+     * @param politicianIds politician IDs to consider
+     * @param year          target year
+     * @return map keyed by politician ID with the respective expense count
+     */
+    public Map<Integer, Integer> countByPoliticianIdsAndYear(List<Integer> politicianIds, Integer year) {
+        if (politicianIds == null || politicianIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        String sql = """
+            SELECT politician_id, COUNT(*) AS total
+            FROM politician_expense
+            WHERE politician_id IN (:politicianIds)
+              AND year = :year
+            GROUP BY politician_id
+        """;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("politicianIds", politicianIds);
+        params.put("year", year);
+
+        return jdbcTemplate.query(sql, params, rs -> {
+            Map<Integer, Integer> result = new HashMap<>();
+            while (rs.next()) {
+                result.put(rs.getInt("politician_id"), rs.getInt("total"));
+            }
+            return result;
+        });
+    }
+}

@@ -17,8 +17,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -48,17 +50,27 @@ public class PoliticianService {
                 : LocalDate.now().getYear();
 
         log.debug("Fetching politicians for year: {}", currentYear);
+        List<PoliticianEntity> politicians = pageRes.getContent();
+        List<Integer> politicianIds = politicians.stream().map(PoliticianEntity::getId).toList();
 
-        List<PoliticianDto> list = pageRes.getContent().stream().map(politician -> {
-            Integer propositionsCount = propositionRepository.countByPoliticianIdAndYear(politician.getId(), currentYear);
-            Integer expenseCount = expenseRepository.countByPoliticianIdAndYear(politician.getId(), currentYear);
-            Boolean isFollowed = userId != null ? repository.isFollowedByUser(userId, politician.getId()) : false;
+        Map<Integer, Integer> propositionsCount =
+                propositionRepository.countByPoliticianIdsAndYear(politicianIds, currentYear);
+        Map<Integer, Integer> expenseCount =
+                expenseRepository.countByPoliticianIdsAndYear(politicianIds, currentYear);
+        Set<Integer> followedPoliticians = userId != null
+                ? repository.findFollowedPoliticianIds(userId, politicianIds)
+                : Collections.emptySet();
+
+        List<PoliticianDto> list = politicians.stream().map(politician -> {
+            Integer propositions = propositionsCount.getOrDefault(politician.getId(), 0);
+            Integer expenses = expenseCount.getOrDefault(politician.getId(), 0);
+            Boolean isFollowed = followedPoliticians.contains(politician.getId());
 
             log.debug("Politician {} (ID: {}): propositions={}, expenses={}, isFollowed={}",
-                      politician.getName(), politician.getId(), propositionsCount, expenseCount, isFollowed);
+                      politician.getName(), politician.getId(), propositions, expenses, isFollowed);
 
-            politician.setPropositionsTotal(propositionsCount);
-            politician.setExpenseTotal(expenseCount);
+            politician.setPropositionsTotal(propositions);
+            politician.setExpenseTotal(expenses);
             politician.setIsFollowed(isFollowed);
             return mapper.toDto(politician);
         }).collect(Collectors.toList());
@@ -101,17 +113,24 @@ public class PoliticianService {
 
         log.debug("Fetching followed politicians for user {} for year: {}", userId, currentYear);
 
-        List<PoliticianDto> list = pageRes.getContent().stream().map(politician -> {
-            Integer propositionsCount = propositionRepository.countByPoliticianIdAndYear(politician.getId(), currentYear);
-            Integer expenseCount = expenseRepository.countByPoliticianIdAndYear(politician.getId(), currentYear);
-            Boolean isFollowed = repository.isFollowedByUser(userId, politician.getId());
+        List<PoliticianEntity> politicians = pageRes.getContent();
+        List<Integer> politicianIds = politicians.stream().map(PoliticianEntity::getId).toList();
 
-            log.debug("Politician {} (ID: {}): propositions={}, expenses={}, isFollowed={}",
-                      politician.getName(), politician.getId(), propositionsCount, expenseCount, isFollowed);
+        Map<Integer, Integer> propositionsCount =
+                propositionRepository.countByPoliticianIdsAndYear(politicianIds, currentYear);
+        Map<Integer, Integer> expenseCount =
+                expenseRepository.countByPoliticianIdsAndYear(politicianIds, currentYear);
 
-            politician.setPropositionsTotal(propositionsCount);
-            politician.setExpenseTotal(expenseCount);
-            politician.setIsFollowed(isFollowed);
+        List<PoliticianDto> list = politicians.stream().map(politician -> {
+            Integer propositions = propositionsCount.getOrDefault(politician.getId(), 0);
+            Integer expenses = expenseCount.getOrDefault(politician.getId(), 0);
+
+            log.debug("Politician {} (ID: {}): propositions={}, expenses={}, isFollowed=true",
+                      politician.getName(), politician.getId(), propositions, expenses);
+
+            politician.setPropositionsTotal(propositions);
+            politician.setExpenseTotal(expenses);
+            politician.setIsFollowed(true);
             return mapper.toDto(politician);
         }).collect(Collectors.toList());
 

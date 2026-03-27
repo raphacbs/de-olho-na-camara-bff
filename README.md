@@ -10,6 +10,7 @@ Backend For Frontend (BFF) que fornece uma API REST para monitoramento de deputa
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Banco de Dados](#banco-de-dados)
 - [Endpoints da API](#endpoints-da-api)
+- [Server-Driven UI (SDUI)](#-server-driven-ui-sdui)
 - [Schedulers](#schedulers)
 - [Configuração](#configuração)
 - [Como Executar](#como-executar)
@@ -298,6 +299,248 @@ Remove o registro de um dispositivo.
 **Headers:**
 - `Authorization: Bearer {token}`
 
+## 📱 Server-Driven UI (SDUI)
+
+O BFF expõe endpoints SDUI que retornam definições de tela em vez de dados brutos. O cliente mobile renderiza cada componente com base no campo `type`, eliminando a necessidade de atualizar o app para pequenas mudanças de layout.
+
+### Conceitos fundamentais
+
+| Elemento | Descrição |
+|---|---|
+| `HomeScreenResponse` | Envelope raiz — contém `screenId`, `version` e a lista de `components` |
+| `ScreenComponent` | Unidade de renderização — possui `id`, `type` e `properties` (shape varia por tipo) |
+| Propriedades | POJO com `@Builder` no pacote `sdui/model/properties/` que define os dados do componente |
+
+**Exemplo de resposta:**
+```json
+{
+  "screenId": "politicians",
+  "version": "1.0",
+  "components": [
+    {
+      "id": "politicians-search",
+      "type": "SEARCH_BAR",
+      "properties": { "placeholder": "Pesquisar por nome..." }
+    },
+    {
+      "id": "politicians-list",
+      "type": "POLITICIAN_CARD_LIST",
+      "properties": {
+        "items": [ { "id": 204379, "name": "Acácio Favacho", "party": "MDB", "state": "AP", ... } ],
+        "total": 513, "currentPage": 0, "totalPages": 26
+      }
+    }
+  ]
+}
+```
+
+### Endpoints SDUI disponíveis
+
+| Endpoint | `screenId` | Componentes retornados |
+|---|---|---|
+| `GET /api/v1/sdui/home` | `home` | `YEAR_SELECTOR_BANNER`, `GREETING_HEADER`, `STATS_GRID`, `QUICK_ACCESS_GRID`, `SECTION_HEADER_WITH_BADGE` |
+| `GET /api/v1/sdui/politicians` | `politicians` | `SEARCH_BAR`, `FILTER_SECTION`, `POLITICIAN_CARD_LIST` |
+| `GET /api/v1/sdui/propositions` | `propositions` | `PROPOSITION_CARD_LIST` |
+| `GET /api/v1/sdui/propositions/{id}` | `proposition-detail-{id}` | `PROPOSITION_DETAIL_HEADER`, `DETAIL_SECTION` ×N, `TEXT_LINK_SECTION`, `AUTHOR_CARD_LIST` |
+| `GET /api/v1/sdui/politicians/{id}/expenses` | `politician-expenses-{id}` | `EXPENSE_CARD_LIST` |
+
+### Tipos de componentes e suas propriedades
+
+#### Componentes de Home
+
+| `type` | Classe de propriedades | Campos principais |
+|---|---|---|
+| `YEAR_SELECTOR_BANNER` | `YearSelectorBannerProperties` | `title`, `subtitle`, `selectedYear`, `buttonBackgroundColor` |
+| `GREETING_HEADER` | `GreetingHeaderProperties` | `greeting`, `subtitle` |
+| `STATS_GRID` | `StatsGridProperties` | `columns`, `items` (lista de `StatCardItem` com `id`, `icon`, `value`, `label`, `backgroundColor`, `action`) |
+| `QUICK_ACCESS_GRID` | `QuickAccessGridProperties` | `title`, `columns`, `items` (lista de `QuickAccessItem` com `id`, `icon`, `label`, `action`) |
+| `SECTION_HEADER_WITH_BADGE` | `SectionHeaderWithBadgeProperties` | `title`, `badgeCount`, `badgeBackgroundColor`, `action` |
+
+#### Componentes de Deputados
+
+| `type` | Classe de propriedades | Campos principais |
+|---|---|---|
+| `SEARCH_BAR` | `SearchBarProperties` | `placeholder` |
+| `FILTER_SECTION` | `FilterSectionProperties` | `groups` (lista de `FilterGroup` com `label` e `chips`), `applyButtonLabel`, `clearButtonLabel` |
+| `POLITICIAN_CARD_LIST` | `PoliticianCardListProperties` | `items` (lista de `PoliticianCardProperties`), `total`, `currentPage`, `totalPages` |
+
+#### Componentes de Proposições
+
+| `type` | Classe de propriedades | Campos principais |
+|---|---|---|
+| `PROPOSITION_CARD_LIST` | `PropositionCardListProperties` | `items` (lista de `PropositionCardProperties`), `total`, `currentPage`, `totalPages` |
+| `PROPOSITION_DETAIL_HEADER` | `PropositionDetailHeaderProperties` | `title`, `presentationDate` |
+| `DETAIL_SECTION` | `DetailSectionProperties` | `title`, `content` |
+| `TEXT_LINK_SECTION` | `TextLinkSectionProperties` | `title`, `linkLabel`, `url` |
+| `AUTHOR_CARD_LIST` | `AuthorCardListProperties` | `title`, `searchPlaceholder`, `items` (lista de `AuthorCardProperties`) |
+
+#### Componentes de Despesas
+
+| `type` | Classe de propriedades | Campos principais |
+|---|---|---|
+| `EXPENSE_CARD_LIST` | `ExpenseCardListProperties` | `items` (lista de `ExpenseCardProperties`), `total`, `currentPage`, `totalPages` |
+
+#### `ComponentAction`
+
+Todos os botões/navegação usam `ComponentAction`:
+```json
+{ "type": "NAVIGATE", "route": "/politicians/204379" }
+```
+
+---
+
+### Como implementar um novo endpoint e tela SDUI
+
+Siga os 5 passos abaixo usando o endpoint de deputados como referência.
+
+#### Passo 1 — Definir o endpoint no `swagger.yaml`
+
+Adicione o path dentro da seção `paths:`, com a tag `SDUI` e operationId único:
+
+```yaml
+/api/v1/sdui/minha-tela:
+  get:
+    tags: [ SDUI ]
+    summary: Get SDUI minha-tela screen definition
+    operationId: getSduiMinhaTela          # nome do método gerado
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: filtro
+        in: query
+        required: false
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Minha tela SDUI definition
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HomeScreenResponse'
+      '401':
+        description: Unauthorized
+```
+
+#### Passo 2 — Gerar as interfaces
+
+```bash
+mvn generate-sources
+```
+
+Isso cria (ou atualiza) `SduiApi` em `target/generated-sources/openapi/...` com o método `getSduiMinhaTela(...)`.
+
+#### Passo 3 — Criar classes de propriedades
+
+Para cada novo tipo de componente, crie um POJO em `src/main/java/br/com/deolhonacamara/sdui/model/properties/`:
+
+```java
+// src/.../sdui/model/properties/MinhaCardProperties.java
+package br.com.deolhonacamara.sdui.model.properties;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class MinhaCardProperties {
+    private Integer id;
+    private String title;
+    private String subtitle;
+    private ComponentAction action;   // inclua se o componente for clicável
+}
+```
+
+Use o padrão `*ListProperties` se o componente exibir uma coleção paginada:
+
+```java
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
+public class MinhaCardListProperties {
+    private List<MinhaCardProperties> items;
+    private Integer total;
+    private Integer currentPage;
+    private Integer totalPages;
+}
+```
+
+#### Passo 4 — Criar o service da tela
+
+Crie em `src/main/java/br/com/deolhonacamara/sdui/service/`:
+
+```java
+// MinhaTelaScreenService.java
+@Service
+@RequiredArgsConstructor
+@Log4j2
+public class MinhaTelaScreenService {
+
+    private static final String SCREEN_VERSION = "1.0";
+    private final MeuServicoExistente meuServico;   // injete os services da camada api/
+
+    public HomeScreenResponse buildMinhaTelaScreen(/* parâmetros */) {
+        log.info("Building SDUI minha-tela screen");
+
+        // 1. buscar dados via services existentes
+        var dados = meuServico.getDados();
+
+        // 2. mapear para propriedades de componente
+        var items = dados.stream().map(d -> MinhaCardProperties.builder()
+                .id(d.getId())
+                .title(d.getTitulo())
+                .action(ComponentAction.builder().type("NAVIGATE").route("/minha-tela/" + d.getId()).build())
+                .build()).toList();
+
+        // 3. montar resposta
+        var response = new HomeScreenResponse();
+        response.setScreenId("minha-tela");
+        response.setVersion(SCREEN_VERSION);
+        response.setComponents(List.of(
+                component("minha-lista", "MINHA_CARD_LIST",
+                        MinhaCardListProperties.builder().items(items).build())
+        ));
+        return response;
+    }
+
+    private ScreenComponent component(String id, String type, Object properties) {
+        var comp = new ScreenComponent();
+        comp.setId(id);
+        comp.setType(type);
+        comp.setProperties(properties);
+        return comp;
+    }
+}
+```
+
+#### Passo 5 — Implementar o método no controller
+
+Em `HomeScreenController.java`, adicione o campo injetado e sobrescreva o método gerado:
+
+```java
+private final MinhaTelaScreenService minhaTelaScreenService;
+
+@Override
+public ResponseEntity<HomeScreenResponse> getSduiMinhaTela(String filtro) {
+    log.info("Fetching SDUI minha-tela screen");
+    var screen = minhaTelaScreenService.buildMinhaTelaScreen(filtro);
+    return ResponseEntity.ok(screen);
+}
+```
+
+> **Nota:** Use `jwtService.extractUserId(rawToken)` sempre que a tela precisar de contexto do usuário autenticado (como filtrar por seguidos). Veja `getSduiPoliticiansScreen` como referência.
+
+#### Verificar
+
+```bash
+mvn compile   # deve compilar sem erros
+mvn test      # todos os testes devem passar
+```
+
+---
+
 ## ⏰ Schedulers
 
 O sistema possui vários schedulers que sincronizam dados da API da Câmara dos Deputados:
@@ -463,7 +706,7 @@ O projeto segue os seguintes padrões:
 - **DTOs:** Objetos de transferência de dados
 - **Mappers:** Usam MapStruct para conversão Entity ↔ DTO
 
-### Adicionando Novos Endpoints
+### Adicionando Novos Endpoints REST
 
 1. Atualize o arquivo `swagger.yaml`
 2. Execute `mvn compile` para gerar as interfaces
@@ -472,11 +715,9 @@ O projeto segue os seguintes padrões:
 5. Crie o repository se necessário
 6. Atualize o mapper se necessário
 
-### Adicionando Novos Tipos de Componentes SDUI
+### Adicionando Novos Endpoints e Telas SDUI
 
-Para adicionar novos tipos de componentes Server-Driven UI, consulte o guia específico:
-
-- **[Guia de Componentes SDUI](SDUI_COMPONENT_GUIDE.md)**: Processo completo para adicionar novos tipos de componentes SDUI
+Consulte a seção **[Server-Driven UI (SDUI)](#-server-driven-ui-sdui)** deste README para o guia passo a passo completo.
 
 ### Executando Testes
 

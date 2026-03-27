@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 @Repository
@@ -51,5 +53,11 @@ public class DashboardRepository {
             """;
         var params = java.util.Map.of("userId", userId);
         return jdbcTemplate.queryForObject(sql, params, Long.class);
+    }
+
+    public BigDecimal sumMonthlyExpenses(int year, int month) {
+        String sql = "SELECT COALESCE(SUM(net_value), 0) FROM expenses WHERE year = :year AND month = :month";
+        var params = Map.of("year", year, "month", month);
+        return jdbcTemplate.queryForObject(sql, params, BigDecimal.class);
     }
 }

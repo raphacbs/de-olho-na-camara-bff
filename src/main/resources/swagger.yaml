@@ -40,6 +40,8 @@ tags:
     description: Political parties data
   - name: Dashboard
     description: Dashboard statistics and analytics
+  - name: SDUI
+    description: Server-Driven UI screen definitions
 
 paths:
   /api/v1/auth/register:
@@ -734,6 +736,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardStatsDto'
 
+  /api/v1/sdui/home:
+    get:
+      tags: [ SDUI ]
+      summary: Get SDUI home screen definition
+      operationId: getHomeScreen
+      description: Returns a server-driven UI definition for the home screen, including stats, quick access items, and followed politicians section.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ano
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Year to filter statistics; if omitted the current year is used.
+      responses:
+        '200':
+          description: Home screen SDUI definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeScreenResponse'
+        '401':
+          description: Unauthorized
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1317,3 +1344,95 @@ components:
           type: integer
         sizePage:
           type: integer
+
+    ComponentAction:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Action type (e.g. NAVIGATE)
+          example: NAVIGATE
+        route:
+          type: string
+          description: Target route for navigation
+          example: /politicians
+
+    StatCardItem:
+      type: object
+      properties:
+        id:
+          type: string
+        icon:
+          type: string
+        value:
+          type: string
+        label:
+          type: string
+        backgroundColor:
+          type: string
+          example: "#1565C0"
+        action:
+          $ref: '#/components/schemas/ComponentAction'
+
+    StatsGridProperties:
+      type: object
+      properties:
+        columns:
+          type: integer
+          example: 2
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatCardItem'
+
+    QuickAccessItem:
+      type: object
+      properties:
+        id:
+          type: string
+        icon:
+          type: string
+        label:
+          type: string
+        action:
+          $ref: '#/components/schemas/ComponentAction'
+
+    QuickAccessGridProperties:
+      type: object
+      properties:
+        title:
+          type: string
+        columns:
+          type: integer
+          example: 2
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuickAccessItem'
+
+    ScreenComponent:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          description: Component type identifier used by the client to select the appropriate renderer
+          example: STATS_GRID
+        properties:
+          type: object
+          description: Component-specific properties; shape depends on the type field
+
+    HomeScreenResponse:
+      type: object
+      properties:
+        screenId:
+          type: string
+          example: home
+        version:
+          type: string
+          example: "1.0"
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScreenComponent'

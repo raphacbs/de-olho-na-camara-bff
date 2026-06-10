@@ -1,6 +1,5 @@
 package br.com.deolhonacamara.api.controller;
 
-import br.com.deolhonacamara.api.model.input.InputBuilder;
 import br.com.deolhonacamara.api.model.input.PropositionInput;
 import br.com.deolhonacamara.api.service.PropositionService;
 import br.com.deolhonacamara.api.service.PropositionTramitationService;
@@ -33,16 +32,7 @@ public class PropositionController implements PropositionsApi {
                                                                             Integer page,
                                                                             Integer size,
                                                                             Integer year) {
-
-
-        //TODO Ajustar forma de criar o input, pois da forma atual fica muito verboso
-        PropositionInput input = InputBuilder
-                .builder(PropositionInput.class)
-                .page(page != null ? page : 0)
-                .sizePage(size != null ? size : 20)
-                .politicianId(id)
-                .filter("year", year)
-                .build();
+        PropositionInput input = PropositionInput.fromPoliticianQuery(id, page, size, year);
 
         return ResponseEntity.ok(propositionService.getByPoliticianId(input));
     }

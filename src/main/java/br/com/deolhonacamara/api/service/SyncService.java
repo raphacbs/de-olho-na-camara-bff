@@ -98,15 +98,8 @@ public class SyncService {
     }
 
     @Async("syncExecutor")
-    public void syncPresence() {
-        log.warn("Presence synchronization is disabled: endpoint /deputados/{id}/presencas does not exist in API REST v2");
-        presenceSyncJob.syncPresence(); // Will only log a warning
-    }
-
-    @Async("syncExecutor")
     public void syncTramitations() {
         log.info("Starting tramitation synchronization...");
         this.propositionTramitationSyncJob.syncPropositionTramitations();
     }
 }
-

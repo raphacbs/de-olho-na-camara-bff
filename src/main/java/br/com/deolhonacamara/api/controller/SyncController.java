@@ -5,10 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.coelho.deolhonacamara.api.SyncApi;
 import net.coelho.deolhonacamara.api.model.SyncResponse;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
@@ -58,8 +56,8 @@ public class SyncController implements SyncApi {
 
     @Override
     public ResponseEntity<SyncResponse> syncVotes(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            LocalDate startDate,
+            LocalDate endDate) {
         log.info("Sync votes endpoint called with date range: {} to {}", startDate, endDate);
         syncService.syncVotes(startDate, endDate);
 

@@ -1,5 +1,9 @@
 # Implementação de isFollowed e Filtro por isFollowed
 
+> ⚠️ Documento histórico de implementação.
+> Para arquitetura, stack e setup atualizados, consulte o `README.md`.
+> Para contexto de produto, consulte `contexto_projeto_de_olho_na_camara.md`.
+
 ## 📋 Objetivo
 Adicionar propriedade `isFollowed` ao endpoint `/api/v1/politicians` que indica se o usuário autenticado segue o político, e também permitir filtrar por este parâmetro.
 
@@ -239,4 +243,3 @@ BUILD SUCCESS in 26.309s
 ```
 
 Todas as warnings são apenas sobre propriedades não mapeadas em outros mappers e APIs deprecadas, não afetando a funcionalidade.
-

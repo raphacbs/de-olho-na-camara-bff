@@ -1,5 +1,9 @@
 # 📋 Filtro de Ano para Proposições e Despesas
 
+> ⚠️ Documento histórico de implementação.
+> Para arquitetura, stack e setup atualizados, consulte o `README.md`.
+> Para contexto de produto, consulte `contexto_projeto_de_olho_na_camara.md`.
+
 ## 🎯 Objetivo
 Adicionar suporte a filtro de **ano** para buscar proposições e despesas de políticos. Se o ano não for informado, utiliza o ano atual (2026).
 
@@ -273,4 +277,3 @@ Errors: 0
 **Status Final:** ✅ **PRONTO PARA PRODUÇÃO**
 
 O filtro de ano está funcionando corretamente e compilado com sucesso!
-

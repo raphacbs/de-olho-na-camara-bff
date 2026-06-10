@@ -1,5 +1,9 @@
 # 📋 RESUMO COMPLETO - Modificações no Endpoint /api/v1/politicians
 
+> ⚠️ Documento histórico de implementação.
+> Para arquitetura, stack e setup atualizados, consulte o `README.md`.
+> Para contexto de produto, consulte `contexto_projeto_de_olho_na_camara.md`.
+
 ## 🎯 Implementações Realizadas
 
 Foram implementadas **3 novas propriedades** com sucesso em todas as camadas da aplicação:
@@ -243,4 +247,3 @@ Documentação adicional criada:
 **Status Final:** ✅ **PRONTO PARA PRODUÇÃO**
 
 Todas as camadas foram implementadas e compiladas com sucesso!
-

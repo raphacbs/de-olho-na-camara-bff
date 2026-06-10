@@ -5,6 +5,7 @@ Backend For Frontend (BFF) que fornece uma API REST para monitoramento de deputa
 ## 📋 Índice
 
 - [Visão Geral](#visão-geral)
+- [Fonte de Verdade da Documentação](#-fonte-de-verdade-da-documentação)
 - [Tecnologias](#tecnologias)
 - [Arquitetura](#arquitetura)
 - [Estrutura do Projeto](#estrutura-do-projeto)
@@ -26,6 +27,14 @@ Backend For Frontend (BFF) que fornece uma API REST para monitoramento de deputa
 - Funcionalidades personalizadas
 - Análises e comparações
 - Notificações sobre atividades dos políticos seguidos
+
+## 🧭 Fonte de Verdade da Documentação
+
+Para evitar divergências e duplicação de informação:
+
+- **README.md** é a fonte principal para stack, arquitetura, setup e fluxo de desenvolvimento.
+- **contexto_projeto_de_olho_na_camara.md** mantém visão de produto, domínio e direcionamento.
+- **RESUMO_*.md** são históricos de entregas específicas (snapshot da época), não documentação arquitetural viva.
 
 ## 🛠 Tecnologias
 

@@ -30,9 +30,6 @@ public class SyncService {
             log.info("Step 1/6: Syncing politicians...");
             politicianSyncJob.syncPoliticians();
             
-            // Wait a bit to ensure politicians are saved
-            Thread.sleep(2000);
-            
             // Sync expenses
             log.info("Step 2/6: Syncing expenses...");
             expenseSyncJob.syncExpenses();
@@ -109,4 +106,3 @@ public class SyncService {
         this.propositionTramitationSyncJob.syncPropositionTramitations();
     }
 }
-

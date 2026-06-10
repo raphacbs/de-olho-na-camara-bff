@@ -8,6 +8,7 @@ import net.coelho.deolhonacamara.api.AuthApi;
 import net.coelho.deolhonacamara.api.model.AuthResponseDTO;
 import net.coelho.deolhonacamara.api.model.RequestLogin;
 import net.coelho.deolhonacamara.api.model.RequestNewUser;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,6 +38,6 @@ public class AuthController implements AuthApi {
 
     @Override
     public ResponseEntity<AuthResponseDTO> apiV1AuthRegisterPost(RequestNewUser requestNewUser) {
-        return ResponseEntity.ok(userService.createUser(requestNewUser));
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(requestNewUser));
     }
 }

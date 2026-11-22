@@ -94,6 +94,13 @@
     .pill.run { color: #2a2110; background: var(--run); }
     .why { color: var(--muted); font-size: 13px; min-height: 18px; }
     .card button { margin-top: auto; }
+    .actions { display: flex; gap: 8px; margin-top: auto; }
+    .actions .primary, .actions .ghost { width: auto; margin-top: 0; padding: 8px 12px; }
+    .when-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .when-form input[type="time"] { width: auto; padding: 6px 8px; }
+    .check { display: flex; gap: 6px; align-items: center; margin: 0; color: var(--muted); font-size: 13px; }
+    .status.paused { color: var(--run); }
+    .status.cancelled { color: var(--muted); }
     .section { margin: 28px 0 12px; display: flex; justify-content: space-between; align-items: baseline; }
     .section h2 { font-family: Fraunces, serif; font-weight: 560; font-size: 28px; margin: 0; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 48px; }
@@ -170,6 +177,8 @@
       if (status === "running") return "em execução";
       if (status === "completed") return "concluída";
       if (status === "failed") return "falhou";
+      if (status === "paused") return "pausada";
+      if (status === "cancelled") return "cancelada";
       return status || "—";
     }
 
@@ -181,18 +190,36 @@
     }
 
     function renderBoard(board, notice) {
-      const cards = board.flows.map(flow => `
+      const cards = board.flows.map(flow => {
+        const manual = flow.schedule === "manual";
+        const state = flow.running ? "ao vivo" : flow.paused ? "pausada" : "parada";
+        const actions = flow.running
+          ? `<button class="ghost" type="button" data-action="pause" data-code="${flow.code}">Pausar</button>
+             <button class="ghost" type="button" data-action="cancel" data-code="${flow.code}">Cancelar</button>`
+          : flow.paused
+            ? `<button class="primary" type="button" data-action="start" data-code="${flow.code}">Continuar</button>
+               <button class="ghost" type="button" data-action="cancel" data-code="${flow.code}">Cancelar</button>`
+            : `<button class="primary" type="button" data-action="start" data-code="${flow.code}" ${flow.blockedBy ? "disabled" : ""}>Iniciar</button>`;
+        const schedule = manual
+          ? `<div class="when">só manual</div>`
+          : `<form class="when-form" data-schedule="${flow.code}">
+               <input type="time" value="${flow.schedule}" required>
+               <label class="check"><input type="checkbox" ${flow.enabled ? "checked" : ""}> ativo</label>
+               <button class="ghost" type="submit">Salvar</button>
+             </form>`;
+        return `
         <article class="card">
           <header>
             <div>
               <h2>${flow.label}</h2>
-              <div class="when">${flow.schedule === "manual" ? "só manual" : "todo dia " + flow.schedule}</div>
+              ${schedule}
             </div>
-            <span class="pill ${flow.running ? "run" : ""}">${flow.running ? "ao vivo" : "parado"}</span>
+            <span class="pill ${flow.running ? "run" : ""}">${state}</span>
           </header>
-          <div class="why">${flow.blockedBy || ""}</div>
-          <button class="primary" data-code="${flow.code}" ${flow.blockedBy ? "disabled" : ""}>Iniciar</button>
-        </article>`).join("");
+          <div class="why">${flow.blockedBy || (flow.paused ? "Continua do ponto gravado" : "")}</div>
+          <div class="actions">${actions}</div>
+        </article>`;
+      }).join("");
       const rows = board.executions.length ? board.executions.map(row => `
         <tr>
           <td>${row.flow}</td>
@@ -221,12 +248,19 @@
         clearInterval(timer);
         renderLogin();
       };
-      document.querySelectorAll("[data-code]").forEach(button => {
-        button.onclick = () => startFlow(button.dataset.code, button);
+      document.querySelectorAll("[data-action]").forEach(button => {
+        button.onclick = () => act(button.dataset.action, button.dataset.code, button);
+      });
+      document.querySelectorAll("[data-schedule]").forEach(form => {
+        form.onsubmit = (event) => saveSchedule(event, form);
       });
     }
 
     async function loadBoard(notice) {
+      const active = document.activeElement;
+      if (!notice && active && active.closest && active.closest("[data-schedule]")) {
+        return;
+      }
       const response = await fetch(boardUrl, { headers: { Authorization: "Bearer " + token() } });
       if (response.status === 401 || response.status === 403) {
         sessionStorage.removeItem(TOKEN);
@@ -241,9 +275,10 @@
       renderBoard(await response.json(), notice);
     }
 
-    async function startFlow(code, button) {
+    async function act(action, code, button) {
       button.disabled = true;
-      const response = await fetch(page + "/api/flows/" + code, {
+      const path = action === "start" ? "/api/flows/" + code : "/api/flows/" + code + "/" + action;
+      const response = await fetch(page + path, {
         method: "POST",
         headers: { Authorization: "Bearer " + token() }
       });
@@ -251,7 +286,29 @@
         await loadBoard(await readError(response));
         return;
       }
-      await loadBoard("Disparo aceito.");
+      const messages = {
+        start: "Disparo aceito.",
+        pause: "Pausa pedida. Para no próximo ponto gravado.",
+        cancel: "Cancelamento pedido. O que já foi gravado não continua."
+      };
+      await loadBoard(messages[action]);
+    }
+
+    async function saveSchedule(event, form) {
+      event.preventDefault();
+      const response = await fetch(page + "/api/flows/" + form.dataset.schedule + "/schedule", {
+        method: "PUT",
+        headers: { Authorization: "Bearer " + token(), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          time: form.querySelector("input[type=time]").value,
+          enabled: form.querySelector("input[type=checkbox]").checked
+        })
+      });
+      if (!response.ok) {
+        await loadBoard(await readError(response));
+        return;
+      }
+      await loadBoard("Horário salvo.");
     }
 
     function startPolling() {

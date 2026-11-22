@@ -13,11 +13,12 @@ import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.PropositionTramitationService;
 import br.com.deolhonacamara.api.service.SyncExecutionGate;
 import br.com.deolhonacamara.api.service.SyncFlows;
+import br.com.deolhonacamara.api.service.SyncHalt;
 import br.com.deolhonacamara.api.service.SyncProgressService;
+import br.com.deolhonacamara.api.service.SyncRunControl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -49,13 +50,12 @@ public class RecentPropositionSyncJob {
     private final PropositionTramitationService propositionTramitationService;
     private final SyncProgressService syncProgressService;
     private final SyncExecutionGate syncExecutionGate;
+    private final SyncRunControl syncRunControl;
     private final PropertiesConfig propertiesConfig;
 
     @Qualifier("syncWorkerExecutor")
     private final Executor syncWorkerExecutor;
 
-    // Runs daily at 06:00 (Recife/BRT time, UTC-3), after the full sync jobs (04:00 and 05:00)
-    @Scheduled(cron = "0 0 6 * * *", zone = "America/Recife")
     public void syncRecentPropositions() {
         if (!syncExecutionGate.enter(FLOW_NAME)) {
             return;
@@ -72,8 +72,11 @@ public class RecentPropositionSyncJob {
 
             log.info("Syncing propositions presented/updated between {} and {}", startDate, endDate);
 
-            int page = 1;
+            int page = currentExecution.getCurrentPage() == null || currentExecution.getCurrentPage() < 1
+                    ? 1
+                    : currentExecution.getCurrentPage() + 1;
             while (true) {
+                syncRunControl.ensureRunning(FLOW_NAME);
                 PropositionListResponseBodyDto response = fetchRecentPropositions(startDate, endDate, page);
 
                 if (response == null || response.getData() == null || response.getData().isEmpty()) {
@@ -116,9 +119,15 @@ public class RecentPropositionSyncJob {
                 page++;
             }
 
+            syncRunControl.ensureRunning(FLOW_NAME);
             syncProgressService.markExecutionCompleted(FLOW_NAME, currentExecution.getExecutionId());
             log.info("Recent proposition synchronization completed successfully");
 
+        } catch (SyncHalt halt) {
+            if (currentExecution != null) {
+                syncProgressService.markExecutionHalted(FLOW_NAME, currentExecution.getExecutionId(), halt.getStatus());
+            }
+            log.info("Recent proposition synchronization {}", halt.getStatus());
         } catch (Exception e) {
             log.error("Error during recent proposition synchronization: ", e);
             try {

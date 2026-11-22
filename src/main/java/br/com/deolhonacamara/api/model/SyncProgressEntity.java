@@ -82,6 +82,14 @@ public class SyncProgressEntity {
         return "failed".equals(status);
     }
 
+    public boolean isPaused() {
+        return "paused".equals(status);
+    }
+
+    public boolean isCancelled() {
+        return "cancelled".equals(status);
+    }
+
     // Explicit setters for environments/static analysis that don't resolve Lombok-generated methods
     public void setLastPropositionId(Long lastPropositionId) {
         this.lastPropositionId = lastPropositionId;

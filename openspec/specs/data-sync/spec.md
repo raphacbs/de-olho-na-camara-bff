@@ -70,6 +70,21 @@ O sistema SHALL recusar iniciar um fluxo quando ele já está em execução na m
 
 O sistema SHALL servir a página `/cabine` para acompanhar e disparar as cargas. Os dados e os disparos SHALL exigir o usuário de operação `cabine@deolhonacamara.local`. A página em si SHALL abrir sem token.
 
+#### Scenario: Operador muda o horário
+
+- **WHEN** o usuário da Cabine grava um novo horário para um fluxo
+- **THEN** o agendamento desse fluxo passa a usar esse horário no fuso `America/Recife`
+
+#### Scenario: Operador pausa e continua
+
+- **WHEN** uma execução em andamento é pausada e depois continuada
+- **THEN** ela para no último ponto gravado e a continuação retoma desse ponto
+
+#### Scenario: Operador cancela
+
+- **WHEN** uma execução em andamento ou pausada é cancelada
+- **THEN** ela não é retomada e o próximo disparo abre outra execução
+
 #### Scenario: Operador dispara um fluxo livre
 
 - **WHEN** o usuário da Cabine pede o início de um fluxo que não está bloqueado

@@ -17,6 +17,17 @@ public final class SyncFlows {
     public static final String TRAMITATIONS = "PropositionTramitations";
     public static final String RECENT_PROPOSITIONS = "RecentPropositions";
     public static final String ALL = "All";
+    public static final String ZONE = "America/Recife";
+
+    public static final Map<String, String> DEFAULT_CRONS = Map.of(
+            POLITICIANS, "0 0 23 * * *",
+            EXPENSES, "0 0 1 * * *",
+            VOTINGS, "0 0 2 * * *",
+            SPEECHES, "0 0 3 * * *",
+            PROPOSITIONS, "0 0 4 * * *",
+            TRAMITATIONS, "0 0 5 * * *",
+            RECENT_PROPOSITIONS, "0 0 6 * * *"
+    );
 
     /**
      * Fluxos que precisam esperar. O pai não reescreve a lista enquanto o filho percorre,

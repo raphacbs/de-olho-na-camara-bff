@@ -13,6 +13,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -45,6 +47,33 @@ public class CabineController {
         cabineService.start(code);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(Map.of("message", "Disparo aceito"));
+    }
+
+    @PostMapping("/cabine/api/flows/{code}/pause")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> pause(@PathVariable String code) {
+        requireOperator();
+        cabineService.pause(code);
+        return ResponseEntity.accepted().body(Map.of("message", "Pausa pedida"));
+    }
+
+    @PostMapping("/cabine/api/flows/{code}/cancel")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> cancel(@PathVariable String code) {
+        requireOperator();
+        cabineService.cancel(code);
+        return ResponseEntity.accepted().body(Map.of("message", "Cancelamento pedido"));
+    }
+
+    @PutMapping("/cabine/api/flows/{code}/schedule")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> schedule(@PathVariable String code, @RequestBody ScheduleRequest request) {
+        requireOperator();
+        cabineService.updateSchedule(code, request.time(), request.enabled());
+        return ResponseEntity.ok(Map.of("message", "Horário atualizado"));
+    }
+
+    public record ScheduleRequest(String time, boolean enabled) {
     }
 
     private void requireOperator() {

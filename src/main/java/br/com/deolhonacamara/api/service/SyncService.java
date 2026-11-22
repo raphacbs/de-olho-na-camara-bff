@@ -22,6 +22,7 @@ public class SyncService {
     private final PropositionTramitationSyncJob propositionTramitationSyncJob;
     private final RecentPropositionSyncJob recentPropositionSyncJob;
     private final SyncExecutionGate syncExecutionGate;
+    private final SyncRunControl syncRunControl;
 
     @Async("syncExecutor")
     public void syncAll() {
@@ -33,39 +34,31 @@ public class SyncService {
 
     private void runSyncAll() {
         try {
-            // Sync politicians first (required for other syncs)
-            log.info("Step 1/6: Syncing politicians...");
-            politicianSyncJob.syncPoliticians();
-            
-            // Wait a bit to ensure politicians are saved
-            Thread.sleep(2000);
-            
-            // Sync expenses
-            log.info("Step 2/6: Syncing expenses...");
-            expenseSyncJob.syncExpenses();
-            
-            // Sync votes
-            log.info("Step 3/6: Syncing votes...");
-            voteSyncJob.syncVotes();
-            
-            // Sync speeches
-            log.info("Step 4/6: Syncing speeches...");
-            speechSyncJob.syncSpeeches();
-            
-            // Sync propositions
-            log.info("Step 5/6: Syncing propositions...");
-            propositionSyncJob.syncPropositions();
-            
-            // Sync presence - DISABLED: endpoint does not exist in API REST v2
-            log.warn("Step 6/6: Presence sync skipped - endpoint /deputados/{id}/presencas does not exist in API REST v2");
-            presenceSyncJob.syncPresence(); // Will only log a warning
-            
-            log.info("Full synchronization completed successfully!");
-            
+            boolean stopped = false;
+            stopped = runStep(stopped, "politicians", politicianSyncJob::syncPoliticians);
+            if (!stopped) {
+                Thread.sleep(2000);
+            }
+            stopped = runStep(stopped, "expenses", expenseSyncJob::syncExpenses);
+            stopped = runStep(stopped, "votes", () -> voteSyncJob.syncVotes());
+            stopped = runStep(stopped, "speeches", speechSyncJob::syncSpeeches);
+            stopped = runStep(stopped, "propositions", propositionSyncJob::syncPropositions);
+            log.info(stopped ? "Full synchronization stopped by Cabine" : "Full synchronization completed successfully!");
         } catch (Exception e) {
             log.error("Error during full synchronization: ", e);
             throw new RuntimeException("Synchronization failed", e);
+        } finally {
+            syncRunControl.clear(SyncFlows.ALL);
         }
+    }
+
+    private boolean runStep(boolean stopped, String step, Runnable job) {
+        if (stopped || syncRunControl.isRequested(SyncFlows.ALL)) {
+            log.info("Skipping {} because the full sync was stopped", step);
+            return true;
+        }
+        job.run();
+        return syncRunControl.isRequested(SyncFlows.ALL);
     }
 
     @Async("syncExecutor")

@@ -12,7 +12,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.log4j.Log4j2;
@@ -30,7 +29,9 @@ import br.com.deolhonacamara.api.repository.VotingRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.SyncExecutionGate;
 import br.com.deolhonacamara.api.service.SyncFlows;
+import br.com.deolhonacamara.api.service.SyncHalt;
 import br.com.deolhonacamara.api.service.SyncProgressService;
+import br.com.deolhonacamara.api.service.SyncRunControl;
 
 @Component
 @Log4j2
@@ -44,6 +45,7 @@ public class VoteSyncJob {
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
     private final SyncExecutionGate syncExecutionGate;
+    private final SyncRunControl syncRunControl;
     private final Executor syncWorkerExecutor;
     private final PropertiesConfig propertiesConfig;
     private final Mapper mapper = Mapper.INSTANCE;
@@ -53,18 +55,18 @@ public class VoteSyncJob {
             CamaraDeputadosService camaraDeputadosService,
             SyncProgressService syncProgressService,
             SyncExecutionGate syncExecutionGate,
+            SyncRunControl syncRunControl,
             @Qualifier("syncWorkerExecutor") Executor syncWorkerExecutor,
             PropertiesConfig propertiesConfig) {
         this.votingRepository = votingRepository;
         this.camaraDeputadosService = camaraDeputadosService;
         this.syncProgressService = syncProgressService;
         this.syncExecutionGate = syncExecutionGate;
+        this.syncRunControl = syncRunControl;
         this.syncWorkerExecutor = syncWorkerExecutor;
         this.propertiesConfig = propertiesConfig;
     }
 
-    // Runs daily at 02:00 (Brasília time)
-    @Scheduled(cron = "0 0 2 * * *", zone = "America/Recife")
     public void syncVotes() {
         // Schedule uses last 3 months as default
         syncVotes(null, null);
@@ -91,6 +93,11 @@ public class VoteSyncJob {
 
             processVotingPages(startPage, currentExecution, effectiveStartDate, effectiveEndDate);
             log.info("Vote synchronization completed for execution {}", currentExecution.getExecutionId());
+        } catch (SyncHalt halt) {
+            syncProgressService.getCurrentProgress("Votings")
+                    .filter(SyncProgressEntity::isRunning)
+                    .ifPresent(exec -> syncProgressService.markExecutionHalted("Votings", exec.getExecutionId(), halt.getStatus()));
+            log.info("Vote synchronization {}", halt.getStatus());
         } catch (Exception e) {
             log.error("Error syncing Votings: ", e);
             // Mark execution as failed if something goes wrong
@@ -128,6 +135,7 @@ public class VoteSyncJob {
     }
 
     private void processVotingPages(Integer page, SyncProgressEntity currentExecution, LocalDate startDate, LocalDate endDate) {
+        syncRunControl.ensureRunning(SyncFlows.VOTINGS);
         try {
             VotingResponseBodyDto votingsResponse = getVotingLastMonthsWithPage(page, startDate, endDate);
             if (votingsResponse == null) {
@@ -168,6 +176,7 @@ public class VoteSyncJob {
                     processVotingPages(page + 1, currentExecution, startDate, endDate);
                 } else {
                     syncProgressService.checkpoint(currentExecution, page, null, null, null, null, null, null);
+                    syncRunControl.ensureRunning(SyncFlows.VOTINGS);
                     syncProgressService.markExecutionCompleted("Votings", currentExecution.getExecutionId());
                 }
             } else {
@@ -175,6 +184,8 @@ public class VoteSyncJob {
                 // If no data is returned for votings, it means we've reached the end, mark as completed
                 syncProgressService.markExecutionCompleted("Votings", currentExecution.getExecutionId());
             }
+        } catch (SyncHalt halt) {
+            throw halt;
         } catch (Exception e) {
             log.error("Error processing voting page {}: ", page, e);
             // Try to continue with next page, but with limits to prevent infinite recursion

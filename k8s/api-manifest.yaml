@@ -37,6 +37,8 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
+            - name: TZ
+              value: America/Recife
             - name: DOMAIN_URL
               value: https://meunovoapp.184.107.88.245.nip.io/api-de-olho-na-camara
           envFrom:

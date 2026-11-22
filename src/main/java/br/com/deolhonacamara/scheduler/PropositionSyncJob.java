@@ -12,13 +12,14 @@ import br.com.deolhonacamara.api.repository.PropositionRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.SyncExecutionGate;
 import br.com.deolhonacamara.api.service.SyncFlows;
+import br.com.deolhonacamara.api.service.SyncHalt;
 import br.com.deolhonacamara.api.service.SyncProgressService;
+import br.com.deolhonacamara.api.service.SyncRunControl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -47,6 +48,7 @@ public class PropositionSyncJob {
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
     private final SyncExecutionGate syncExecutionGate;
+    private final SyncRunControl syncRunControl;
     @Qualifier("syncWorkerExecutor")
     private final Executor syncWorkerExecutor;
 
@@ -54,8 +56,6 @@ public class PropositionSyncJob {
     @Value("${sync.propositions.period.months:1}")
     private int syncPropositionsPeriodMonths;
 
-    // Runs daily at 04:00 (Brasília time)
-    @Scheduled(cron = "0 0 4 * * *", zone = "America/Recife")
     public void syncPropositions() {
         if (!syncExecutionGate.enter(SyncFlows.PROPOSITIONS)) {
             return;
@@ -82,6 +82,7 @@ public class PropositionSyncJob {
                 if (processedPoliticians <= alreadyDone) {
                     continue;
                 }
+                syncRunControl.ensureRunning(SyncFlows.PROPOSITIONS);
                 try {
                     log.info("Processing politician {}/{}: {} (ID: {})", processedPoliticians, totalPoliticians, politician.getName(), politician.getId());
 
@@ -98,10 +99,15 @@ public class PropositionSyncJob {
                 }
             }
 
-            // Mark execution as completed
+            syncRunControl.ensureRunning(SyncFlows.PROPOSITIONS);
             syncProgressService.markExecutionCompleted("Propositions", currentExecution.getExecutionId());
             log.info("Proposition synchronization completed successfully");
 
+        } catch (SyncHalt halt) {
+            syncProgressService.getCurrentProgress("Propositions")
+                    .filter(SyncProgressEntity::isRunning)
+                    .ifPresent(exec -> syncProgressService.markExecutionHalted("Propositions", exec.getExecutionId(), halt.getStatus()));
+            log.info("Proposition synchronization {}", halt.getStatus());
         } catch (Exception e) {
             log.error("Error syncing propositions: ", e);
             // Mark execution as failed if something goes wrong

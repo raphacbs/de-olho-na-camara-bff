@@ -26,8 +26,21 @@ public class SyncProgressService {
     public SyncProgressEntity getOrCreateCurrentExecution(String flowName) {
         Optional<SyncProgressEntity> lastExecution = syncProgressRepository.findFirstByFlowNameOrderByStartTimeDesc(flowName);
 
-        // Uma execução concluída ou interrompida não é retomada: abre outra.
-        if (lastExecution.isEmpty() || lastExecution.get().isCompleted() || lastExecution.get().isFailed()) {
+        if (lastExecution.isPresent() && lastExecution.get().isPaused()) {
+            SyncProgressEntity paused = lastExecution.get();
+            paused.setStatus("running");
+            paused.setEndTime(null);
+            paused.setLastUpdated(LocalDateTime.now());
+            paused.setUpdatedAt(LocalDateTime.now());
+            SyncProgressEntity saved = syncProgressRepository.save(paused);
+            log.info("Resuming paused execution {} for flow {} from page {}",
+                    saved.getExecutionId(), flowName, saved.getCurrentPage());
+            return saved;
+        }
+
+        // Concluída, cancelada ou falha abre outra. Pausada continua do ponto gravado.
+        if (lastExecution.isEmpty() || lastExecution.get().isCompleted()
+                || lastExecution.get().isFailed() || lastExecution.get().isCancelled()) {
             String executionId = UUID.randomUUID().toString();
             SyncProgressEntity newExecution = SyncProgressEntity.builder()
                     .flowName(flowName)
@@ -188,6 +201,23 @@ public class SyncProgressService {
         } else {
             log.warn("Execution {} not found for flow {}", executionId, flowName);
         }
+    }
+
+    @Transactional
+    public void markExecutionHalted(String flowName, String executionId, String status) {
+        Optional<SyncProgressEntity> execution = syncProgressRepository.findByFlowNameAndExecutionId(flowName, executionId);
+        if (execution.isEmpty()) {
+            log.warn("Execution {} not found for flow {}", executionId, flowName);
+            return;
+        }
+        SyncProgressEntity progress = execution.get();
+        LocalDateTime now = LocalDateTime.now();
+        progress.setStatus(status);
+        progress.setEndTime("paused".equals(status) ? null : now);
+        progress.setLastUpdated(now);
+        progress.setUpdatedAt(now);
+        syncProgressRepository.save(progress);
+        log.info("Marked execution {} for flow {} as {}", executionId, flowName, status);
     }
 
     /**

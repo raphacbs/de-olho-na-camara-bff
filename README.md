@@ -148,7 +148,7 @@ Dispositivos dos usuários para notificações push.
 
 ### Migrações
 
-No perfil `prod` o Flyway aplica `src/main/resources/db/migration` na subida (`V1`…`V18`). Os scripts históricos em `src/main/resources/db/changelog` não rodam mais. Fora do perfil `prod` o Flyway fica desligado. Nova mudança de schema entra como o próximo arquivo `V{n}__descricao.sql`, sem editar uma versão já aplicada.
+No perfil `prod` o Flyway aplica `src/main/resources/db/migration` na subida. Horários do banco e da aplicação usam `America/Recife` (GMT-3): a JVM, a sessão JDBC e o timezone padrão do database. Os scripts históricos em `src/main/resources/db/changelog` não rodam mais. Fora do perfil `prod` o Flyway fica desligado. Nova mudança de schema entra como o próximo arquivo `V{n}__descricao.sql`, sem editar uma versão já aplicada.
 
 ## 🔌 Endpoints da API
 
@@ -582,7 +582,9 @@ mvn test      # todos os testes devem passar
 
 Painel de operação das cargas, em `/cabine`. No ambiente publicado: `https://meunovoapp.184.107.88.245.nip.io/api-de-olho-na-camara/cabine`.
 
-O acesso é só do usuário `cabine@deolhonacamara.local`, criado pela migration `V19`. A senha não fica no repositório. A página mostra o que está em execução nesta instância, o histórico de `sync_progress` e dispara os mesmos fluxos do agendamento, inclusive proposições recentes. Deputados não gravam linha de progresso.
+O acesso é só do usuário `cabine@deolhonacamara.local`, criado pela migration `V19`. A senha não fica no repositório. A página mostra o que está em execução nesta instância, o histórico de `sync_progress` e dispara os fluxos, inclusive proposições recentes.
+
+O horário de cada fluxo fica em `sync_schedule` (migration `V20`) e pode ser alterado na Cabine, no fuso `America/Recife`. Pausar pede para o job parar no próximo ponto já gravado; continuar reabre essa execução. Cancelar encerra a execução e a próxima começa do zero.
 
 ## ⏰ Schedulers
 

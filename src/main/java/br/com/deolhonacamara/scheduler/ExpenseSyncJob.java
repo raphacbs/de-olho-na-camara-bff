@@ -9,11 +9,12 @@ import br.com.deolhonacamara.api.repository.PoliticianRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.SyncExecutionGate;
 import br.com.deolhonacamara.api.service.SyncFlows;
+import br.com.deolhonacamara.api.service.SyncHalt;
 import br.com.deolhonacamara.api.service.SyncProgressService;
+import br.com.deolhonacamara.api.service.SyncRunControl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -28,9 +29,8 @@ public class ExpenseSyncJob {
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
     private final SyncExecutionGate syncExecutionGate;
+    private final SyncRunControl syncRunControl;
 
-    // Runs daily at 01:00 (Brasília time) - after politician sync
-    @Scheduled(cron = "0 0 1 * * *", zone = "America/Recife")
     public void syncExpenses() {
         if (!syncExecutionGate.enter(SyncFlows.EXPENSES)) {
             return;
@@ -59,6 +59,7 @@ public class ExpenseSyncJob {
                 if (processedPoliticians <= alreadyDone) {
                     continue;
                 }
+                syncRunControl.ensureRunning(SyncFlows.EXPENSES);
                 try {
                     log.info("Processing politician {}/{}: {} (ID: {})", processedPoliticians, totalPoliticians, politician.getName(), politician.getId());
 
@@ -105,10 +106,15 @@ public class ExpenseSyncJob {
                 }
             }
 
-            // Mark execution as completed
+            syncRunControl.ensureRunning(SyncFlows.EXPENSES);
             syncProgressService.markExecutionCompleted("Expenses", currentExecution.getExecutionId());
             log.info("Expense synchronization completed: {} expenses synced for {} politicians.", totalExpenses, processedPoliticians);
 
+        } catch (SyncHalt halt) {
+            syncProgressService.getCurrentProgress("Expenses")
+                    .filter(SyncProgressEntity::isRunning)
+                    .ifPresent(exec -> syncProgressService.markExecutionHalted("Expenses", exec.getExecutionId(), halt.getStatus()));
+            log.info("Expense synchronization {}", halt.getStatus());
         } catch (Exception e) {
             log.error("Error syncing expenses: ", e);
             // Mark execution as failed if something goes wrong

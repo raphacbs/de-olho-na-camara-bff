@@ -9,11 +9,12 @@ import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.PropositionTramitationService;
 import br.com.deolhonacamara.api.service.SyncExecutionGate;
 import br.com.deolhonacamara.api.service.SyncFlows;
+import br.com.deolhonacamara.api.service.SyncHalt;
 import br.com.deolhonacamara.api.service.SyncProgressService;
+import br.com.deolhonacamara.api.service.SyncRunControl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -36,12 +37,11 @@ public class PropositionTramitationSyncJob {
     private final PropositionTramitationService propositionTramitationService;
     private final SyncProgressService syncProgressService;
     private final SyncExecutionGate syncExecutionGate;
+    private final SyncRunControl syncRunControl;
     private final PropertiesConfig propertiesConfig;
     @Qualifier("syncWorkerExecutor")
     private final Executor syncWorkerExecutor;
 
-    // Runs daily at 05:00 (Brasília time) to avoid overlapping with propositions job
-    @Scheduled(cron = "0 0 5 * * *", zone = "America/Recife")
     public void syncPropositionTramitations() {
         if (!syncExecutionGate.enter(SyncFlows.TRAMITATIONS)) {
             return;
@@ -77,6 +77,7 @@ public class PropositionTramitationSyncJob {
             int inFlightLimit = Math.min(configuredInFlight, chunkSize);
 
             while (true) {
+                syncRunControl.ensureRunning(SyncFlows.TRAMITATIONS);
                 List<PropositionEntity> props = propositionRepository.findPropositionsAfterId(lastProcessedId, chunkSize);
                 if (props == null || props.isEmpty()) {
                     log.info("No more propositions to process for tramitações (lastProcessedId={})", lastProcessedId);
@@ -155,9 +156,13 @@ public class PropositionTramitationSyncJob {
                 // continue with next chunk starting after lastProcessedId
             }
 
+            syncRunControl.ensureRunning(SyncFlows.TRAMITATIONS);
             syncProgressService.markExecutionCompleted("PropositionTramitations", currentExecution.getExecutionId());
             log.info("Proposition tramitation synchronization completed");
 
+        } catch (SyncHalt halt) {
+            syncProgressService.markExecutionHalted("PropositionTramitations", currentExecution.getExecutionId(), halt.getStatus());
+            log.info("Proposition tramitation synchronization {}", halt.getStatus());
         } catch (Exception e) {
             log.error("Error syncing proposition tramitations: ", e);
             try {

@@ -10,11 +10,12 @@ import br.com.deolhonacamara.api.repository.SpeechRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.SyncExecutionGate;
 import br.com.deolhonacamara.api.service.SyncFlows;
+import br.com.deolhonacamara.api.service.SyncHalt;
 import br.com.deolhonacamara.api.service.SyncProgressService;
+import br.com.deolhonacamara.api.service.SyncRunControl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -29,11 +30,10 @@ public class SpeechSyncJob {
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
     private final SyncExecutionGate syncExecutionGate;
+    private final SyncRunControl syncRunControl;
     private final Mapper mapper = Mapper.INSTANCE;
 
 
-    // Runs daily at 03:00 (Brasília time)
-    @Scheduled(cron = "0 0 3 * * *", zone = "America/Recife")
     public void syncSpeeches() {
         if (!syncExecutionGate.enter(SyncFlows.SPEECHES)) {
             return;
@@ -62,6 +62,7 @@ public class SpeechSyncJob {
                 if (processedPoliticians <= alreadyDone) {
                     continue;
                 }
+                syncRunControl.ensureRunning(SyncFlows.SPEECHES);
                 try {
                     log.info("Processing politician {}/{}: {} (ID: {})", processedPoliticians, totalPoliticians, politician.getName(), politician.getId());
 
@@ -88,10 +89,15 @@ public class SpeechSyncJob {
                 }
             }
 
-            // Mark execution as completed
+            syncRunControl.ensureRunning(SyncFlows.SPEECHES);
             syncProgressService.markExecutionCompleted("Speeches", currentExecution.getExecutionId());
             log.info("Speech synchronization completed: {} speeches synced for {} politicians.", totalSpeeches, processedPoliticians);
 
+        } catch (SyncHalt halt) {
+            syncProgressService.getCurrentProgress("Speeches")
+                    .filter(SyncProgressEntity::isRunning)
+                    .ifPresent(exec -> syncProgressService.markExecutionHalted("Speeches", exec.getExecutionId(), halt.getStatus()));
+            log.info("Speech synchronization {}", halt.getStatus());
         } catch (Exception e) {
             log.error("Error syncing speeches: ", e);
             // Mark execution as failed if something goes wrong

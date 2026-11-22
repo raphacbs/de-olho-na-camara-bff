@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cabine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Outfit:wght@380;500;620&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #10130f;
+      --bg-2: #181c15;
+      --card: #1d2219;
+      --line: #31382b;
+      --text: #f4f1e7;
+      --muted: #a39d8e;
+      --brass: #e2b657;
+      --brass-2: #8d6b2e;
+      --ok: #8fceab;
+      --run: #f0c56e;
+      --bad: #e58b74;
+      --idle: #8ea0b8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Outfit, sans-serif;
+      background:
+        radial-gradient(900px 420px at 90% -10%, rgba(226, 182, 87, .16), transparent 60%),
+        radial-gradient(700px 380px at -10% 110%, rgba(143, 206, 171, .08), transparent 55%),
+        var(--bg);
+    }
+    button, input { font: inherit; }
+    .shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 0 8px;
+    }
+    .mark { display: flex; gap: 14px; align-items: center; }
+    .ring {
+      width: 42px; height: 42px; border-radius: 50%;
+      border: 1.5px solid var(--brass);
+      box-shadow: inset 0 0 0 6px #10130f, inset 0 0 0 7px var(--brass-2);
+    }
+    h1 { font-family: Fraunces, serif; font-size: 34px; font-weight: 560; margin: 0; letter-spacing: -.03em; }
+    .sub { color: var(--muted); margin: 2px 0 0; font-size: 14px; }
+    .ghost {
+      background: transparent; color: var(--text); border: 1px solid var(--line);
+      border-radius: 999px; padding: 8px 14px; cursor: pointer;
+    }
+    .ghost:hover { border-color: var(--brass); }
+    .login {
+      min-height: calc(100vh - 40px);
+      display: grid; place-items: center;
+    }
+    .panel {
+      width: min(420px, 100%);
+      background: rgba(29, 34, 25, .9);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
+    }
+    label { display: block; color: var(--muted); font-size: 13px; margin: 16px 0 6px; }
+    input {
+      width: 100%; background: var(--bg); color: var(--text);
+      border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+    }
+    input:focus { outline: 2px solid rgba(226, 182, 87, .45); border-color: var(--brass); }
+    .primary {
+      width: 100%; margin-top: 22px; border: 0; cursor: pointer;
+      background: var(--brass); color: #241b0a; font-weight: 620;
+      border-radius: 14px; padding: 12px 16px;
+    }
+    .primary:disabled { opacity: .55; cursor: wait; }
+    .error { color: var(--bad); min-height: 20px; font-size: 14px; margin-top: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 22px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 16px 16px 14px;
+      display: flex; flex-direction: column; gap: 10px; min-height: 168px;
+    }
+    .card header { padding: 0; align-items: flex-start; }
+    .card h2 { font-size: 18px; margin: 0; font-weight: 620; }
+    .when { color: var(--muted); font-size: 13px; }
+    .pill {
+      border-radius: 999px; padding: 4px 8px; font-size: 12px; letter-spacing: .02em;
+      background: #262c21; color: var(--idle);
+    }
+    .pill.run { color: #2a2110; background: var(--run); }
+    .why { color: var(--muted); font-size: 13px; min-height: 18px; }
+    .card button { margin-top: auto; }
+    .section { margin: 28px 0 12px; display: flex; justify-content: space-between; align-items: baseline; }
+    .section h2 { font-family: Fraunces, serif; font-weight: 560; font-size: 28px; margin: 0; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 48px; }
+    th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); font-size: 14px; }
+    th { color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+    .status { font-weight: 620; }
+    .status.running { color: var(--run); }
+    .status.completed { color: var(--ok); }
+    .status.failed { color: var(--bad); }
+    .empty { color: var(--muted); padding: 18px 0 40px; }
+    @media (max-width: 980px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } header { align-items: flex-start; } }
+  </style>
+</head>
+<body>
+  <div class="shell" id="app"></div>
+  <script>
+    const page = location.pathname.replace(/\/$/, "");
+    const prefix = page.replace(/\/cabine$/, "");
+    const loginUrl = prefix + "/api/v1/auth/login";
+    const boardUrl = page + "/api/board";
+    const TOKEN = "cabine.token";
+    let timer = null;
+
+    function token() { return sessionStorage.getItem(TOKEN); }
+
+    async function readError(response) {
+      try {
+        const body = await response.json();
+        return body.message || "Não foi possível concluir.";
+      } catch (e) {
+        return "Não foi possível concluir.";
+      }
+    }
+
+    function renderLogin(message) {
+      document.getElementById("app").innerHTML = `
+        <div class="login">
+          <form class="panel" id="login-form">
+            <div class="mark"><div class="ring"></div><div><h1>Cabine</h1><p class="sub">Controle das cargas da Câmara</p></div></div>
+            <label for="email">E-mail</label>
+            <input id="email" name="email" type="email" autocomplete="username" required value="cabine@deolhonacamara.local">
+            <label for="password">Senha</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+            <button class="primary" type="submit">Entrar</button>
+            <div class="error">${message || ""}</div>
+          </form>
+        </div>`;
+      document.getElementById("login-form").addEventListener("submit", onLogin);
+    }
+
+    async function onLogin(event) {
+      event.preventDefault();
+      const button = event.target.querySelector("button");
+      button.disabled = true;
+      const response = await fetch(loginUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value
+        })
+      });
+      if (!response.ok) {
+        renderLogin(await readError(response));
+        return;
+      }
+      const body = await response.json();
+      sessionStorage.setItem(TOKEN, body.accessToken);
+      startPolling();
+    }
+
+    function statusLabel(status) {
+      if (status === "running") return "em execução";
+      if (status === "completed") return "concluída";
+      if (status === "failed") return "falhou";
+      return status || "—";
+    }
+
+    function when(value) {
+      if (!value) return "—";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value.replace("T", " ").slice(0, 16);
+      return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+    }
+
+    function renderBoard(board, notice) {
+      const cards = board.flows.map(flow => `
+        <article class="card">
+          <header>
+            <div>
+              <h2>${flow.label}</h2>
+              <div class="when">${flow.schedule === "manual" ? "só manual" : "todo dia " + flow.schedule}</div>
+            </div>
+            <span class="pill ${flow.running ? "run" : ""}">${flow.running ? "ao vivo" : "parado"}</span>
+          </header>
+          <div class="why">${flow.blockedBy || ""}</div>
+          <button class="primary" data-code="${flow.code}" ${flow.blockedBy ? "disabled" : ""}>Iniciar</button>
+        </article>`).join("");
+      const rows = board.executions.length ? board.executions.map(row => `
+        <tr>
+          <td>${row.flow}</td>
+          <td class="status ${row.status}">${statusLabel(row.status)}</td>
+          <td>${row.currentPage ?? "—"} / ${row.totalPages ?? "—"}</td>
+          <td>${row.processedCount ?? 0}</td>
+          <td>${row.errorCount ?? 0}</td>
+          <td>${row.lastCursor || "—"}</td>
+          <td>${when(row.startTime)}</td>
+          <td>${when(row.lastUpdated)}</td>
+        </tr>`).join("") : `<tr><td class="empty" colspan="8">Nenhuma execução gravada ainda. Deputados não entram nesta tabela.</td></tr>`;
+      document.getElementById("app").innerHTML = `
+        <header>
+          <div class="mark"><div class="ring"></div><div><h1>Cabine</h1><p class="sub">Cargas em andamento e o histórico recente</p></div></div>
+          <button class="ghost" id="logout" type="button">Sair</button>
+        </header>
+        <div class="error">${notice || ""}</div>
+        <section class="grid">${cards}</section>
+        <div class="section"><h2>Execuções</h2><span class="when">atualiza sozinha</span></div>
+        <table>
+          <thead><tr><th>Fluxo</th><th>Estado</th><th>Página</th><th>Itens</th><th>Erros</th><th>Cursor</th><th>Início</th><th>Atualização</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      document.getElementById("logout").onclick = () => {
+        sessionStorage.removeItem(TOKEN);
+        clearInterval(timer);
+        renderLogin();
+      };
+      document.querySelectorAll("[data-code]").forEach(button => {
+        button.onclick = () => startFlow(button.dataset.code, button);
+      });
+    }
+
+    async function loadBoard(notice) {
+      const response = await fetch(boardUrl, { headers: { Authorization: "Bearer " + token() } });
+      if (response.status === 401 || response.status === 403) {
+        sessionStorage.removeItem(TOKEN);
+        clearInterval(timer);
+        renderLogin(response.status === 403 ? "Esse login não opera a Cabine." : "");
+        return;
+      }
+      if (!response.ok) {
+        renderBoard({ flows: [], executions: [] }, await readError(response));
+        return;
+      }
+      renderBoard(await response.json(), notice);
+    }
+
+    async function startFlow(code, button) {
+      button.disabled = true;
+      const response = await fetch(page + "/api/flows/" + code, {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token() }
+      });
+      if (!response.ok) {
+        await loadBoard(await readError(response));
+        return;
+      }
+      await loadBoard("Disparo aceito.");
+    }
+
+    function startPolling() {
+      clearInterval(timer);
+      loadBoard();
+      timer = setInterval(() => loadBoard(), 4000);
+    }
+
+    if (!token()) {
+      renderLogin();
+    } else {
+      startPolling();
+    }
+  </script>
+</body>
+</html>

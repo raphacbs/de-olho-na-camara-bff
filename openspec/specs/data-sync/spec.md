@@ -52,6 +52,29 @@ O sistema SHALL gravar cada execução em `camara_deputados.sync_progress` com `
 - **WHEN** um job dispara gravações paralelas de votos ou proposições
 - **THEN** essas tarefas rodam em `syncWorkerExecutor`, e a espera tem limite de 5 minutos
 
+### Requirement: Dependência entre execuções
+
+O sistema SHALL recusar iniciar um fluxo quando ele já está em execução na mesma instância, ou quando um fluxo bloqueador ainda está em execução. Deputados bloqueiam despesas, discursos e proposições, e esses três bloqueiam deputados. Proposições, tramitações e proposições recentes bloqueiam-se entre si. Votações não têm bloqueador. A reserva SHALL ser liberada ao terminar, com sucesso ou falha. Uma execução `running` deixada por um processo que não está mais vivo MUST NOT impedir a próxima subida.
+
+#### Scenario: Segundo disparo do mesmo fluxo
+
+- **WHEN** despesas já estão em execução e chega outro disparo de despesas
+- **THEN** o segundo disparo termina sem abrir outra execução
+
+#### Scenario: Filho espera o pai
+
+- **WHEN** a sincronização de deputados está em execução e o cron de despesas dispara
+- **THEN** despesas não começa e deputados segue até o fim
+
+### Requirement: Painel Cabine
+
+O sistema SHALL servir a página `/cabine` para acompanhar e disparar as cargas. Os dados e os disparos SHALL exigir o usuário de operação `cabine@deolhonacamara.local`. A página em si SHALL abrir sem token.
+
+#### Scenario: Operador dispara um fluxo livre
+
+- **WHEN** o usuário da Cabine pede o início de um fluxo que não está bloqueado
+- **THEN** o sistema aceita o disparo e a página passa a exibir esse fluxo em execução
+
 ### Requirement: Fonte externa única para dados legislativos
 
 O sistema SHALL obter dados legislativos exclusivamente da API pública da Câmara dos Deputados (base URL configurável, ex.: `camara-deputados.api.base-url`), mapeando para entidades locais antes de servir as APIs REST.

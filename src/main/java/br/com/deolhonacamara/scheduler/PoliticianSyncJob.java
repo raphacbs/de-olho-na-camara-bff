@@ -4,6 +4,8 @@ import br.com.deolhonacamara.api.dto.DeputadosBodyDto;
 import br.com.deolhonacamara.api.model.PoliticianEntity;
 import br.com.deolhonacamara.api.repository.PoliticianRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
+import br.com.deolhonacamara.api.service.SyncExecutionGate;
+import br.com.deolhonacamara.api.service.SyncFlows;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,9 +23,14 @@ public class PoliticianSyncJob {
 
     private final PoliticianRepository politicianRepository;
 
+    private final SyncExecutionGate syncExecutionGate;
+
     // Runs daily at 23:00 (Brasília time)
     @Scheduled(cron = "0 0 23 * * *", zone = "America/Recife")
     public void syncPoliticians() {
+        if (!syncExecutionGate.enter(SyncFlows.POLITICIANS)) {
+            return;
+        }
         log.info("Starting politician synchronization from Câmara API...");
 
         try {
@@ -64,6 +71,8 @@ public class PoliticianSyncJob {
 
         } catch (Exception e) {
             log.error("Error syncing politicians: ", e);
+        } finally {
+            syncExecutionGate.release(SyncFlows.POLITICIANS);
         }
     }
 }

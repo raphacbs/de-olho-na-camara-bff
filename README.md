@@ -578,9 +578,17 @@ mvn test      # todos os testes devem passar
 
 ---
 
+## Cabine
+
+Painel de operação das cargas, em `/cabine`. No ambiente publicado: `https://meunovoapp.184.107.88.245.nip.io/api-de-olho-na-camara/cabine`.
+
+O acesso é só do usuário `cabine@deolhonacamara.local`, criado pela migration `V19`. A senha não fica no repositório. A página mostra o que está em execução nesta instância, o histórico de `sync_progress` e dispara os mesmos fluxos do agendamento, inclusive proposições recentes. Deputados não gravam linha de progresso.
+
 ## ⏰ Schedulers
 
 O sistema possui vários schedulers que sincronizam dados da API da Câmara dos Deputados. O job roda em `syncExecutor`. O trabalho paralelo (votos, proposições, tramitações) roda em `syncWorkerExecutor`, para a thread do job não esperar a própria fila. O progresso fica em `sync_progress` e a execução seguinte continua de `current_page` / `last_cursor`. A presença não é sincronizada: o endpoint não existe na API REST v2.
+
+Um fluxo não começa se ele mesmo já está em execução nesta instância. Também espera o fluxo de que depende: deputados travam despesas, discursos e proposições (e o contrário, para a lista de deputados não mudar no meio da carga); proposições, tramitações e proposições recentes travam umas às outras. Votações não dependem de outro fluxo. A trava é solta no fim do job. Uma linha `running` deixada por queda do pod não bloqueia a próxima subida: o processo não está mais vivo e a execução é retomada.
 
 ### `PoliticianSyncJob`
 - **Horário:** 23:00 (Brasília)

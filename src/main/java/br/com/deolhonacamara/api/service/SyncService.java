@@ -20,11 +20,18 @@ public class SyncService {
     private final PropositionSyncJob propositionSyncJob;
     private final PresenceSyncJob presenceSyncJob;
     private final PropositionTramitationSyncJob propositionTramitationSyncJob;
+    private final RecentPropositionSyncJob recentPropositionSyncJob;
+    private final SyncExecutionGate syncExecutionGate;
 
     @Async("syncExecutor")
     public void syncAll() {
         log.info("Starting full synchronization of all features...");
-        
+        if (!syncExecutionGate.runFull(this::runSyncAll)) {
+            log.warn("Full sync skipped because another flow is running");
+        }
+    }
+
+    private void runSyncAll() {
         try {
             // Sync politicians first (required for other syncs)
             log.info("Step 1/6: Syncing politicians...");
@@ -107,6 +114,12 @@ public class SyncService {
     public void syncTramitations() {
         log.info("Starting tramitation synchronization...");
         this.propositionTramitationSyncJob.syncPropositionTramitations();
+    }
+
+    @Async("syncExecutor")
+    public void syncRecentPropositions() {
+        log.info("Starting recent proposition synchronization...");
+        recentPropositionSyncJob.syncRecentPropositions();
     }
 }
 

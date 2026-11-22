@@ -8,6 +8,8 @@ import br.com.deolhonacamara.api.model.SyncProgressEntity;
 import br.com.deolhonacamara.api.repository.PoliticianRepository;
 import br.com.deolhonacamara.api.repository.SpeechRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
+import br.com.deolhonacamara.api.service.SyncExecutionGate;
+import br.com.deolhonacamara.api.service.SyncFlows;
 import br.com.deolhonacamara.api.service.SyncProgressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -26,12 +28,16 @@ public class SpeechSyncJob {
     private final SpeechRepository speechRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
+    private final SyncExecutionGate syncExecutionGate;
     private final Mapper mapper = Mapper.INSTANCE;
 
 
     // Runs daily at 03:00 (Brasília time)
     @Scheduled(cron = "0 0 3 * * *", zone = "America/Recife")
     public void syncSpeeches() {
+        if (!syncExecutionGate.enter(SyncFlows.SPEECHES)) {
+            return;
+        }
         log.info("Starting speech synchronization from Câmara API...");
 
         try {
@@ -96,6 +102,8 @@ public class SpeechSyncJob {
             } catch (Exception e2) {
                 log.error("Error marking execution as failed: ", e2);
             }
+        } finally {
+            syncExecutionGate.release(SyncFlows.SPEECHES);
         }
     }
 }

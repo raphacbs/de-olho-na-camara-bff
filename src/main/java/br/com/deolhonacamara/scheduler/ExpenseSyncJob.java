@@ -7,6 +7,8 @@ import br.com.deolhonacamara.api.model.SyncProgressEntity;
 import br.com.deolhonacamara.api.repository.ExpenseRepository;
 import br.com.deolhonacamara.api.repository.PoliticianRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
+import br.com.deolhonacamara.api.service.SyncExecutionGate;
+import br.com.deolhonacamara.api.service.SyncFlows;
 import br.com.deolhonacamara.api.service.SyncProgressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -25,10 +27,14 @@ public class ExpenseSyncJob {
     private final ExpenseRepository expenseRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
+    private final SyncExecutionGate syncExecutionGate;
 
     // Runs daily at 01:00 (Brasília time) - after politician sync
     @Scheduled(cron = "0 0 1 * * *", zone = "America/Recife")
     public void syncExpenses() {
+        if (!syncExecutionGate.enter(SyncFlows.EXPENSES)) {
+            return;
+        }
         log.info("Starting expense synchronization from Câmara API...");
 
         try {
@@ -116,6 +122,8 @@ public class ExpenseSyncJob {
             } catch (Exception e2) {
                 log.error("Error marking execution as failed: ", e2);
             }
+        } finally {
+            syncExecutionGate.release(SyncFlows.EXPENSES);
         }
     }
 }

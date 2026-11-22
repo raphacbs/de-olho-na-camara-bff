@@ -11,6 +11,8 @@ import br.com.deolhonacamara.api.model.SyncProgressEntity;
 import br.com.deolhonacamara.api.repository.PropositionRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
 import br.com.deolhonacamara.api.service.PropositionTramitationService;
+import br.com.deolhonacamara.api.service.SyncExecutionGate;
+import br.com.deolhonacamara.api.service.SyncFlows;
 import br.com.deolhonacamara.api.service.SyncProgressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -40,12 +42,13 @@ import java.util.stream.Collectors;
 @Log4j2
 public class RecentPropositionSyncJob {
 
-    private static final String FLOW_NAME = "RecentPropositions";
+    private static final String FLOW_NAME = SyncFlows.RECENT_PROPOSITIONS;
 
     private final PropositionRepository propositionRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final PropositionTramitationService propositionTramitationService;
     private final SyncProgressService syncProgressService;
+    private final SyncExecutionGate syncExecutionGate;
     private final PropertiesConfig propertiesConfig;
 
     @Qualifier("syncWorkerExecutor")
@@ -54,11 +57,14 @@ public class RecentPropositionSyncJob {
     // Runs daily at 06:00 (Recife/BRT time, UTC-3), after the full sync jobs (04:00 and 05:00)
     @Scheduled(cron = "0 0 6 * * *", zone = "America/Recife")
     public void syncRecentPropositions() {
+        if (!syncExecutionGate.enter(FLOW_NAME)) {
+            return;
+        }
         log.info("Starting recent proposition synchronization from Câmara API...");
 
-        SyncProgressEntity currentExecution = syncProgressService.getOrCreateCurrentExecution(FLOW_NAME);
-
+        SyncProgressEntity currentExecution = null;
         try {
+            currentExecution = syncProgressService.getOrCreateCurrentExecution(FLOW_NAME);
             int days = propertiesConfig.getPropositionRecentSyncDays();
 
             LocalDate endDate = LocalDate.now();
@@ -116,10 +122,14 @@ public class RecentPropositionSyncJob {
         } catch (Exception e) {
             log.error("Error during recent proposition synchronization: ", e);
             try {
-                syncProgressService.markExecutionFailed(FLOW_NAME, currentExecution.getExecutionId());
+                if (currentExecution != null) {
+                    syncProgressService.markExecutionFailed(FLOW_NAME, currentExecution.getExecutionId());
+                }
             } catch (Exception ex) {
                 log.error("Error marking {} execution as failed: {}", FLOW_NAME, ex.getMessage());
             }
+        } finally {
+            syncExecutionGate.release(FLOW_NAME);
         }
     }
 

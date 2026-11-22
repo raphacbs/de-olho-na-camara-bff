@@ -21,7 +21,7 @@ Key patterns (concrete)
 - Controllers implement generated OpenAPI interfaces (package `net.coelho.deolhonacamara.api`) — implement method signatures and return `ResponseEntity`.
   - Example: controller implements `PoliticiansApi` and calls a service: `politicianService.find(...)`.
 - Layering: controller -> service -> repository (follow `br.com.deolhonacamara` package layout).
-- Schedulers: use `@Component`, constructor injection (`@RequiredArgsConstructor`) and `@Scheduled(cron = "...", zone = "America/Sao_Paulo")`.
+- Schedulers: use `@Component`, constructor injection (`@RequiredArgsConstructor`) and `@Scheduled(cron = "...", zone = "America/Sao_Paulo")`. Each sync job enters `SyncExecutionGate` before work and releases it in `finally`. Blockers live in `SyncFlows`.
   - Long-running sync jobs persist/resume progress using `SyncProgressService.checkpoint` / `SyncProgressEntity` (`current_page`, `total_pages` once, `last_cursor`, and for tramitação `last_proposition_id` / `last_tramitacao_id`). Nested parallel work uses `syncWorkerExecutor`, not `syncExecutor`. Honor `proposition.sync.chunk-size` from `PropertiesConfig`.
 - DB: add the next Flyway file `src/main/resources/db/migration/V{n}__descricao.sql`. Do not edit a version already applied. Flyway runs only with the `prod` profile.
 

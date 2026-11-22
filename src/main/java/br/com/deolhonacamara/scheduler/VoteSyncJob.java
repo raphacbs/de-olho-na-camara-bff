@@ -28,6 +28,8 @@ import br.com.deolhonacamara.api.model.SyncProgressEntity;
 import br.com.deolhonacamara.api.model.VotingEntity;
 import br.com.deolhonacamara.api.repository.VotingRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
+import br.com.deolhonacamara.api.service.SyncExecutionGate;
+import br.com.deolhonacamara.api.service.SyncFlows;
 import br.com.deolhonacamara.api.service.SyncProgressService;
 
 @Component
@@ -41,6 +43,7 @@ public class VoteSyncJob {
     private final VotingRepository votingRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
+    private final SyncExecutionGate syncExecutionGate;
     private final Executor syncWorkerExecutor;
     private final PropertiesConfig propertiesConfig;
     private final Mapper mapper = Mapper.INSTANCE;
@@ -49,11 +52,13 @@ public class VoteSyncJob {
             VotingRepository votingRepository,
             CamaraDeputadosService camaraDeputadosService,
             SyncProgressService syncProgressService,
+            SyncExecutionGate syncExecutionGate,
             @Qualifier("syncWorkerExecutor") Executor syncWorkerExecutor,
             PropertiesConfig propertiesConfig) {
         this.votingRepository = votingRepository;
         this.camaraDeputadosService = camaraDeputadosService;
         this.syncProgressService = syncProgressService;
+        this.syncExecutionGate = syncExecutionGate;
         this.syncWorkerExecutor = syncWorkerExecutor;
         this.propertiesConfig = propertiesConfig;
     }
@@ -66,6 +71,9 @@ public class VoteSyncJob {
     }
 
     public void syncVotes(LocalDate startDate, LocalDate endDate) {
+        if (!syncExecutionGate.enter(SyncFlows.VOTINGS)) {
+            return;
+        }
         LocalDate effectiveStartDate = startDate != null ? startDate : LocalDate.now().minusMonths(3);
         LocalDate effectiveEndDate = endDate != null ? endDate : LocalDate.now();
 
@@ -93,6 +101,8 @@ public class VoteSyncJob {
             } catch (Exception e2) {
                 log.error("Error marking execution as failed: ", e2);
             }
+        } finally {
+            syncExecutionGate.release(SyncFlows.VOTINGS);
         }
     }
 

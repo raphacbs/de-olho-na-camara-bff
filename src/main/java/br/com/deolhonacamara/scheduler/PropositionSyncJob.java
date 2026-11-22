@@ -10,6 +10,8 @@ import br.com.deolhonacamara.api.model.SyncProgressEntity;
 import br.com.deolhonacamara.api.repository.PoliticianRepository;
 import br.com.deolhonacamara.api.repository.PropositionRepository;
 import br.com.deolhonacamara.api.service.CamaraDeputadosService;
+import br.com.deolhonacamara.api.service.SyncExecutionGate;
+import br.com.deolhonacamara.api.service.SyncFlows;
 import br.com.deolhonacamara.api.service.SyncProgressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -44,6 +46,7 @@ public class PropositionSyncJob {
     private final PropositionRepository propositionRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
+    private final SyncExecutionGate syncExecutionGate;
     @Qualifier("syncWorkerExecutor")
     private final Executor syncWorkerExecutor;
 
@@ -54,6 +57,9 @@ public class PropositionSyncJob {
     // Runs daily at 04:00 (Brasília time)
     @Scheduled(cron = "0 0 4 * * *", zone = "America/Recife")
     public void syncPropositions() {
+        if (!syncExecutionGate.enter(SyncFlows.PROPOSITIONS)) {
+            return;
+        }
         log.info("Starting proposition synchronization from Câmara API...");
 
         try {
@@ -106,6 +112,8 @@ public class PropositionSyncJob {
             } catch (Exception e2) {
                 log.error("Error marking execution as failed: ", e2);
             }
+        } finally {
+            syncExecutionGate.release(SyncFlows.PROPOSITIONS);
         }
     }
 

@@ -24,6 +24,9 @@ public interface SyncProgressRepository extends CrudRepository<SyncProgressEntit
 
     boolean existsByFlowNameAndExecutionId(String flowName, String executionId);
 
+    @Query("SELECT * FROM sync_progress ORDER BY start_time DESC NULLS LAST LIMIT :limit")
+    List<SyncProgressEntity> findRecent(@Param("limit") int limit);
+
     @Modifying
     @Query("UPDATE sync_progress SET last_tramitacao_id = NULL, last_updated = :now, updated_at = :now WHERE id = :id")
     void clearLastTramitacaoId(@Param("id") Long id, @Param("now") LocalDateTime now);

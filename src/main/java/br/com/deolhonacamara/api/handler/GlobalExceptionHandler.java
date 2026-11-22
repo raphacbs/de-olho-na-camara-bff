@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.server.ResponseStatusException;
 
 @Log4j2
 @ControllerAdvice
@@ -19,6 +20,12 @@ public class GlobalExceptionHandler {
         log.warn("⚠️ Exceção de negócio capturada - Código: {} - Mensagem: {}", ex.getCode(), ex.getMessage());
         ErrorResponse errorResponse = new ErrorResponse(ex.getCode(), ex.getMessage());
         return new ResponseEntity<>(errorResponse,  BusinessCode.TOKEN_EXPIRED.equals(ex.getCode()) ? HttpStatus.UNAUTHORIZED: HttpStatus.PRECONDITION_FAILED);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleStatus(ResponseStatusException ex) {
+        String code = ex.getStatusCode().toString();
+        return new ResponseEntity<>(new ErrorResponse(code, ex.getReason()), ex.getStatusCode());
     }
 
     @ExceptionHandler(Exception.class)

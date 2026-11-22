@@ -41,7 +41,7 @@ public class VoteSyncJob {
     private final VotingRepository votingRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
-    private final Executor syncExecutor;
+    private final Executor syncWorkerExecutor;
     private final PropertiesConfig propertiesConfig;
     private final Mapper mapper = Mapper.INSTANCE;
 
@@ -49,12 +49,12 @@ public class VoteSyncJob {
             VotingRepository votingRepository,
             CamaraDeputadosService camaraDeputadosService,
             SyncProgressService syncProgressService,
-            @Qualifier("syncExecutor") Executor syncExecutor,
+            @Qualifier("syncWorkerExecutor") Executor syncWorkerExecutor,
             PropertiesConfig propertiesConfig) {
         this.votingRepository = votingRepository;
         this.camaraDeputadosService = camaraDeputadosService;
         this.syncProgressService = syncProgressService;
-        this.syncExecutor = syncExecutor;
+        this.syncWorkerExecutor = syncWorkerExecutor;
         this.propertiesConfig = propertiesConfig;
     }
 
@@ -137,27 +137,27 @@ public class VoteSyncJob {
             Integer lastPage = getLastPageNumber(votingsResponse);
             log.info("Processing page {}/{}", page, lastPage);
 
-            // Set total pages on first response
             if (currentExecution.getTotalPages() == null) {
-                syncProgressService.updateTotalPages("Votings", currentExecution.getExecutionId(), lastPage);
+                syncProgressService.checkpoint(currentExecution, null, lastPage, null, null, null, null, null);
                 log.info("Set total pages to {} for execution {}", lastPage, currentExecution.getExecutionId());
             }
 
             if (votingsResponse.getData() != null) {
                 log.info("Found {} votings in page {}", votingsResponse.getData().size(), page);
 
+                int processed = currentExecution.getProcessedCount() == null ? 0 : currentExecution.getProcessedCount();
                 for (VotingBodyDto votingDto : votingsResponse.getData()) {
                     processSingleVoting(votingDto);
+                    processed++;
+                    syncProgressService.checkpoint(currentExecution, null, null, processed, null, votingDto.getId(), null, null);
                 }
 
                 if (page < lastPage) {
-                    // Update progress before moving to next page
-                    syncProgressService.updateCurrentPage("Votings", currentExecution.getExecutionId(), page);
+                    syncProgressService.checkpoint(currentExecution, page, null, null, null, null, null, null);
                     log.info("Starting processing of next page {} for votings", page + 1);
                     processVotingPages(page + 1, currentExecution, startDate, endDate);
                 } else {
-                    // Update final progress and mark as completed when reaching the last page
-                    syncProgressService.updateCurrentPage("Votings", currentExecution.getExecutionId(), page);
+                    syncProgressService.checkpoint(currentExecution, page, null, null, null, null, null, null);
                     syncProgressService.markExecutionCompleted("Votings", currentExecution.getExecutionId());
                 }
             } else {
@@ -221,7 +221,7 @@ public class VoteSyncJob {
                         } finally {
                             limiter.release();
                         }
-                    }, syncExecutor).exceptionally(ex -> {
+                    }, syncWorkerExecutor).exceptionally(ex -> {
                         log.error("Async error saving vote for voting {}: ", votingId, ex);
                         return null;
                     });

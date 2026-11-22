@@ -43,7 +43,11 @@ public class CamaraDeputadosService {
     }
 
     public DeputadosResponseBodyDto getDeputados() {
-        return getDeputadosShepherd.request();
+        return getDeputados(Map.of());
+    }
+
+    public DeputadosResponseBodyDto getDeputados(Map<String, Object> params) {
+        return getDeputadosShepherd.request(params);
     }
 
     public DeputadoResponseBodyDto getDeputadoById(Integer politicianId) {

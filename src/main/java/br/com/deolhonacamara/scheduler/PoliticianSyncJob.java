@@ -9,6 +9,9 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 @Log4j2
@@ -24,23 +27,37 @@ public class PoliticianSyncJob {
         log.info("Starting politician synchronization from Câmara API...");
 
         try {
-            var response = camaraDeputadosService.getDeputados();
+            int page = 1;
             int count = 0;
-            for (DeputadosBodyDto deputadosBodyDto : response.getData()) {
-                PoliticianEntity p = PoliticianEntity.builder()
-                        .id((Integer) deputadosBodyDto.getId())
-                        .name(deputadosBodyDto.getNome())
-                        .party(deputadosBodyDto.getSiglaPartido())
-                        .partyUri(deputadosBodyDto.getUriPartido())
-                        .state(deputadosBodyDto.getSiglaUf())
-                        .legislatureId(deputadosBodyDto.getIdLegislatura())
-                        .email(deputadosBodyDto.getEmail())
-                        .uri(deputadosBodyDto.getUri())
-                        .photoUrl(deputadosBodyDto.getUrlFoto())
-                        .build();
-                politicianRepository.upsertPolitician(p);
-                log.info("Synchronized politician: {} (ID: {})", p.getName(), p.getId());
-                count++;
+            while (true) {
+                Map<String, Object> params = new HashMap<>();
+                params.put("itens", 100);
+                params.put("pagina", page);
+                var response = camaraDeputadosService.getDeputados(params);
+                if (response == null || response.getData() == null || response.getData().isEmpty()) {
+                    break;
+                }
+                for (DeputadosBodyDto deputadosBodyDto : response.getData()) {
+                    PoliticianEntity p = PoliticianEntity.builder()
+                            .id((Integer) deputadosBodyDto.getId())
+                            .name(deputadosBodyDto.getNome())
+                            .party(deputadosBodyDto.getSiglaPartido())
+                            .partyUri(deputadosBodyDto.getUriPartido())
+                            .state(deputadosBodyDto.getSiglaUf())
+                            .legislatureId(deputadosBodyDto.getIdLegislatura())
+                            .email(deputadosBodyDto.getEmail())
+                            .uri(deputadosBodyDto.getUri())
+                            .photoUrl(deputadosBodyDto.getUrlFoto())
+                            .build();
+                    politicianRepository.upsertPolitician(p);
+                    count++;
+                }
+                boolean hasNext = response.getLinks() != null
+                        && response.getLinks().stream().anyMatch(link -> "next".equals(link.getRel()));
+                if (!hasNext) {
+                    break;
+                }
+                page++;
             }
 
             log.info("Synchronization completed: {} politicians updated.", count);

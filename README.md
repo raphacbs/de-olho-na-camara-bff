@@ -41,7 +41,7 @@ Backend For Frontend (BFF) que fornece uma API REST para monitoramento de deputa
 
 ### Banco de Dados
 - **PostgreSQL** - Banco de dados relacional
-- **Liquibase** - Versionamento de schema
+- **Flyway** - Versionamento de schema no perfil `prod`
 
 ### Documentação
 - **OpenAPI 3.0** - Especificação da API
@@ -128,8 +128,11 @@ Relaciona usuários com os políticos que seguem.
 #### `camara_deputados.politician_expense`
 Despesas dos deputados.
 
-#### `camara_deputados.vote` e `camara_deputados.politician_vote`
+#### `camara_deputados.voting` e `camara_deputados.politician_vote`
 Votações e posicionamentos dos deputados.
+
+#### `camara_deputados.sync_progress`
+Progresso de cada execução de sync: `current_page`, `total_pages` (gravado uma vez), `processed_count`, `error_count`, `last_cursor` e, na tramitação, `last_proposition_id` / `last_tramitacao_id`.
 
 #### `camara_deputados.speech`
 Discursos dos deputados na Câmara.
@@ -145,10 +148,7 @@ Dispositivos dos usuários para notificações push.
 
 ### Migrações
 
-As migrações do banco de dados são gerenciadas pelo Liquibase e estão localizadas em:
-```
-src/main/resources/db/changelog/
-```
+No perfil `prod` o Flyway aplica `src/main/resources/db/migration` na subida (`V1`…`V18`). Os scripts históricos em `src/main/resources/db/changelog` não rodam mais. Fora do perfil `prod` o Flyway fica desligado. Nova mudança de schema entra como o próximo arquivo `V{n}__descricao.sql`, sem editar uma versão já aplicada.
 
 ## 🔌 Endpoints da API
 
@@ -580,7 +580,7 @@ mvn test      # todos os testes devem passar
 
 ## ⏰ Schedulers
 
-O sistema possui vários schedulers que sincronizam dados da API da Câmara dos Deputados:
+O sistema possui vários schedulers que sincronizam dados da API da Câmara dos Deputados. O job roda em `syncExecutor`. O trabalho paralelo (votos, proposições, tramitações) roda em `syncWorkerExecutor`, para a thread do job não esperar a própria fila. O progresso fica em `sync_progress` e a execução seguinte continua de `current_page` / `last_cursor`. A presença não é sincronizada: o endpoint não existe na API REST v2.
 
 ### `PoliticianSyncJob`
 - **Horário:** 23:00 (Brasília)
@@ -607,10 +607,19 @@ O sistema possui vários schedulers que sincronizam dados da API da Câmara dos 
 - **Função:** Sincroniza proposições legislativas
 - **Frequência:** Diária
 
-### `PresenceSyncJob`
+### `PropositionTramitationSyncJob`
 - **Horário:** 05:00 (Brasília)
-- **Função:** Sincroniza registros de presença
+- **Função:** Sincroniza tramitações e retoma de `last_proposition_id` / `last_tramitacao_id`
 - **Frequência:** Diária
+
+### `RecentPropositionSyncJob`
+- **Horário:** 06:00 (Brasília)
+- **Função:** Sincroniza proposições recentes
+- **Frequência:** Diária
+
+### `PresenceSyncJob`
+- **Horário:** desligado
+- **Função:** Presença indisponível na API REST v2
 
 ## ⚙️ Configuração
 
@@ -688,11 +697,9 @@ cp src/main/resources/application-local.properties src/main/resources/applicatio
 
 Ajuste as configurações conforme necessário.
 
-### 4. Executar Migrações do Liquibase
+### 4. Subir a aplicação
 
-```bash
-mvn liquibase:update -Plocal
-```
+No perfil `local` ou `dev` o schema não é migrado na subida. No perfil `prod` o Flyway aplica as migrations ao conectar no banco.
 
 ### 5. Executar a Aplicação
 
@@ -706,12 +713,19 @@ mvn liquibase:update -Plocal
 mvn spring-boot:run
 ```
 
-#### Com Docker (se disponível):
-```bash
-docker-compose up
-```
+A aplicação local fica em `http://localhost:8080`.
 
-A aplicação estará disponível em: `http://localhost:8080`
+## Deploy
+
+Push na branch `main` gera a imagem `ghcr.io/raphacbs/de-olho-na-camara-bff` e atualiza a tag em `k8s/api-manifest.yaml`. O Argo CD sincroniza esse manifesto.
+
+- URL: `https://meunovoapp.184.107.88.245.nip.io/api-de-olho-na-camara/api/v1/...`
+- Banco: `de_olho_na_camara` em `postgres-svc`, perfil `prod`
+- Secret `de-olho-na-camara-api-secret` (template em `docs/k8s-de-olho-na-camara-api-secret.example.yaml`) é aplicado no cluster e não entra no Git
+
+```bash
+kubectl apply -f k8s/secret.yaml
+```
 
 ## 📚 Documentação da API
 

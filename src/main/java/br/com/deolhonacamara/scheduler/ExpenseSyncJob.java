@@ -42,20 +42,18 @@ public class ExpenseSyncJob {
 
             log.info("Found {} politicians to sync expenses", politicians.size());
 
-            int totalExpenses = 0;
+            int totalExpenses = currentExecution.getProcessedCount() == null ? 0 : currentExecution.getProcessedCount();
+            int errors = currentExecution.getErrorCount() == null ? 0 : currentExecution.getErrorCount();
+            int alreadyDone = currentExecution.getCurrentPage() == null ? 0 : currentExecution.getCurrentPage();
             int processedPoliticians = 0;
             int totalPoliticians = politicians.size();
 
-            // Set total pages (total politicians) on first response for this execution
-            if (currentExecution.getTotalPages() == null) {
-                syncProgressService.updateTotalPages("Expenses", currentExecution.getExecutionId(), totalPoliticians);
-                log.info("Set total pages to {} for expenses execution {}", totalPoliticians, currentExecution.getExecutionId());
-            }
-
             for (PoliticianEntity politician : politicians) {
+                processedPoliticians++;
+                if (processedPoliticians <= alreadyDone) {
+                    continue;
+                }
                 try {
-                    // Update progress for current politician
-                    processedPoliticians++;
                     log.info("Processing politician {}/{}: {} (ID: {})", processedPoliticians, totalPoliticians, politician.getName(), politician.getId());
 
                     var expensesResponse = camaraDeputadosService.getExpenses(politician.getId(), null, null);
@@ -87,13 +85,16 @@ public class ExpenseSyncJob {
                         }
                     }
 
-                    // Persist current page (politician processed)
-                    syncProgressService.updateCurrentPage("Expenses", currentExecution.getExecutionId(), processedPoliticians);
+                    syncProgressService.checkpoint(currentExecution, processedPoliticians, totalPoliticians,
+                            totalExpenses, errors, String.valueOf(politician.getId()), null, null);
 
                     if (processedPoliticians % 10 == 0) {
                         log.info("Processed {} politicians, {} expenses synced so far", processedPoliticians, totalExpenses);
                     }
                 } catch (Exception e) {
+                    errors++;
+                    syncProgressService.checkpoint(currentExecution, processedPoliticians, totalPoliticians,
+                            totalExpenses, errors, String.valueOf(politician.getId()), null, null);
                     log.error("Error syncing expenses for politician {} (ID: {}): ", politician.getName(), politician.getId(), e);
                 }
             }

@@ -45,20 +45,18 @@ public class SpeechSyncJob {
 
             log.info("Found {} politicians to sync speeches", politicians.size());
 
-            int totalSpeeches = 0;
+            int totalSpeeches = currentExecution.getProcessedCount() == null ? 0 : currentExecution.getProcessedCount();
+            int errors = currentExecution.getErrorCount() == null ? 0 : currentExecution.getErrorCount();
+            int alreadyDone = currentExecution.getCurrentPage() == null ? 0 : currentExecution.getCurrentPage();
             int processedPoliticians = 0;
             int totalPoliticians = politicians.size();
 
-            // Set total pages (total politicians) on first response for this execution
-            if (currentExecution.getTotalPages() == null) {
-                syncProgressService.updateTotalPages("Speeches", currentExecution.getExecutionId(), totalPoliticians);
-                log.info("Set total pages to {} for speeches execution {}", totalPoliticians, currentExecution.getExecutionId());
-            }
-
             for (PoliticianEntity politician : politicians) {
+                processedPoliticians++;
+                if (processedPoliticians <= alreadyDone) {
+                    continue;
+                }
                 try {
-                    // Update progress for current politician (increment before processing to match Proposition job behavior)
-                    processedPoliticians++;
                     log.info("Processing politician {}/{}: {} (ID: {})", processedPoliticians, totalPoliticians, politician.getName(), politician.getId());
 
                     var speechesResponse = camaraDeputadosService.getSpeeches(politician.getId());
@@ -70,13 +68,16 @@ public class SpeechSyncJob {
                         }
                     }
 
-                    // Persist current page (politician processed)
-                    syncProgressService.updateCurrentPage("Speeches", currentExecution.getExecutionId(), processedPoliticians);
+                    syncProgressService.checkpoint(currentExecution, processedPoliticians, totalPoliticians,
+                            totalSpeeches, errors, String.valueOf(politician.getId()), null, null);
 
                     if (processedPoliticians % 10 == 0) {
                         log.info("Processed {} politicians, {} speeches synced so far", processedPoliticians, totalSpeeches);
                     }
                 } catch (Exception e) {
+                    errors++;
+                    syncProgressService.checkpoint(currentExecution, processedPoliticians, totalPoliticians,
+                            totalSpeeches, errors, String.valueOf(politician.getId()), null, null);
                     log.error("Error syncing speeches for politician {} (ID: {}): ", politician.getName(), politician.getId(), e);
                 }
             }

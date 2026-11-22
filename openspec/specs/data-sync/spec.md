@@ -36,7 +36,21 @@ O sistema SHALL persistir progresso de sincronização de tramitações via `Syn
 #### Scenario: Interrupção e retomada
 
 - **WHEN** um job de tramitação é interrompido após processar parte das proposições
-- **THEN** na próxima execução o sistema continua a partir do último progresso salvo
+- **THEN** na próxima execução o sistema continua a partir de `last_proposition_id` e, se houver, `last_tramitacao_id`
+
+### Requirement: Acompanhamento estável do progresso
+
+O sistema SHALL gravar cada execução em `camara_deputados.sync_progress` com `current_page`, `total_pages`, `processed_count`, `error_count` e `last_cursor`. `total_pages` SHALL ser definido uma vez na execução e MUST NOT ser substituído por um total de outro significado. `current_page` SHALL representar a unidade já concluída daquele fluxo (página da API ou deputados processados). Trabalho paralelo interno SHALL usar um executor diferente da thread que conduz o job.
+
+#### Scenario: Deputados e páginas não se misturam
+
+- **WHEN** a sincronização de proposições avança do deputado 10 para o 11
+- **THEN** `current_page` passa a 11, `total_pages` permanece a quantidade de deputados e `last_cursor` recebe o id do deputado concluído
+
+#### Scenario: Job não espera a própria fila
+
+- **WHEN** um job dispara gravações paralelas de votos ou proposições
+- **THEN** essas tarefas rodam em `syncWorkerExecutor`, e a espera tem limite de 5 minutos
 
 ### Requirement: Fonte externa única para dados legislativos
 

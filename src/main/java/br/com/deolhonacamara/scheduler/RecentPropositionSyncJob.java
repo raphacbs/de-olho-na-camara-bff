@@ -48,8 +48,8 @@ public class RecentPropositionSyncJob {
     private final SyncProgressService syncProgressService;
     private final PropertiesConfig propertiesConfig;
 
-    @Qualifier("syncExecutor")
-    private final Executor syncExecutor;
+    @Qualifier("syncWorkerExecutor")
+    private final Executor syncWorkerExecutor;
 
     // Runs daily at 06:00 (Recife/BRT time, UTC-3), after the full sync jobs (04:00 and 05:00)
     @Scheduled(cron = "0 0 6 * * *", zone = "America/Recife")
@@ -80,7 +80,7 @@ public class RecentPropositionSyncJob {
                 List<CompletableFuture<Void>> tasks = response.getData().stream()
                         .map(dto -> CompletableFuture
                                 .runAsync(() -> savePropositionAndTramitations(dto.getId(), startDate, endDate),
-                                        syncExecutor)
+                                        syncWorkerExecutor)
                                 .exceptionally(ex -> {
                                     log.error("Unexpected error processing proposition {}: {}",
                                             dto.getId(), ex.getMessage(), ex);
@@ -88,9 +88,20 @@ public class RecentPropositionSyncJob {
                                 }))
                         .toList();
 
-                CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+                try {
+                    CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]))
+                            .orTimeout(5, java.util.concurrent.TimeUnit.MINUTES)
+                            .join();
+                } catch (Exception aggregateException) {
+                    log.error("Timeout or error waiting recent proposition tasks on page {}", page, aggregateException);
+                }
 
-                syncProgressService.updateCurrentPage(FLOW_NAME, currentExecution.getExecutionId(), page);
+                Integer lastId = response.getData().get(response.getData().size() - 1).getId();
+                int processed = (currentExecution.getProcessedCount() == null ? 0 : currentExecution.getProcessedCount())
+                        + response.getData().size();
+                syncProgressService.checkpoint(currentExecution, page, getLastPageNumber(response), processed, null,
+                        lastId == null ? null : String.valueOf(lastId),
+                        lastId == null ? null : lastId.longValue(), null);
 
                 Integer lastPage = getLastPageNumber(response);
                 if (page >= lastPage) {

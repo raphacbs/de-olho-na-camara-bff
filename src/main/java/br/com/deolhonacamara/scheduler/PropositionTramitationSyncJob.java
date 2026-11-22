@@ -34,9 +34,8 @@ public class PropositionTramitationSyncJob {
     private final PropositionTramitationService propositionTramitationService;
     private final SyncProgressService syncProgressService;
     private final PropertiesConfig propertiesConfig;
-    // Defined in AsyncConfig#syncExecutor
-    @Qualifier("syncExecutor")
-    private final Executor syncExecutor;
+    @Qualifier("syncWorkerExecutor")
+    private final Executor syncWorkerExecutor;
 
     // Runs daily at 05:00 (Brasília time) to avoid overlapping with propositions job
     @Scheduled(cron = "0 0 5 * * *", zone = "America/Recife")
@@ -118,7 +117,7 @@ public class PropositionTramitationSyncJob {
                 for (PropositionEntity proposition : propsToProcess) {
                     tasks.add(CompletableFuture.runAsync(
                                     () -> processPropositionTramitations(currentExecution, proposition, null, false),
-                                    syncExecutor
+                                    syncWorkerExecutor
                             )
                             .exceptionally(ex -> {
                                 log.error("Unexpected error syncing tramitacoes for proposition {}: {}", proposition.getId(), ex.getMessage(), ex);
@@ -126,13 +125,13 @@ public class PropositionTramitationSyncJob {
                             }));
 
                     if (tasks.size() >= inFlightLimit) {
-                        CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+                        awaitTramitationTasks(tasks);
                         tasks.clear();
                     }
                 }
 
                 if (!tasks.isEmpty()) {
-                    CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+                    awaitTramitationTasks(tasks);
                 }
 
                 // persist progress using maxIdInChunk so we can resume after failures
@@ -140,6 +139,7 @@ public class PropositionTramitationSyncJob {
                     syncProgressService.updateCurrentPage("PropositionTramitations", currentExecution.getExecutionId(), maxIdInChunk);
                     // Also save more explicit last proposition progress (id and timestamp)
                     syncProgressService.updateLastPropositionProgress("PropositionTramitations", currentExecution.getExecutionId(), (long) maxIdInChunk, null, LocalDateTime.now());
+                    syncProgressService.clearLastTramitacao(currentExecution);
                     lastProcessedId = maxIdInChunk;
                 } catch (Exception e) {
                     log.warn("Failed to update sync progress after processing chunk ending at {}: {}", maxIdInChunk, e.getMessage());
@@ -158,6 +158,16 @@ public class PropositionTramitationSyncJob {
             } catch (Exception ex) {
                 log.error("Error marking PropositionTramitations execution as failed: {}", ex.getMessage());
             }
+        }
+    }
+
+    private void awaitTramitationTasks(List<CompletableFuture<Void>> tasks) {
+        try {
+            CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]))
+                    .orTimeout(5, java.util.concurrent.TimeUnit.MINUTES)
+                    .join();
+        } catch (Exception aggregateException) {
+            log.error("Timeout or error waiting tramitation tasks", aggregateException);
         }
     }
 

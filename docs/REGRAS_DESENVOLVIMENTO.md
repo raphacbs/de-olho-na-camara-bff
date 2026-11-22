@@ -7,7 +7,7 @@ Este documento centraliza as regras de desenvolvimento utilizadas pelo projeto e
 1. Escopo
 
 - Público: desenvolvedores e assistentes IA que contribuem para este repositório Java Spring Boot.
-- Abrangência: convenções de nomenclatura, arquitetura, padrões de código, testes, CI/PR, segurança, migrações de banco (Liquibase), OpenAPI e exemplos.
+- Abrangência: convenções de nomenclatura, arquitetura, padrões de código, testes, CI/PR, segurança, migrações de banco (Flyway), OpenAPI e exemplos.
 
 2. Regras gerais
 
@@ -85,12 +85,12 @@ Este documento centraliza as regras de desenvolvimento utilizadas pelo projeto e
 - Executar ferramentas de análise (SpotBugs, Checkstyle, PMD) e scans de dependências no CI.
 - Vulnerabilidades: atualizar imediatamente dependências com CVEs; documentar exceção temporária no PR.
 
-12. Banco de dados e Liquibase
+12. Banco de dados e Flyway
 
-- Migrations via Liquibase (folder db/changelog). Cada mudança deve ser uma changeset com id e author claros.
-- Não editar changesets já aplicados em produção. Para correções, crie um novo changeset.
-- Mantém-se um changelog-master que referencia mudanças por módulo.
-- Testar migrations localmente e em ambiente de integração antes de PR.
+- Migrations em `src/main/resources/db/migration`, arquivo `V{n}__descricao.sql`. O Flyway aplica na subida do perfil `prod`.
+- Não editar uma versão já aplicada. Para correção, crie a próxima versão.
+- `src/main/resources/db/changelog` permanece só como histórico.
+- Testar a migration no banco de desenvolvimento antes do PR.
 
 13. OpenAPI / geração de código
 
@@ -165,7 +165,7 @@ mvn org.owasp:dependency-check-maven:check
 18. Checklist prático (pre-PR)
 
 - [ ] Código compila e testes unitários passam localmente.
-- [ ] Migrations Liquibase novas foram adicionadas e testadas.
+- [ ] Nova migration Flyway foi adicionada e testada.
 - [ ] Swagger/OpenAPI atualizado se houve alteração de contrato.
 - [ ] Não há segredos acidentalmente comitados.
 - [ ] Mensagens de commit seguem Conventional Commits.

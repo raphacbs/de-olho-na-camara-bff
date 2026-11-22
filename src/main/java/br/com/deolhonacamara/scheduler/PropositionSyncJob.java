@@ -44,8 +44,8 @@ public class PropositionSyncJob {
     private final PropositionRepository propositionRepository;
     private final CamaraDeputadosService camaraDeputadosService;
     private final SyncProgressService syncProgressService;
-    @Qualifier("syncExecutor")
-    private final Executor syncExecutor;
+    @Qualifier("syncWorkerExecutor")
+    private final Executor syncWorkerExecutor;
 
     // configurable period (months) used to compute dataApresentacaoInicio as first day of the month 'periodMonths' months ago
     @Value("${sync.propositions.period.months:1}")
@@ -66,21 +66,28 @@ public class PropositionSyncJob {
 
             log.info("Found {} politicians to sync propositions", politicians.size());
 
+            int alreadyDone = currentExecution.getCurrentPage() == null ? 0 : currentExecution.getCurrentPage();
+            int errors = currentExecution.getErrorCount() == null ? 0 : currentExecution.getErrorCount();
             int processedPoliticians = 0;
             int totalPoliticians = politicians.size();
 
             for (PoliticianEntity politician : politicians) {
+                processedPoliticians++;
+                if (processedPoliticians <= alreadyDone) {
+                    continue;
+                }
                 try {
-                    // Update progress for current politician
-                    processedPoliticians++;
                     log.info("Processing politician {}/{}: {} (ID: {})", processedPoliticians, totalPoliticians, politician.getName(), politician.getId());
 
-                    processPropositions(politician, currentExecution, 1);
+                    processPropositions(politician, 1);
 
-                    // Update current page (politician processed)
-                    syncProgressService.updateCurrentPage("Propositions", currentExecution.getExecutionId(), processedPoliticians);
+                    syncProgressService.checkpoint(currentExecution, processedPoliticians, totalPoliticians,
+                            null, errors, String.valueOf(politician.getId()), null, null);
 
                 } catch (Exception e) {
+                    errors++;
+                    syncProgressService.checkpoint(currentExecution, processedPoliticians, totalPoliticians,
+                            null, errors, String.valueOf(politician.getId()), null, null);
                     log.error("Error syncing propositions for politician {} (ID: {}): ", politician.getName(), politician.getId(), e);
                 }
             }
@@ -138,7 +145,7 @@ public class PropositionSyncJob {
         return 1;
     }
 
-    private void processPropositions(PoliticianEntity politician, SyncProgressEntity currentExecution, Integer page) {
+    private void processPropositions(PoliticianEntity politician, Integer page) {
         PropositionListResponseBodyDto propositionsResponse = getPropositions(politician.getId(), page);
 
         Integer lastPage = propositionsResponse != null && propositionsResponse.getLinks() != null ?
@@ -146,27 +153,27 @@ public class PropositionSyncJob {
 
         log.info("Processing page {}/{} for politician {} (ID: {})", page, lastPage, politician.getName(), politician.getId());
 
-        // Set total pages on first response for this politician
-        if (currentExecution.getTotalPages() == null) {
-            syncProgressService.updateTotalPages("Propositions", currentExecution.getExecutionId(), lastPage);
-            log.info("Set total pages to {} for propositions execution {}", lastPage, currentExecution.getExecutionId());
-        }
-
         if (propositionsResponse != null && propositionsResponse.getData() != null) {
             log.info("Found {} propositions for politician {} (ID: {}) on page {}", propositionsResponse.getData().size(), politician.getName(), politician.getId(), page);
 
             // Repository methods are stateless/JdbcTemplate-backed and safe for concurrent usage with the limited executor
             List<CompletableFuture<Void>> tasks = propositionsResponse.getData().stream()
                     .map(propositionDto -> CompletableFuture.runAsync(() ->
-                            savePropositionForPolitician(politician, page, propositionDto), syncExecutor))
+                            savePropositionForPolitician(politician, page, propositionDto), syncWorkerExecutor))
                     .toList();
 
-            // Wait for all parallel requests to finish before moving to the next page
-            CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+            try {
+                CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]))
+                        .orTimeout(5, java.util.concurrent.TimeUnit.MINUTES)
+                        .join();
+            } catch (Exception aggregateException) {
+                log.error("Timeout or error waiting proposition tasks for politician {} (ID: {}) page {}",
+                        politician.getName(), politician.getId(), page, aggregateException);
+            }
 
             if (page < lastPage) {
                 log.info("Starting processing of next page {} for politician {} (ID: {})", page + 1, politician.getName(), politician.getId());
-                processPropositions(politician, currentExecution, page + 1);
+                processPropositions(politician, page + 1);
             }
         } else {
             log.info("No proposition data found for politician {} (ID: {}) on page {}, this likely means we've reached the end", politician.getName(), politician.getId(), page);

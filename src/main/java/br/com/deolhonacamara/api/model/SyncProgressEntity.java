@@ -35,6 +35,15 @@ public class SyncProgressEntity {
     @Column("current_page")
     private Integer currentPage;
 
+    @Column("processed_count")
+    private Integer processedCount;
+
+    @Column("error_count")
+    private Integer errorCount;
+
+    @Column("last_cursor")
+    private String lastCursor;
+
     // New columns to support resuming proposition tramitation syncs
     @Column("last_proposition_id")
     private Long lastPropositionId;

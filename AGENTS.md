@@ -8,7 +8,7 @@ Where to look (quick)
 - Services / business logic: `src/main/java/br/com/deolhonacamara/api/service`
 - DTOs / models: `src/main/java/br/com/deolhonacamara/api/dto` and generated OpenAPI models under `target/generated-sources/openapi`
 - Schedulers: `src/main/java/br/com/deolhonacamara/scheduler` (jobs use `@Component` + `@Scheduled`)
-- DB migrations: `src/main/resources/db/changelog` (Liquibase)
+- DB migrations: `src/main/resources/db/migration` (Flyway, perfil `prod`). `src/main/resources/db/changelog` é histórico e não roda na subida.
 - Config, OpenAPI and mocks: `src/main/resources` (see `application-*.properties`, `swagger.yaml`, `mocks/`)
 
 - Note: there are two swagger files present: `src/main/resources/swagger.yaml` and `src/main/resources/swagger-camara.yaml` (use `README.md` or resources to confirm the authoritative file).
@@ -22,8 +22,8 @@ Key patterns (concrete)
   - Example: controller implements `PoliticiansApi` and calls a service: `politicianService.find(...)`.
 - Layering: controller -> service -> repository (follow `br.com.deolhonacamara` package layout).
 - Schedulers: use `@Component`, constructor injection (`@RequiredArgsConstructor`) and `@Scheduled(cron = "...", zone = "America/Sao_Paulo")`.
-  - Long-running sync jobs persist/resume progress using `SyncProgressService` / `SyncProgressEntity`. When implementing schedulers that page or chunk external data, follow the existing resume pattern (persist current page / last processed id) and honor the chunk-size property (`proposition.sync.chunk-size`) from `PropertiesConfig`.
-- DB: add Liquibase changeSets to `src/main/resources/db/changelog`; do not edit existing changeSets — create a new one.
+  - Long-running sync jobs persist/resume progress using `SyncProgressService.checkpoint` / `SyncProgressEntity` (`current_page`, `total_pages` once, `last_cursor`, and for tramitação `last_proposition_id` / `last_tramitacao_id`). Nested parallel work uses `syncWorkerExecutor`, not `syncExecutor`. Honor `proposition.sync.chunk-size` from `PropertiesConfig`.
+- DB: add the next Flyway file `src/main/resources/db/migration/V{n}__descricao.sql`. Do not edit a version already applied. Flyway runs only with the `prod` profile.
 
 Build / run / tests (developer commands)
 - Build and tests: `mvn clean install` or `mvn test`
@@ -34,13 +34,13 @@ Build / run / tests (developer commands)
 
 Integration points & external deps
 - External API: Câmara dos Deputados (base URL configured via properties; look for camara-deputados config)
-- DB: PostgreSQL managed with Liquibase changelogs in `src/main/resources/db/changelog`
+- DB: PostgreSQL. Schema migrations are Flyway scripts in `src/main/resources/db/migration`, applied on startup when `spring.profiles.active=prod`.
 - OpenAPI: spec at `src/main/resources/swagger.yaml`, codegen configured in `pom.xml` (openapi-generator)
   - Generated server interfaces and models appear under `target/generated-sources/openapi/src/main/java/net/coelho/deolhonacamara/api` after `mvn generate-sources`.
 
 Agent rules (must-follow)
 - If you change the HTTP surface, update `swagger.yaml` and add a matching OpenAPI change or coordinate with maintainers before regenerating sources.
-- Always add new Liquibase changeSet files (follow existing folder structure and naming style).
+- Always add a new Flyway version script. Do not edit an applied `V{n}__*.sql`.
 - Implement generated API interfaces (prefer controller implementations over editing generated sources).
 - Run `mvn -DskipTests=false test` after code changes and fix failing tests before committing.
 - Use `src/main/resources/mocks/*` for offline integration testing (sample payloads exist).
@@ -48,12 +48,13 @@ Agent rules (must-follow)
 
 Verification & communication
 - After OpenAPI/schema or DB changes, run full `mvn clean install` and include test output in PR.
-- Ask maintainers about conventions if unclear: OpenAPI regeneration policy and preferred Liquibase authorship/naming.
+- Ask maintainers about conventions if unclear: OpenAPI regeneration policy and Flyway version naming.
 
 Files that exemplify the patterns
 - `pom.xml` (openapi-generator, mapstruct config)
 - `src/main/resources/swagger.yaml` (API spec)
-- `src/main/resources/db/changelog` (Liquibase changelogs)
+- `src/main/resources/db/migration` (Flyway migrations)
+- `k8s/api-manifest.yaml`, `Dockerfile`, `.github/workflows/deploy.yml` (deploy GitOps)
 - `src/main/resources/mocks/proposition.json` (mock payload)
 - `src/main/java/br/com/deolhonacamara/scheduler/PoliticianSyncJob.java` (scheduler example)
 - `src/main/java/br/com/deolhonacamara/scheduler/PropositionTramitationSyncJob.java` (long-running sync + resume example)

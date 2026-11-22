@@ -16,4 +16,7 @@ import java.util.List;
 public class DeputadosResponseBodyDto  implements Serializable {
     @JsonProperty("dados")
     private List<DeputadosBodyDto> data;
+
+    @JsonProperty("links")
+    private List<LinkDto> links;
 }

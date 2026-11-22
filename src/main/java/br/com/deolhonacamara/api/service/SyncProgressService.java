@@ -26,14 +26,16 @@ public class SyncProgressService {
     public SyncProgressEntity getOrCreateCurrentExecution(String flowName) {
         Optional<SyncProgressEntity> lastExecution = syncProgressRepository.findFirstByFlowNameOrderByStartTimeDesc(flowName);
 
-        // If no execution exists or the last one is completed, create a new one
-        if (lastExecution.isEmpty() || lastExecution.get().isCompleted()) {
+        // Uma execução concluída ou interrompida não é retomada: abre outra.
+        if (lastExecution.isEmpty() || lastExecution.get().isCompleted() || lastExecution.get().isFailed()) {
             String executionId = UUID.randomUUID().toString();
             SyncProgressEntity newExecution = SyncProgressEntity.builder()
                     .flowName(flowName)
                     .executionId(executionId)
                     .status("running")
-                    .currentPage(1)
+                    .currentPage(0)
+                    .processedCount(0)
+                    .errorCount(0)
                     .startTime(LocalDateTime.now())
                     .lastUpdated(LocalDateTime.now())
                     .createdAt(LocalDateTime.now())
@@ -49,6 +51,48 @@ public class SyncProgressService {
         log.info("Resuming existing execution {} for flow {} from page {}",
                 lastExecution.get().getExecutionId(), flowName, lastExecution.get().getCurrentPage());
         return lastExecution.get();
+    }
+
+    /**
+     * Grava página, totais e o último item numa única escrita.
+     * totalPages só entra se ainda estiver vazio, para um fluxo não resetar o total de outro.
+     * Argumentos nulos não apagam o que já estava na execução.
+     */
+    @Transactional
+    public void checkpoint(SyncProgressEntity execution,
+                           Integer currentPage,
+                           Integer totalPages,
+                           Integer processedCount,
+                           Integer errorCount,
+                           String lastCursor,
+                           Long lastPropositionId,
+                           Long lastTramitacaoId) {
+        if (totalPages != null && execution.getTotalPages() == null) {
+            execution.setTotalPages(totalPages);
+        }
+        if (currentPage != null) {
+            execution.setCurrentPage(currentPage);
+        }
+        if (processedCount != null) {
+            execution.setProcessedCount(processedCount);
+        }
+        if (errorCount != null) {
+            execution.setErrorCount(errorCount);
+        }
+        if (lastCursor != null) {
+            execution.setLastCursor(lastCursor);
+        }
+        if (lastPropositionId != null) {
+            execution.setLastPropositionId(lastPropositionId);
+            execution.setLastPropositionUpdatedAt(LocalDateTime.now());
+        }
+        if (lastTramitacaoId != null) {
+            execution.setLastTramitacaoId(lastTramitacaoId);
+        }
+        LocalDateTime now = LocalDateTime.now();
+        execution.setLastUpdated(now);
+        execution.setUpdatedAt(now);
+        syncProgressRepository.save(execution);
     }
 
     /**
@@ -79,15 +123,31 @@ public class SyncProgressService {
 
         if (execution.isPresent()) {
             SyncProgressEntity progress = execution.get();
-            progress.setLastPropositionId(lastPropositionId);
-            progress.setLastTramitacaoId(lastTramitacaoId);
+            if (lastPropositionId != null) {
+                progress.setLastPropositionId(lastPropositionId);
+                progress.setLastCursor(String.valueOf(lastPropositionId));
+            }
+            if (lastTramitacaoId != null) {
+                progress.setLastTramitacaoId(lastTramitacaoId);
+            }
             progress.setLastPropositionUpdatedAt(updatedAt == null ? LocalDateTime.now() : updatedAt);
             progress.setLastUpdated(LocalDateTime.now());
             progress.setUpdatedAt(LocalDateTime.now());
             syncProgressRepository.save(progress);
-            log.debug("Updated last proposition progress for flow {} execution {} to propositionId={} tramitacaoId={}", flowName, executionId, lastPropositionId, lastTramitacaoId);
+            log.debug("Updated last proposition progress for flow {} execution {} to propositionId={} tramitacaoId={}", flowName, executionId, progress.getLastPropositionId(), progress.getLastTramitacaoId());
         } else {
             log.warn("Execution {} not found for flow {}", executionId, flowName);
+        }
+    }
+
+    @Transactional
+    public void clearLastTramitacao(SyncProgressEntity execution) {
+        LocalDateTime now = LocalDateTime.now();
+        execution.setLastTramitacaoId(null);
+        execution.setLastUpdated(now);
+        execution.setUpdatedAt(now);
+        if (execution.getId() != null) {
+            syncProgressRepository.clearLastTramitacaoId(execution.getId(), now);
         }
     }
 

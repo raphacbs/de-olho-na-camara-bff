@@ -1,0 +1,9 @@
+target/
+.git/
+.github/
+openspec/
+.idea/
+.cursor/
+k8s/
+docs/
+*.md

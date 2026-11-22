@@ -1,0 +1,102 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: de-olho-na-camara-api-svc
+  namespace: default
+spec:
+  selector:
+    app: de-olho-na-camara-api
+  ports:
+    - port: 8080
+      targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: de-olho-na-camara-api
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: de-olho-na-camara-api
+  template:
+    metadata:
+      labels:
+        app: de-olho-na-camara-api
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: de-olho-na-camara-api
+          image: ghcr.io/raphacbs/de-olho-na-camara-bff:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: DOMAIN_URL
+              value: https://meunovoapp.184.107.88.245.nip.io/api-de-olho-na-camara
+          envFrom:
+            - secretRef:
+                name: de-olho-na-camara-api-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1536Mi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 10
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: de-olho-na-camara-api-strip-prefix
+  namespace: default
+spec:
+  stripPrefix:
+    prefixes:
+      - /api-de-olho-na-camara
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: de-olho-na-camara-api-ingress
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    ingress.kubernetes.io/ssl-redirect: "false"
+    traefik.ingress.kubernetes.io/router.middlewares: default-de-olho-na-camara-api-strip-prefix@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - meunovoapp.184.107.88.245.nip.io
+      secretName: meunovoapp-tls
+  rules:
+    - host: meunovoapp.184.107.88.245.nip.io
+      http:
+        paths:
+          - path: /api-de-olho-na-camara
+            pathType: Prefix
+            backend:
+              service:
+                name: de-olho-na-camara-api-svc
+                port:
+                  number: 8080

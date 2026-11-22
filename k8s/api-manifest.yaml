@@ -31,7 +31,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: de-olho-na-camara-api
-          image: ghcr.io/raphacbs/de-olho-na-camara-bff:77ff120d5e124261dd4497c195abf32af54704cf
+          image: ghcr.io/raphacbs/de-olho-na-camara-bff:4512e5d2e8b41f708ca208a1534e7178a1f639b5
           ports:
             - containerPort: 8080
           env:

@@ -1,5 +1,9 @@
 # Resumo das Alterações - Adição de propositionsTotal e expenseTotal
 
+> ⚠️ Documento histórico de implementação.
+> Para arquitetura, stack e setup atualizados, consulte o `README.md`.
+> Para contexto de produto, consulte `contexto_projeto_de_olho_na_camara.md`.
+
 ## 📋 Objetivo
 Adicionar dois novos atributos ao endpoint `/api/v1/politicians`:
 - `propositionsTotal` - Quantidade de proposições do político no ano corrente
@@ -192,4 +196,3 @@ POST /api/v1/sync/expenses
 2. ✅ Se não há dados: sincronizar usando endpoints `/sync/*`
 3. ✅ Validar se os contadores começam a retornar valores corretos
 4. ⏳ Implementação completa e testada
-

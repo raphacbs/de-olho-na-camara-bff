@@ -1,7 +1,5 @@
 package br.com.deolhonacamara.api.service;
 
-import br.com.deolhonacamara.api.dto.PoliticianVoteWithPropositionResponseDTO;
-import br.com.deolhonacamara.api.dto.VotingWithVotesResponseDTO;
 import br.com.deolhonacamara.api.mapper.Mapper;
 import br.com.deolhonacamara.api.model.PageResponse;
 import br.com.deolhonacamara.api.model.PoliticianVoteEntity;
@@ -10,6 +8,8 @@ import br.com.deolhonacamara.api.repository.VotingRepository;
 import lombok.RequiredArgsConstructor;
 import net.coelho.deolhonacamara.api.model.PoliticianVoteDto;
 import net.coelho.deolhonacamara.api.model.PoliticianVoteResponseDTO;
+import net.coelho.deolhonacamara.api.model.PoliticianVoteWithPropositionResponseDTO;
+import net.coelho.deolhonacamara.api.model.VotingWithVotesResponseDTO;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -41,11 +41,15 @@ public class VotingService {
         return response;
     }
 
-    public PoliticianVoteWithPropositionResponseDTO getPoliticianVotesWithProposition(Integer politicianId, int page, int size) {
-        return politicianVoteRepository.findVotesWithPropositionByPoliticianId(politicianId, PageRequest.of(page, size));
+    public PoliticianVoteWithPropositionResponseDTO getPoliticianVotesWithProposition(Integer politicianId, Integer page, Integer size) {
+        int pageNum = page != null ? page : 0;
+        int pageSize = size != null ? size : 20;
+        return politicianVoteRepository.findVotesWithPropositionByPoliticianId(politicianId, PageRequest.of(pageNum, pageSize));
     }
 
-    public VotingWithVotesResponseDTO getVotingsWithVotes(int page, int size, String votingId, Integer politicianId, boolean onlyVotes) {
-        return votingRepository.findVotingsWithVotes(PageRequest.of(page, size), votingId, politicianId, onlyVotes);
+    public VotingWithVotesResponseDTO getVotingsWithVotes(Integer page, Integer size, String votingId, Integer politicianId, boolean onlyVotes) {
+        int pageNum = page != null ? page : 0;
+        int pageSize = size != null ? size : 20;
+        return votingRepository.findVotingsWithVotes(PageRequest.of(pageNum, pageSize), votingId, politicianId, onlyVotes);
     }
 }

@@ -188,8 +188,7 @@
                             <modelPackage>net.coelho.deolhonacamara.api.model</modelPackage>
                             <configOptions>
                                 <interfaceOnly>true</interfaceOnly>
-                                <!--                                <interfaceDefaultMethod>false</interfaceDefaultMethod>-->
-                                <skipDefaultInterfaceMethods>true</skipDefaultInterfaceMethods>
+                                <skipDefaultInterface>true</skipDefaultInterface>
                                 <useJakartaEe>true</useJakartaEe>
                                 <groupByTags>true</groupByTags>
                                 <useTags>true</useTags>

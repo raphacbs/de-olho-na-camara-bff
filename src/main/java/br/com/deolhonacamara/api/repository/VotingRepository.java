@@ -1,7 +1,8 @@
 package br.com.deolhonacamara.api.repository;
 
-import br.com.deolhonacamara.api.dto.VotingWithVotesDTO;
-import br.com.deolhonacamara.api.dto.VotingWithVotesResponseDTO;
+import net.coelho.deolhonacamara.api.model.PoliticianVoteSummaryDTO;
+import net.coelho.deolhonacamara.api.model.VotingWithVotesDTO;
+import net.coelho.deolhonacamara.api.model.VotingWithVotesResponseDTO;
 import br.com.deolhonacamara.api.model.PageResponse;
 import br.com.deolhonacamara.api.model.PoliticianEntity;
 import br.com.deolhonacamara.api.model.VotingEntity;
@@ -331,23 +332,21 @@ public class VotingRepository {
         params.put("offset", pageable.getOffset());
 
         List<VotingWithVotesDTO> votings = jdbcTemplate.query(votingsSql, params, (rs, rowNum) ->
-                VotingWithVotesDTO.builder()
+                new VotingWithVotesDTO()
                         .id(rs.getString("id"))
                         .date(rs.getDate("date") != null ? rs.getDate("date").toLocalDate() : null)
                         .description(rs.getString("description"))
                         .organAcronym(rs.getString("organ_acronym"))
                         .votes(new ArrayList<>())
-                        .build()
         );
 
         if (votings.isEmpty()) {
-            return VotingWithVotesResponseDTO.builder()
+            return new VotingWithVotesResponseDTO()
                 .data(new ArrayList<>())
                 .total(0)
                 .page(pageable.getPageNumber())
                 .totalPages(0)
-                .sizePage(pageable.getPageSize())
-                .build();
+                .sizePage(pageable.getPageSize());
         }
 
         List<String> votingIds = votings.stream().map(VotingWithVotesDTO::getId).collect(Collectors.toList());
@@ -362,15 +361,14 @@ public class VotingRepository {
         Map<String, Object> votesParams = new HashMap<>();
         votesParams.put("votingIds", votingIds);
 
-        Map<String, List<VotingWithVotesDTO.PoliticianVoteSummaryDTO>> votesMap = new HashMap<>();
+        Map<String, List<PoliticianVoteSummaryDTO>> votesMap = new HashMap<>();
         jdbcTemplate.query(votesSql, votesParams, (rs, rowNum) -> {
             String votingId = rs.getString("voting_id");
             votesMap.computeIfAbsent(votingId, k -> new ArrayList<>()).add(
-                    VotingWithVotesDTO.PoliticianVoteSummaryDTO.builder()
+                    new PoliticianVoteSummaryDTO()
                             .politicianId(rs.getInt("politician_id"))
                             .politicianName(rs.getString("politician_name"))
                             .voteType(rs.getString("vote_type"))
-                            .build()
             );
             return null;
         });
@@ -383,12 +381,11 @@ public class VotingRepository {
         params.remove("offset");
         int total = jdbcTemplate.queryForObject(countSql, params, Integer.class);
 
-        return VotingWithVotesResponseDTO.builder()
+        return new VotingWithVotesResponseDTO()
                 .data(votings)
                 .total(total)
                 .page(pageable.getPageNumber())
                 .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
-                .sizePage(pageable.getPageSize())
-                .build();
+                .sizePage(pageable.getPageSize());
     }
 }

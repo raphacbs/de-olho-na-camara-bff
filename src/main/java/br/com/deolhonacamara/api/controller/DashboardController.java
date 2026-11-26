@@ -35,9 +35,6 @@ public class DashboardController implements DashboardApi {
     }
 
     private String getAuthorizationHeader() {
-        var opt = getRequest().map(r -> r.getHeader("Authorization"));
-        if (opt.isPresent()) return opt.get();
-
         var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs == null) return null;
         HttpServletRequest req = attrs.getRequest();

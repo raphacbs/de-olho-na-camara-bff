@@ -1,7 +1,7 @@
 package br.com.deolhonacamara.api.repository;
 
-import br.com.deolhonacamara.api.dto.PoliticianVoteWithPropositionDTO;
-import br.com.deolhonacamara.api.dto.PoliticianVoteWithPropositionResponseDTO;
+import net.coelho.deolhonacamara.api.model.PoliticianVoteWithPropositionDTO;
+import net.coelho.deolhonacamara.api.model.PoliticianVoteWithPropositionResponseDTO;
 import br.com.deolhonacamara.api.model.PageResponse;
 import br.com.deolhonacamara.api.model.PoliticianVoteEntity;
 import lombok.RequiredArgsConstructor;
@@ -152,7 +152,7 @@ public class PoliticianVoteRepository {
         params.put("limit", pageable.getPageSize());
         params.put("offset", pageable.getOffset());
 
-        List<PoliticianVoteWithPropositionDTO> content = jdbcTemplate.query(sql, params, (rs, i) -> PoliticianVoteWithPropositionDTO.builder()
+        List<PoliticianVoteWithPropositionDTO> content = jdbcTemplate.query(sql, params, (rs, i) -> new PoliticianVoteWithPropositionDTO()
                 .id(rs.getLong("id"))
                 .politicianId(rs.getInt("politician_id"))
                 .vote(rs.getString("vote_type"))
@@ -161,17 +161,15 @@ public class PoliticianVoteRepository {
                 .votingDescription(rs.getString("vote_description"))
                 .propositionSummary(rs.getString("proposition_summary"))
                 .propositionYear(rs.getInt("proposition_year"))
-                .propositionDetailedSummary(rs.getString("proposition_detailed_summary"))
-                .build());
+                .propositionDetailedSummary(rs.getString("proposition_detailed_summary")));
 
         int total = jdbcTemplate.queryForObject(countSql, params, Integer.class);
 
-        return PoliticianVoteWithPropositionResponseDTO.builder()
+        return new PoliticianVoteWithPropositionResponseDTO()
                 .data(content)
                 .total(total)
                 .page(pageable.getPageNumber())
                 .totalPages((int) Math.ceil((double) total / pageable.getPageSize()))
-                .sizePage(pageable.getPageSize())
-                .build();
+                .sizePage(pageable.getPageSize());
     }
 }

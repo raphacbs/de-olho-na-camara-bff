@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import net.coelho.deolhonacamara.api.VotesApi;
 import net.coelho.deolhonacamara.api.model.PoliticianVoteResponseDTO;
+import net.coelho.deolhonacamara.api.model.PoliticianVoteWithPropositionResponseDTO;
+import net.coelho.deolhonacamara.api.model.VotingWithVotesResponseDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,5 +24,17 @@ public class VoteController implements VotesApi {
 
         return ResponseEntity.ok(voteService.getByPoliticianId(id, pageNum, pageSize));
     }
-}
 
+    @Override
+    public ResponseEntity<PoliticianVoteWithPropositionResponseDTO> getPoliticianVotesWithProposition(
+            Integer id, Integer page, Integer size) {
+        return ResponseEntity.ok(voteService.getPoliticianVotesWithProposition(id, page, size));
+    }
+
+    @Override
+    public ResponseEntity<VotingWithVotesResponseDTO> getVotingsWithVotes(
+            Integer page, Integer size, String votingId, Integer politicianId, Boolean onlyVotes) {
+        return ResponseEntity.ok(voteService.getVotingsWithVotes(
+                page, size, votingId, politicianId, Boolean.TRUE.equals(onlyVotes)));
+    }
+}

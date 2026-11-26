@@ -120,10 +120,6 @@ public class HomeScreenController implements SduiApi {
     }
 
     private String getAuthorizationHeader() {
-        // Prefer generated getRequest() when available
-        var opt = getRequest().map(r -> r.getHeader("Authorization"));
-        if (opt.isPresent()) return opt.get();
-
         var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs == null) return null;
         HttpServletRequest req = attrs.getRequest();

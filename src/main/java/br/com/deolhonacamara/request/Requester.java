@@ -36,6 +36,7 @@ public class Requester<T> {
     private final Class<T> type;
     private final Duration timeout;
     private final String contentType;
+    private final String authorization;
 
     public Requester(HttpClient httpClient,
                      Environment environment,
@@ -44,6 +45,7 @@ public class Requester<T> {
                      String timeout,
                      Class<T> type,
                      String contentType,
+                     String authorization,
                      ObjectMapper objectMapper) {
 
         this.httpClient = httpClient;
@@ -73,6 +75,7 @@ public class Requester<T> {
         this.pathParams = processPathParams(fullEndpoint);
         this.timeout = parseDuration(resolvedTimeout);
         this.contentType = contentType;
+        this.authorization = authorization;
         this.type = type;
     }
 
@@ -102,7 +105,9 @@ public class Requester<T> {
             if (timeout != null) {
                 builder.timeout(timeout);
             }
-            // TODO configurar o authorization
+            if (authorization != null && !authorization.isBlank()) {
+                builder.header("Authorization", authorization);
+            }
 
             HttpRequest req = builder.build();
             HttpBodyCodecBodyHandler bodyHandler = new HttpBodyCodecBodyHandler(objectMapper, DEFAULT_ENCODING);

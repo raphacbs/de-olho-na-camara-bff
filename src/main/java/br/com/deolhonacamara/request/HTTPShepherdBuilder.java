@@ -27,6 +27,8 @@ public class HTTPShepherdBuilder<B, O> {
     @Setter
     private String contentType = "application/json";
     @Setter
+    private String authorization;
+    @Setter
     private HTTPShepherdRepository repository;
 
     public HTTPShepherd<B, O> build() {
@@ -36,6 +38,7 @@ public class HTTPShepherdBuilder<B, O> {
                 .endpoint(endpoint)
                 .timeout(timeout)
                 .contentType(contentType)
+                .authorization(authorization)
                 .build();
         return new HTTPShepherd<>(requester, repository, type, url);
     }

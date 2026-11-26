@@ -27,11 +27,13 @@ public class RequesterBuilder<T> {
     @Setter
     private String contentType = "application/json";
     @Setter
+    private String authorization;
+    @Setter
     private HTTPShepherdRepository repository;
 
     public Requester<T> build() {
         validateRequiredFields();
-        return new Requester<>(httpClient, environment, url, endpoint, timeout, type, contentType, objectMapper);
+        return new Requester<>(httpClient, environment, url, endpoint, timeout, type, contentType, authorization, objectMapper);
     }
 
     private void validateRequiredFields() {

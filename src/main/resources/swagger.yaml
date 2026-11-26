@@ -532,7 +532,7 @@ paths:
       tags: [ Sync ]
       summary: Trigger full synchronization of all features
       operationId: syncAll
-      description: Starts an asynchronous synchronization process for all features (politicians, expenses, votes, speeches, propositions, and presence). Returns immediately without waiting for completion.
+      description: Starts an asynchronous synchronization process for all available features (politicians, expenses, votes, speeches, and propositions). Returns immediately without waiting for completion.
       responses:
         '202':
           description: Synchronization started successfully
@@ -605,20 +605,6 @@ paths:
       summary: Trigger synchronization of propositions only
       operationId: syncPropositions
       description: Starts an asynchronous synchronization process for propositions only.
-      responses:
-        '202':
-          description: Synchronization started successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SyncResponse'
-
-  /api/v1/sync/presence:
-    post:
-      tags: [ Sync ]
-      summary: Trigger synchronization of presence only
-      operationId: syncPresence
-      description: Starts an asynchronous synchronization process for presence only.
       responses:
         '202':
           description: Synchronization started successfully

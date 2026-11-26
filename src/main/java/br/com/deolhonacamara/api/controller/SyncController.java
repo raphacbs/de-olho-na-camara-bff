@@ -112,18 +112,4 @@ public class SyncController implements SyncApi {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 
-    @Override
-    public ResponseEntity<SyncResponse> syncPresence() {
-        log.info("Sync presence endpoint called");
-        syncService.syncPresence();
-        
-        SyncResponse response = new SyncResponse();
-        response.setMessage("Presence synchronization started successfully");
-        response.setStatus("ACCEPTED");
-        
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
-    }
-
-
 }
-

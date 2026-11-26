@@ -22,6 +22,7 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static br.com.deolhonacamara.api.BusinessCode.INACTIVE_USER;
+import static br.com.deolhonacamara.api.BusinessCode.INVALID_PASSWORD;
 
 @Service
 @RequiredArgsConstructor
@@ -94,13 +95,13 @@ public class UserService {
 
     private void validateUserCredentials(UserEntity user, String password) {
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new BusinessException(INACTIVE_USER, "Senha inválida");
+            throw new BusinessException(INVALID_PASSWORD, "Senha inválida");
         }
     }
 
     private void validateUserActive(UserEntity user) {
         if (!user.isActive()) {
-            throw new BusinessException("Usuário inativo", "Usuário não está ativo");
+            throw new BusinessException(INACTIVE_USER, "Usuário não está ativo");
         }
     }
 

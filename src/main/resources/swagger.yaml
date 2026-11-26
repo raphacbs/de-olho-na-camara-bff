@@ -576,7 +576,22 @@ paths:
       tags: [ Sync ]
       summary: Trigger synchronization of votes only
       operationId: syncVotes
-      description: Starts an asynchronous synchronization process for votes only.
+      description: Starts an asynchronous synchronization process for votes only. Optional startDate and endDate query parameters can be used to limit synchronization to a specific date range.
+      parameters:
+        - in: query
+          name: startDate
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Optional start date for vote synchronization (inclusive)
+        - in: query
+          name: endDate
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Optional end date for vote synchronization (inclusive)
       responses:
         '202':
           description: Synchronization started successfully
